@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=NuCommander
+Comment="Orthodox File Manager"
+StartupNotify=true
+Exec=@bindir@/nucommander %U
+Categories=Utility

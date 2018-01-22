@@ -1,0 +1,7 @@
+add_sources(
+    main.cpp 
+    nucommander.cpp 
+    nucommander.h
+    app_window.cpp
+    app_window.h
+)
