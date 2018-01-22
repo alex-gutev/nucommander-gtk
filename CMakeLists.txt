@@ -36,6 +36,7 @@ set(RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c)
 
 add_custom_command(OUTPUT ${RESOURCES}
     COMMAND glib-compile-resources --target=resources.c --generate-source nucommander.gresource.xml
+    DEPENDS src/window.glade src/fileview.glade src/nucommander.gresource.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_sources(${RESOURCES})

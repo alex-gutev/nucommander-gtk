@@ -22,6 +22,8 @@
 
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/builder.h>
+#include <gtkmm/box.h>
+#include <gtkmm/paned.h>
 
 #include <glibmm.h>
 
@@ -29,6 +31,12 @@ namespace nuc {
     class app_window : public Gtk::ApplicationWindow {
     protected:
       Glib::RefPtr<Gtk::Builder> builder;
+      
+      Gtk::Paned *pane_view;
+      Gtk::Box *left_view;
+      Gtk::Box *right_view;
+      
+      Glib::RefPtr<Gtk::Builder> file_view_builder();
       
     public:
         app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);

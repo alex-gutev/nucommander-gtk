@@ -21,11 +21,6 @@
 
 #include <exception>
 
-nuc::app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject, 
-                            const Glib::RefPtr< Gtk::Builder >& builder)
-    : Gtk::ApplicationWindow(cobject), builder(builder) {
-}
-
 nuc::app_window* nuc::app_window::create() {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.glade");
     
@@ -39,5 +34,24 @@ nuc::app_window* nuc::app_window::create() {
     return window;
 }
 
+nuc::app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject, 
+                            const Glib::RefPtr< Gtk::Builder >& builder)
+    : Gtk::ApplicationWindow(cobject), builder(builder) {
+    auto left_builder = file_view_builder();
+    auto right_builder = file_view_builder();
+    
+    builder->get_widget("pane_view", pane_view);
+    
+    left_builder->get_widget("file_view", left_view);
+    right_builder->get_widget("file_view", right_view);
+    
+    pane_view->pack1(*left_view, true, true);
+    pane_view->pack2(*right_view, true, true);
+    
+    left_view->show();
+    right_view->show();
+}
 
-
+Glib::RefPtr< Gtk::Builder > nuc::app_window::file_view_builder() {
+    return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
+}

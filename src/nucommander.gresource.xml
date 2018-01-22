@@ -2,5 +2,6 @@
 <gresources>
     <gresource prefix="/org/agware/nucommander">
         <file preprocess="xml-stripblanks">window.glade</file>
+        <file preprocess="xml-stripblanks">fileview.glade</file>
     </gresource>
 </gresources>
