@@ -14,4 +14,7 @@ add_sources(
     
     lister.h
     lister.cpp
+    
+    dir_lister.h
+    dir_lister.cpp
 )
