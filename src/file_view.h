@@ -17,39 +17,24 @@
  *
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
-
-#include <gtkmm/applicationwindow.h>
-#include <gtkmm/builder.h>
-#include <gtkmm/box.h>
-#include <gtkmm/frame.h>
-#include <gtkmm/paned.h>
+#ifndef NUC_FILE_VIEW_H
+#define NUC_FILE_VIEW_H
 
 #include <glibmm.h>
 
-#include "file_view.h"
+#include <gtkmm/builder.h>
+#include <gtkmm/frame.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/treeview.h>
 
 namespace nuc {
-    class app_window : public Gtk::ApplicationWindow {
-    protected:
-        Glib::RefPtr<Gtk::Builder> builder;
-      
-        Gtk::Paned *pane_view;
+    class file_view : public Gtk::Frame {
+        Gtk::Entry *path_entry;
+        Gtk::TreeView *file_list;
         
-        file_view *left_view;
-        file_view *right_view;
-
-        void add_file_view(file_view * &ptr, int pane);
-        
-        Glib::RefPtr<Gtk::Builder> file_view_builder();
-      
     public:
-        app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
-		
-		static app_window *create();
+        file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
     };
 }
 
-#endif // WINDOW_H
-
+#endif // NUC_FILE_VIEW_H

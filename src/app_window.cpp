@@ -21,7 +21,9 @@
 
 #include <exception>
 
-nuc::app_window* nuc::app_window::create() {
+using namespace nuc;
+
+app_window* app_window::create() {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.glade");
     
     app_window *window = nullptr;
@@ -34,24 +36,34 @@ nuc::app_window* nuc::app_window::create() {
     return window;
 }
 
-nuc::app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject, 
+app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject, 
                             const Glib::RefPtr< Gtk::Builder >& builder)
     : Gtk::ApplicationWindow(cobject), builder(builder) {
-    auto left_builder = file_view_builder();
-    auto right_builder = file_view_builder();
-    
+    // TODO: Add error checking
     builder->get_widget("pane_view", pane_view);
     
-    left_builder->get_widget("file_view", left_view);
-    right_builder->get_widget("file_view", right_view);
+    add_file_view(left_view, 1);
+    add_file_view(right_view, 2);
     
-    pane_view->pack1(*left_view, true, true);
-    pane_view->pack2(*right_view, true, true);
-    
-    left_view->show();
-    right_view->show();
+    pane_view->show_all();
 }
 
-Glib::RefPtr< Gtk::Builder > nuc::app_window::file_view_builder() {
+void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
+    
+    // TODO: Add error checking
+    
+    builder->get_widget_derived("file_view", ptr);
+    
+    if (pane == 1) {
+        pane_view->pack1(*ptr, true, true);
+    }
+    else {
+        pane_view->pack2(*ptr, true, true);
+    }
+}
+
+
+Glib::RefPtr< Gtk::Builder > app_window::file_view_builder() {
     return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
 }
