@@ -19,7 +19,10 @@
 
 #include "dir_lister.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 using namespace nuc;
 
