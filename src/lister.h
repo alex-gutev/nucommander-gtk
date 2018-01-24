@@ -26,7 +26,8 @@
 #include <errno.h>
 
 #include <atomic>
-#include <string>
+
+#include "types.h"
 
 namespace nuc {
     /**
@@ -67,8 +68,6 @@ namespace nuc {
         std::atomic_flag finished;
         
     public:
-        typedef std::string path_str;
-        
         /** 
          * Operation stage constants, passed in the stage parameter of the
          * callback.

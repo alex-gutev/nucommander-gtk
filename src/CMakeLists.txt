@@ -10,6 +10,7 @@ add_sources(
     file_view.h
     file_view.cpp
     
+    types.h
     async_task.h
     
     lister.h

@@ -93,7 +93,7 @@ int lister::call_callback(lister::stage_t stage, const lister::entry *ent, const
     return -1;
 }
 
-void lister::begin(const lister::path_str &path) {
+void lister::begin(const path_str &path) {
     cancel_state = CAN_CANCEL;
     
     dispatch_async([=]{
