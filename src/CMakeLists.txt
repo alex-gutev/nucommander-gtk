@@ -18,4 +18,11 @@ add_sources(
     
     dir_lister.h
     dir_lister.cpp
+    
+    path_components.h
+    path_components.cpp
+    
+    path_utils.h
+    path_utils.cpp
+    
 )

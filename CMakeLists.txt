@@ -45,3 +45,8 @@ add_executable(nucommander ${SRCS})
 target_link_libraries(nucommander ${GTKMM_LIBRARIES})
 
 install(TARGETS nucommander RUNTIME DESTINATION bin)
+
+## Tests
+
+enable_testing()
+add_subdirectory(test)
