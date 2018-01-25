@@ -29,16 +29,27 @@ namespace nuc {
         
     public:
         
-        struct iter {
+        class iter {
             const std::string &path;
             
             size_t pos = 0;
             size_t next_pos = 0;
             
+        public:
+            
             iter(const std::string &path, size_t pos);
             
             size_t next_slash();
             void next();
+            
+            std::string sub_path() const {
+                return path.substr(0, next_pos);
+            }
+            
+            bool last() const {
+                return next_pos == path.length();
+            }
+            
             
             iter &operator++() {
                 next();

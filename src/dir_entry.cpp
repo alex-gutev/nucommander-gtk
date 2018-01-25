@@ -17,21 +17,30 @@
  *
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#include "dir_entry.h"
 
-#include <string>
-#include <unordered_map>
+#include "path_utils.h"
 
-#include <stdint.h>
+using namespace nuc;
 
-namespace nuc {
-    typedef std::string path_str;
-    
-    typedef uint8_t file_type;
-    
-    template <typename T>
-    using file_map = std::unordered_multimap<path_str, T>;
+dir_entry::dir_entry(const lister::entry &ent, const struct stat *st)
+    : m_orig_name(ent.name) {
+    set_attr(ent, st);
 }
 
-#endif // TYPES_H
+void dir_entry::display_name(const path_str &name) {
+    m_display_name = name;
+    m_ext = file_extension(name);
+}
+
+
+void dir_entry::set_attr(const lister::entry &ent, const struct stat *st) {
+    m_type = ent.type;
+    
+    if (st) {
+        m_attr = *st;
+    }
+    else {
+        m_attr.st_mode = DTTOIF(ent.type);
+    }
+}

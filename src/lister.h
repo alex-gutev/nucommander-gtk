@@ -1,3 +1,4 @@
+
 /*
  * NuCommander
  * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>

@@ -25,4 +25,9 @@ add_sources(
     path_utils.h
     path_utils.cpp
     
+    dir_tree.h
+    dir_tree.cpp
+    
+    dir_entry.h
+    dir_entry.cpp
 )

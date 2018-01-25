@@ -23,7 +23,7 @@
 using namespace nuc;
 
 path_components::iter::iter(const std::string &path, size_t pos) : path(path), pos(pos) {
-    if (pos != path.length()) {
+    if (pos != std::string::npos) {
         next_pos = next_slash();
         
         if (next_pos == pos)
@@ -43,16 +43,8 @@ std::vector<std::string> path_components::all(const std::string &path) {
 }
 
 
-
-
 size_t path_components::iter::next_slash() {
-    size_t next_pos = path.find('/', pos);
-    
-    if (next_pos == std::string::npos) {
-        next_pos = path.length();
-    }
-    
-    return next_pos;
+    return path.find('/', pos);
 }
 
 
@@ -64,7 +56,6 @@ void path_components::iter::next() {
     pos = path.find_first_not_of('/', next_pos);
     
     if (pos == std::string::npos) {
-        pos = next_pos = path.length();
         return;
     }
     
@@ -81,7 +72,7 @@ path_components::iter path_components::begin() {
 }
 
 path_components::iter path_components::end() {
-    return iter(path, path.length());
+    return iter(path, std::string::npos);
 }
 
 std::string path_components::iter::operator*() const {
