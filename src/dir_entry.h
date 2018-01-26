@@ -17,8 +17,10 @@
  *
  */
 
-#ifndef NUC_DIRENT_H
-#define NUC_DIRENT_H
+#ifndef NUC_DIR_ENTRY_H
+#define NUC_DIR_ENTRY_H
+
+#include <functional>
 
 #include "types.h"
 #include "lister.h"
@@ -77,18 +79,19 @@ namespace nuc {
          * Constructs a 'dir_entry' object with a given name and
          * type, which is stored in the entry type and stat attributes.
          */
-        dir_entry(const path_str orig_name, uint8_t type) : 
-            m_orig_name(orig_name), m_type(type) {
-            m_attr.st_mode = DTTOIF(type);
-        }
+        dir_entry(const path_str orig_name, uint8_t type);
+        
+        /**
+         * Constructs a 'dir_entry' object from a 'lister' object.
+         */
+        dir_entry(const lister::entry &ent);
+        
         /**
          * Constructs a 'dir_entry' object from the details stored int
          * the 'lister::entry' object (returned by the 'lister' object)
-         * and stat attributes. The constructor takes a pointer
-         * to the stat struct, rather than a reference, as it may be NULL
-         * in the case that the stat information could not be obtained.
+         * and stat attributes
          */
-        dir_entry(const lister::entry &ent, const struct stat *st);
+        dir_entry(const lister::entry &ent, const struct stat &st);
         
         /**
          * Returns the original name.
@@ -144,13 +147,6 @@ namespace nuc {
         }
         
         /**
-         * Sets the attributes of the entry from the
-         * 'lister::entry' and 'stat' structs returned by the
-         * the 'lister' object.
-         */
-        void set_attr(const lister::entry &ent, const struct stat *st);
-        
-        /**
          * Returns a reference to the child map.
          */
         file_map<dir_entry *> & child_ents() {
@@ -162,4 +158,4 @@ namespace nuc {
     };
 }
 
-#endif // NUC_DIRENT_H
+#endif // NUC_DIR_ENTRY_H

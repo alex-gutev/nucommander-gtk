@@ -17,18 +17,6 @@
  *
  */
 
-#ifndef ASYNC_TASK_H
-#define ASYNC_TASK_H
+#include "async_task.h"
 
-#include <glibmm/threadpool.h>
-
-namespace nuc {
-    extern Glib::ThreadPool global_thread_pool;
-    
-    template <typename F>
-    void dispatch_async(F fn) {
-        global_thread_pool.push(fn);
-    }
-}
-
-#endif // ASYNC_TASK_H
+Glib::ThreadPool nuc::global_thread_pool;

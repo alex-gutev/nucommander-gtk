@@ -23,84 +23,77 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
+
 
 using namespace nuc;
 
-int dir_lister::init(const path_str &path) {
-    dp = opendir(path.c_str());
-    
-    return dp ? 0 : errno;
+dir_lister::~dir_lister() {
+    close();
 }
 
-dir_lister::~dir_lister() {
+void dir_lister::open(const path_str& path) {
+    dp = opendir(path.c_str());
+    
+    if (!dp) {
+        raise_error(errno);
+    }
+}
+
+void dir_lister::open(int fd) {
+    fd = dup(fd);
+    
+    if (fd < 0) {
+        raise_error(errno);
+    }
+    
+    dp = fdopendir(fd);
+    
+    if (!dp) {
+        int err = errno;
+        
+        ::close(fd);
+        
+        raise_error(err);
+    }
+    
+    if (lseek(fd, 0, SEEK_SET)) {
+        raise_error(errno);
+    }
+}
+
+void dir_lister::close() {
     if (dp) closedir(dp);
 }
 
-int dir_lister::init(int fd, bool dupfd) {
-    int dfd = fd;
+
+bool dir_lister::read_entry(lister::entry& ent) {
+    errno = 0;
     
-    if (dupfd) {
-        if ((dfd = dup(fd)) < 0) {
-            return errno;
+    last_ent = readdir(dp);
+    
+    if (!last_ent) {
+        int err = errno;
+        
+        if (err) {
+            raise_error(err);
         }
+        
+        return false;
     }
     
-    if ((dp = fdopendir(dfd))) {
-        // Reset pointer to start of directory
-        if (!lseek(dfd, 0, SEEK_SET)) {
-            return 0;
-        }
-    }
+    ent.name = last_ent->d_name;
+    ent.type = last_ent->d_type;
     
-    int err = errno;
-    
-    if (dupfd) {
-        close(dfd);
-    }
-    
-    return err;
+    return true;
 }
 
-void dir_lister::read_async() {
-    if (!call_callback(BEGIN, NULL, NULL)) {
-        read_dir();
-    }
-    
-    call_finish(errno);
-}
-
-void dir_lister::read_dir() {
-    struct dirent *dir_ent;
-    struct stat st;
-    
-    entry ent;
-    
-    int stat_err = 0;
-    
-    while ((errno = 0, dir_ent = readdir(dp))) {
-        stat_err = get_stat(dir_ent, &st);
-        
-        ent.name = dir_ent->d_name;
-        ent.type = dir_ent->d_type;
-        
-        // In the case of a stat error a NULL pointer is passed to the
-        // callback and errno is set.  It is up to the callback to
-        // deal with the error, since this is not necessarily a
-        // critical error.
-        
-        if (call_callback(ENTRY, &ent, !stat_err ? &st : NULL)) {
-            errno = ECANCELED;
-            return;
-        }
-    }
-}
-
-int dir_lister::get_stat(const struct dirent *ent, struct stat *st) {
+bool dir_lister::entry_stat(struct stat &st) {
     int fd = dirfd(dp);
     
-    if (fstatat(fd, ent->d_name, st, 0)) {
-        return fstatat(fd, ent->d_name, st, AT_SYMLINK_NOFOLLOW);
+    if (fstatat(fd, last_ent->d_name, &st, 0)) {
+        return !fstatat(fd, last_ent->d_name, &st, AT_SYMLINK_NOFOLLOW);
     }
     
-    return 0;
+    return true;
 }

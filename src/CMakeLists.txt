@@ -11,11 +11,11 @@ add_sources(
     file_view.cpp
     
     types.h
+    
     async_task.h
+    async_task.cpp
     
     lister.h
-    lister.cpp
-    
     dir_lister.h
     dir_lister.cpp
     
@@ -30,4 +30,11 @@ add_sources(
     
     dir_entry.h
     dir_entry.cpp
+    
+    operation.h
+    operation.cpp
+    fn_operation.h
+    
+    vfs.h
+    vfs.cpp
 )

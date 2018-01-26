@@ -150,7 +150,7 @@ namespace nuc {
          * ent:     The entry object returned by the lister object.
          * st:      The stat information returned by the lister object.
          */
-        dir_entry *add_entry(const lister::entry &ent, struct stat *st);
+        dir_entry *add_entry(const lister::entry &ent, const struct stat &st);
         
         /**
          * Returns the pointer to the first entry with name 'name',

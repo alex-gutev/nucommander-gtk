@@ -23,24 +23,18 @@
 
 using namespace nuc;
 
-dir_entry::dir_entry(const lister::entry &ent, const struct stat *st)
-    : m_orig_name(ent.name) {
-    set_attr(ent, st);
+dir_entry::dir_entry(const path_str orig_name, uint8_t type) : 
+    m_orig_name(orig_name), m_type(type) {
+    m_attr.st_mode = DTTOIF(type);
 }
+
+dir_entry::dir_entry(const lister::entry &ent) : dir_entry(ent.name, ent.type) {}
+
+dir_entry::dir_entry(const lister::entry &ent, const struct stat &st)
+    : m_orig_name(ent.name), m_type(ent.type), m_attr(st) {}
+
 
 void dir_entry::display_name(const path_str &name) {
     m_display_name = name;
     m_ext = file_extension(name);
-}
-
-
-void dir_entry::set_attr(const lister::entry &ent, const struct stat *st) {
-    m_type = ent.type;
-    
-    if (st) {
-        m_attr = *st;
-    }
-    else {
-        m_attr.st_mode = DTTOIF(ent.type);
-    }
 }

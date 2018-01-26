@@ -30,10 +30,10 @@ namespace nuc {
      */
     class dir_lister : public lister {
         /** Directory handle. */
-        DIR *dp;
+        DIR *dp = nullptr;
         
-        /** Reads the directory. */
-        void read_dir();
+        /** Last entry read. */
+        struct dirent *last_ent;
         
         /**
          * Gets the stat attributes of an entry.
@@ -48,24 +48,16 @@ namespace nuc {
          */
         int get_stat(const struct dirent *ent, struct stat *st);
         
-        /** Constructor */
-        using lister::lister;
-        
     public:
+        virtual ~dir_lister();
         
-        /**
-         * The static create method. The type parameter is ignored.
-         */
-        static lister *create(callback_fn callback, void *ctx, void *) {
-            return new dir_lister(callback, ctx);
-        }
+        virtual void open(const path_str &path);
+        virtual void open(int fd);
         
-        /**
-         * Returns the creator functor for this object.
-         */
-        static creator get_creator() {
-            return creator(create);
-        }
+        virtual void close();
+        
+        virtual bool read_entry(entry &ent);
+        virtual bool entry_stat(struct stat &st);
         
         /**
          * Returns the file descriptor of the directory.
@@ -74,15 +66,9 @@ namespace nuc {
             return dirfd(dp);
         }
         
-    protected:
-        
-        virtual ~dir_lister();
-        
-        /** Both init methods are supported */
-        virtual int init(const path_str &path);
-        virtual int init(int fd, bool dupfd);
-        
-        virtual void read_async();        
+        static bool reads_fd() {
+            return true;
+        }
     };
 }
 

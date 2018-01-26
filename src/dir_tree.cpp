@@ -25,7 +25,7 @@
 using namespace nuc;
 
 
-dir_entry* dir_tree::add_entry(const lister::entry &ent, struct stat* st) {
+dir_entry* dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
     path_str key = ent_name_key(ent.name);
     
     dir_entry &dir_ent = map.emplace(key, dir_entry(ent, st))->second;
