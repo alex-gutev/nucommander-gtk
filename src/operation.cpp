@@ -36,6 +36,11 @@ void operation::exit_no_cancel() {
         throw cancelled();
 }
 
+void operation::test_cancel() {
+    if (cancel_state.load() == CANCELLED)
+        throw cancelled();
+}
+
 void operation::call_finish(bool cancelled) {
     if (!finished.test_and_set()) {
         finish(cancelled);

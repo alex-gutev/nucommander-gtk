@@ -20,14 +20,38 @@
 #ifndef ASYNC_TASK_H
 #define ASYNC_TASK_H
 
+#include <functional>
+
 #include <glibmm/threadpool.h>
+#include <glibmm/dispatcher.h>
+
+#include "async_queue.h"
 
 namespace nuc {
-    extern Glib::ThreadPool global_thread_pool;
+    typedef std::function<void()> async_task;
+    
+    // Must be called from the main thread
+    void init_threads();
+    
+    //extern Glib::ThreadPool global_thread_pool;
+    
+    // Must be called after global_thread_pool
+    Glib::ThreadPool &global_thread_pool();
+    
+    // Must be called on the main thread
+    Glib::Dispatcher &global_dispatcher();
+    
+    async_queue<async_task> &global_main_queue();
     
     template <typename F>
     void dispatch_async(F fn) {
-        global_thread_pool.push(fn);
+        global_thread_pool().push(fn);
+    }
+    
+    template <typename F>
+    void dispatch_main(F fn) {
+        global_main_queue().emplace(std::forward<F>(fn));
+        global_dispatcher().emit();
     }
 }
 

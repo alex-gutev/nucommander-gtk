@@ -19,4 +19,40 @@
 
 #include "async_task.h"
 
-Glib::ThreadPool nuc::global_thread_pool;
+static nuc::async_queue<nuc::async_task> main_queue;
+
+static Glib::ThreadPool * thread_pool;
+static Glib::Dispatcher * dispatcher;
+
+static void main_thread_dispatcher();
+
+
+void nuc::init_threads() {
+    dispatcher = new Glib::Dispatcher();
+    
+    dispatcher->connect(sigc::ptr_fun(main_thread_dispatcher));
+    
+    thread_pool = new Glib::ThreadPool();
+}
+
+
+Glib::ThreadPool &nuc::global_thread_pool() {
+    return *thread_pool;
+}
+
+Glib::Dispatcher &nuc::global_dispatcher() {
+    return *dispatcher;
+}
+
+nuc::async_queue<nuc::async_task> &nuc::global_main_queue() {
+    return main_queue;
+}
+
+
+void main_thread_dispatcher() {
+    nuc::async_task task;
+    
+    if (main_queue.pop(task)) {
+        task();
+    }
+}

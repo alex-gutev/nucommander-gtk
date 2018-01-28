@@ -25,7 +25,7 @@
 using namespace nuc;
 
 
-dir_entry* dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
+dir_entry &dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
     path_str key = ent_name_key(ent.name);
     
     dir_entry &dir_ent = map.emplace(key, dir_entry(ent, st))->second;
@@ -34,6 +34,8 @@ dir_entry* dir_tree::add_entry(const lister::entry &ent, const struct stat &st) 
     if (m_parse_dirs) {
         add_components(key, dir_ent);
     }
+    
+    return dir_ent;
 }
 
 void dir_tree::add_components(const path_str& path, dir_entry &ent) {
@@ -84,10 +86,6 @@ dir_entry &dir_tree::make_dir_ent(const path_str &path, const path_str &name) {
 
 path_str dir_tree::ent_name_key(const path_str& orig_name) {
     return canonicalized_path(orig_name);
-}
-
-path_str dir_tree::file_name(path_str key) {
-    return file_name(key);
 }
 
 

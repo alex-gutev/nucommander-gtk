@@ -81,6 +81,13 @@ namespace nuc {
         void exit_no_cancel();
         
         /**
+         * Tests whether the operation has been cancelled.
+         * If the operation has been cancelled, a cancelled
+         * exception is thrown.
+         */
+        void test_cancel();
+        
+        /**
          * Executes the callable 'f' in a "no cancel" state,
          * that is the call to 'f' is preceeded by 'enter_no_cancel()',
          * and followed by 'exit_no_cancel()'.

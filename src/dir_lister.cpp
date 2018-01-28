@@ -25,6 +25,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <cstring>
+
 
 using namespace nuc;
 
@@ -70,15 +72,9 @@ void dir_lister::close() {
 bool dir_lister::read_entry(lister::entry& ent) {
     errno = 0;
     
-    last_ent = readdir(dp);
+    last_ent = next_ent();
     
     if (!last_ent) {
-        int err = errno;
-        
-        if (err) {
-            raise_error(err);
-        }
-        
         return false;
     }
     
@@ -87,6 +83,24 @@ bool dir_lister::read_entry(lister::entry& ent) {
     
     return true;
 }
+
+struct dirent* dir_lister::next_ent() {
+    struct dirent *ent;
+    
+    do {
+        errno = 0;
+        ent = readdir(dp);
+    } while (ent && (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")));
+    
+    if (!ent) {
+        int err = errno;
+        
+        if (err) raise_error(err);
+    }
+    
+    return ent;
+}
+
 
 bool dir_lister::entry_stat(struct stat &st) {
     int fd = dirfd(dp);

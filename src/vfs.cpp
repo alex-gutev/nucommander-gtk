@@ -23,16 +23,20 @@
 
 #include <memory>
 
+
 using namespace nuc;
 
-void vfs::begin_read(const path_str& path) {
-    op = make_operation([=] (operation &op) {
-        op_main(op, path);
-    }, [=] (operation &op, bool cancelled) {
-        op_finish(cancelled);
-    });
-    
-    op->run();
+void vfs::read(const path_str& path) {
+    if (!op) {
+        op = make_operation([=] (operation &op) {
+            op_main(op, path);
+        }, [=] (operation &op, bool cancelled) {
+            op_finish(cancelled);
+        });
+        
+        op_status = 0;
+        op->run();        
+    }
 }
 
 void vfs::cancel() {
@@ -45,13 +49,10 @@ void vfs::commit_read() {
 }
 
 
-
 void vfs::op_main(operation &op, const std::string &path) {
     std::unique_ptr<lister> listr(new dir_lister());
     
-    op_status = 0;
-    
-    call_callback(BEGIN);
+    call_callback(op, BEGIN);
     
     try {
         listr->open(path);
@@ -86,8 +87,8 @@ void vfs::add_entry(operation &op, const lister::entry &ent, const struct stat &
     });
 }
 
-void vfs::call_callback(vfs::op_stage stage) {
-    op->no_cancel([=] {
+void vfs::call_callback(operation &op, vfs::op_stage stage) {
+    op.no_cancel([=] {
         callback(*this, stage);
     });
 }

@@ -48,6 +48,8 @@ namespace nuc {
          */
         int get_stat(const struct dirent *ent, struct stat *st);
         
+        struct dirent *next_ent();
+        
     public:
         virtual ~dir_lister();
         

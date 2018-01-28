@@ -20,8 +20,6 @@
 #ifndef NUC_DIR_ENTRY_H
 #define NUC_DIR_ENTRY_H
 
-#include <functional>
-
 #include "types.h"
 #include "lister.h"
 

@@ -26,14 +26,43 @@
 #include <gtkmm/frame.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/treeview.h>
+#include <gtkmm/liststore.h>
+
+#include "file_model_columns.h"
+#include "vfs.h"
 
 namespace nuc {
     class file_view : public Gtk::Frame {
         Gtk::Entry *path_entry;
         Gtk::TreeView *file_list;
+
+        Glib::RefPtr<Gtk::ListStore> list_store;
+        file_model_columns columns;
+        
+        nuc::vfs vfs;
+        
+        void init_file_list();
+        void init_model();
+        
+        void init_path_entry();
+        
+        void init_vfs();
+        
+        void read_path(const std::string &path);
+        void entry_path(const std::string &path);
+        
+        void vfs_callback(nuc::vfs::op_stage stage);
+        void begin_read();
+        void finish_read();
+        
+        void add_row(dir_entry &ent);
+        
+        void path_entry_activate();
         
     public:
         file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
+        
+        void path(const std::string &path);
     };
 }
 

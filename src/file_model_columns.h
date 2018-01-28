@@ -17,40 +17,20 @@
  *
  */
 
-#ifndef WINDOW_H
-#define WINDOW_H
+#ifndef FILEMODELCOLUMNS_H
+#define FILEMODELCOLUMNS_H
 
-#include <gtkmm/applicationwindow.h>
-#include <gtkmm/builder.h>
-#include <gtkmm/box.h>
-#include <gtkmm/frame.h>
-#include <gtkmm/paned.h>
-
-#include <glibmm.h>
-
-#include "file_view.h"
+#include <gtkmm/treemodelcolumn.h>
 
 namespace nuc {
-    class app_window : public Gtk::ApplicationWindow {
-    protected:
-        Glib::RefPtr<Gtk::Builder> builder;
-      
-        Gtk::Paned *pane_view;
-        
-        file_view *left_view;
-        file_view *right_view;
-
-        void init_pane_view();
-        void add_file_view(file_view * &ptr, int pane);
-        
-        Glib::RefPtr<Gtk::Builder> file_view_builder();
-      
+    class file_model_columns : public Gtk::TreeModelColumnRecord {
     public:
-        app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
-		
-		static app_window *create();
-    };
+        Gtk::TreeModelColumn<Glib::ustring> name;
+        
+        file_model_columns() {
+            add(name);
+        }
+    };    
 }
 
-#endif // WINDOW_H
-
+#endif // FILEMODELCOLUMNS_H

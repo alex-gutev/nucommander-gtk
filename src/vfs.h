@@ -60,7 +60,7 @@ namespace nuc {
         
         callback_fn callback;
         
-        void begin_read(const path_str &path);
+        void read(const path_str &path);
         void cancel();
         
         int status() const {
@@ -69,12 +69,23 @@ namespace nuc {
         
         void commit_read();
         
-        // TODO: Add a visit_entries and get_entry/get_entries interface.
+        template <typename F>
+        void for_each(F f);
         
     private:
         
-        void call_callback(op_stage stage);
+        void call_callback(operation &op, op_stage stage);
     };
 }
+
+/** Template Implementation */
+
+template <typename F>
+void nuc::vfs::for_each(F f) {
+    for (auto &ent_pair : cur_tree) {
+        f(ent_pair.second);
+    }
+}
+
 
 #endif // NUC_VFS_H

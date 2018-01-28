@@ -63,14 +63,6 @@ namespace nuc {
          * '.' and '..' path components are removed.
          */
         path_str ent_name_key(const path_str &orig_name);
-
-        /**
-         * Returns only the file name component of the entry's
-         * path.
-         * 
-         * key: The canonicalized path, as returned by 'ent_name_key'.
-         */
-        path_str file_name(path_str key);
         
         /**
          * Extracts and creates the intermediate directory components
@@ -150,7 +142,7 @@ namespace nuc {
          * ent:     The entry object returned by the lister object.
          * st:      The stat information returned by the lister object.
          */
-        dir_entry *add_entry(const lister::entry &ent, const struct stat &st);
+        dir_entry &add_entry(const lister::entry &ent, const struct stat &st);
         
         /**
          * Returns the pointer to the first entry with name 'name',

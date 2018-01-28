@@ -10,8 +10,12 @@ add_sources(
     file_view.h
     file_view.cpp
     
+    file_model_columns.h
+    file_model_columns.cpp
+    
     types.h
     
+    async_queue.h
     async_task.h
     async_task.cpp
     

@@ -21,6 +21,8 @@
 
 #include "app_window.h"
 
+#include "async_task.h"
+
 #include <sigc++/sigc++.h>
 
 nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {
@@ -42,6 +44,8 @@ nuc::app_window *nuc::NuCommander::create_app_window() {
 
 void nuc::NuCommander::on_activate() {
     //TODO: Add exception handling
+    
+    init_threads();
     
     auto window = create_app_window();
     window->present();
