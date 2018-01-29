@@ -37,29 +37,29 @@ app_window* app_window::create() {
 }
 
 app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject, 
-                            const Glib::RefPtr< Gtk::Builder >& builder)
+                       const Glib::RefPtr<Gtk::Builder> &builder)
     : Gtk::ApplicationWindow(cobject), builder(builder) {
+    
     // TODO: Add error checking
     
     set_default_size(500, 600);
         
     builder->get_widget("pane_view", pane_view);
-    
-    add_file_view(left_view, 1);
-    add_file_view(right_view, 2);
-    
-    pane_view->show_all();
-    
-    left_view->path("/");
-    right_view->path("/");
-    
+
     init_pane_view();
 }
 
 void app_window::init_pane_view() {
     set_focus_chain({pane_view});
     
+    add_file_view(left_view, 1);
+    add_file_view(right_view, 2);
+    
+    left_view->path("/");
+    right_view->path("/");
+    
     pane_view->set_focus_chain({left_view, right_view});
+    pane_view->show_all();
 }
 
 
@@ -79,6 +79,6 @@ void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
 }
 
 
-Glib::RefPtr< Gtk::Builder > app_window::file_view_builder() {
+Glib::RefPtr<Gtk::Builder> app_window::file_view_builder() {
     return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
 }

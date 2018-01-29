@@ -20,6 +20,7 @@
 #include "path_utils.h"
 
 nuc::path_str nuc::file_name(const path_str &path) {
+    // Find last slash
     size_t slash_pos = path.rfind('/');
     
     if (slash_pos != std::string::npos) {
@@ -30,24 +31,25 @@ nuc::path_str nuc::file_name(const path_str &path) {
 }
 
 nuc::path_str nuc::file_extension(const path_str &path) {
-    // Search for first '.' or '/' from the end of string
-    
+    // Find last '.' or '/'
     size_t pos = path.find_last_of("./");
     
-    // If one of the characters was found and it is not
-    // '/' return substring beginning from next character.
+    // If a character was found and it is not '/', return the
+    // substring beginning from next character.
     if (pos != std::string::npos && path[pos] != '/') {
         return path.substr(pos + 1);
     }
     
-    // No characters found, return empty string
+    // No characters found, return empty string.
     return std::string();
 }
 
 void nuc::append_component(path_str &path, const path_str &comp) {
+    // If 'path' is not an empty string and does end in a slash,
+    // append a slash.
     if (path.size() && path.back() != '/')
         path.append("/");
-    
+
     path.append(comp);
 }
 
@@ -64,8 +66,6 @@ nuc::path_str nuc::path_from_components(const std::vector<path_str> &comps) {
 nuc::path_str nuc::canonicalized_path(const path_str &path) {
     path_components comps(path);
     std::vector<path_str> new_comps;
-    
-    bool first = true;
     
     for (path_str comp : comps) {
         if (comp == "..") {

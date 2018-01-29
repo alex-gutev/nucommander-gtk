@@ -23,33 +23,74 @@
 #include <string>
 #include <vector>
 
+#include "types.h"
+
 namespace nuc {
+    /**
+     * Splits a path string into its components.
+     */
     class path_components {
-        const std::string &path;
+        /** Reference to the path string. */
+        const path_str &path;
         
     public:
-        
+
+        /**
+         * Path component iterator.
+         */
         class iter {
-            const std::string &path;
-            
+            /** Reference to the path string. */
+            const path_str &path;
+
+            /**
+             * Index of the first character of the current component.
+             */
             size_t pos = 0;
+            /**
+             * Index of the next '/' character, or past the end of
+             * string index.
+             */
             size_t next_pos = 0;
-            
-        public:
-            
-            iter(const std::string &path, size_t pos);
-            
+
+            /**
+             * Returns the index of the '/' next slash in the path
+             * string.
+             */
             size_t next_slash();
+
+            /**
+             * Returns the index of the first non-slash character
+             * after 'next_pos'.
+             */
+            size_t next_non_slash() const;
+            
+            /**
+             * Advances the current position to the first non-slash
+             * character after 'next_pos', stops at the end of string.
+             */
             void next();
             
-            std::string sub_path() const {
+        public:
+            /**
+             * Creates an iterator with a given path and index.
+             */
+            iter(const path_str &path, size_t pos);
+
+            /**
+             * Returns the substring of the path upto and including
+             * the current component.
+             */
+            path_str sub_path() const {
                 return path.substr(0, next_pos);
             }
-            
+
+            /**
+             * Returns true if this component, is the last component
+             * in the path.
+             */
             bool last() const {
-                return next_pos == path.length();
+                return next_non_slash() == path_str::npos;
             }
-            
             
             iter &operator++() {
                 next();
@@ -60,8 +101,11 @@ namespace nuc {
                 
                 return copy;
             }
-            
-            std::string operator*() const;
+
+            /**
+             * Returns the current component string.
+             */
+            path_str operator*() const;
             
             bool operator==(const iter &it) const {
                 return pos == it.pos;
@@ -70,11 +114,23 @@ namespace nuc {
                 return pos != it.pos;
             }
         };
-        
-        path_components(const std::string &path) : path(path) {}
-        
-        static std::vector<std::string> all(const std::string &path);
-        
+
+        /**
+         * Constructs a 'path_component' object. The only purpose of
+         * this object is to obtain iterators to the path components.
+         *
+         * path: The path string. The string is not copied, a
+         *       reference to it is stored instead, thus should be
+         *       kept in memory whilst this object is used.
+         */
+        path_components(const path_str &path) : path(path) {}
+
+        /**
+         * Returns an array of all path components in the path string.
+         */
+        static std::vector<path_str> all(const path_str &path);
+
+        /** Iterators */
         iter begin();
         iter end();
     };

@@ -23,40 +23,41 @@
 #include "types.h"
 #include "lister.h"
 
+#include "path_utils.h"
+
 namespace nuc {
     /**
-     * Directory Entry Class.
+     * Directory Entry.
      * 
-     * Stores information about entries in a directory tree,
-     * such as the file name, the sub-path (within the tree),
-     * and stat attributes.
+     * Stores information about entries in a directory tree, such as
+     * the file name, the subpath (within the tree), and stat
+     * attributes.
      * 
-     * When the directory tree is set to parse the directory
-     * structure from the file paths, the class also stores
-     * a map of the child entries of the directory, if the
-     * entry is of type directory.
+     * When the directory tree is set to parse the directory structure
+     * from a flat list of file paths, a map of the child entries of
+     * the directory, if the entry is of type directory, is stored.
      */
     class dir_entry {
         /**
-         * The file name which is displayed.
+         * The file name of the entry, i.e. the basename of the
+         * canonicalized subpath of the entry.
          */
-        path_str m_display_name;
+        path_str m_file_name;
         /**
-         * The original non-canonicalized name of the file.
+         * Original non-canonicalized subpath of the entry.
          */
-        path_str m_orig_name;
+        path_str m_orig_subpath;
         /**
-         * File extension.
+         * Canonicalized subpath.
          */
-        path_str m_ext;
+        path_str m_subpath;
         
         /**
-         * The type of the entry itself, not the underlying
-         * file, as a POSIX 'dirent' constant.
+         * The type of the entry itself, not the underlying file, as a
+         * POSIX 'dirent' constant.
          * 
-         * This is useful to distinguish symbolic links
-         * from regular files whilst still storing the
-         * file type of their targets.
+         * This is useful to distinguish symbolic links from regular
+         * files whilst still storing the file type of their targets.
          */
         file_type m_type;
         
@@ -66,18 +67,22 @@ namespace nuc {
         struct stat m_attr;
         
         /**
-         * Map of child entries, used when the directory tree
-         * is set to store the directory structure, and the file
-         * is of type directory. Otherwise it is not used.
+         * Map of child entries, used when the directory tree stores
+         * the directory structure, and the entry is of type
+         * directory.
          */
         file_map<dir_entry *> child_map;
         
     public:
         /**
-         * Constructs a 'dir_entry' object with a given name and
-         * type, which is stored in the entry type and stat attributes.
+         * Constructs a 'dir_entry' object with a given name and type,
+         * which is stored in the entry type and 'mode' stat
+         * attribute.
+         *
+         * orig_subpath: The non-canonicalized subpath.
+         * type:         The type of the entry, as a dirent constant.
          */
-        dir_entry(const path_str orig_name, uint8_t type);
+        dir_entry(const path_str orig_subpath, uint8_t type);
         
         /**
          * Constructs a 'dir_entry' object from a 'lister' object.
@@ -85,36 +90,39 @@ namespace nuc {
         dir_entry(const lister::entry &ent);
         
         /**
-         * Constructs a 'dir_entry' object from the details stored int
-         * the 'lister::entry' object (returned by the 'lister' object)
-         * and stat attributes
+         * Constructs a 'dir_entry' object from 'lister::entry' object
+         * with given stat attributes.
          */
         dir_entry(const lister::entry &ent, const struct stat &st);
         
         /**
-         * Returns the original name.
+         * Returns the original non-canonicalized subpath.
          */
-        const path_str &orig_name() const {
-            return m_orig_name;
+        const path_str &orig_subpath() const {
+            return m_orig_subpath;
+        }
+
+        /**
+         * Returns the canonicalized subpath.
+         */
+        const path_str &subpath() const {
+            return m_subpath;
         }
         /**
-         * Returns the extension.
+         * Sets the canonicalized subpath, and file name.
          */
-        const path_str &extension() const {
-            return m_ext;
+        void subpath(const path_str &str) {
+            m_subpath = str;
+            m_file_name = nuc::file_name(str);
         }
         
         /**
-         * Returns the display name.
+         * Returns the file name component of the canonicalized
+         * subpath.
          */
-        const path_str &display_name() const {
-            return m_display_name;
+        const path_str &file_name() const {
+            return m_file_name;
         }
-        /**
-         * Sets the display name and the extension, which
-         * is extracted from the display name.
-         */
-        void display_name(const path_str &name);
         
         /**
          * Returns the entry type.
@@ -123,8 +131,8 @@ namespace nuc {
             return m_type;
         }
         /**
-         * Sets the entry type, the stat attributes
-         * are not changed.
+         * Sets the entry type. The stat mode attribute is not
+         * changed.
          */
         void ent_type(uint8_t type) {
             m_type = type;

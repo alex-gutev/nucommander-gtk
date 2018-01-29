@@ -19,17 +19,34 @@
 
 #include "async_task.h"
 
+/**
+ * Queue of tasks to run on the main thread.
+ */
 static nuc::async_queue<nuc::async_task> main_queue;
 
+/**
+ * Pointer to the thread pool on which background tasks are run.
+ *
+ * Has to be created after the dispatcher object.
+ */
 static Glib::ThreadPool * thread_pool;
+/**
+ * Pointer to the dispatcher object.
+ *
+ * Has to be created after the event's loop MainContext has been
+ * created.
+ */
 static Glib::Dispatcher * dispatcher;
 
+/**
+ * The function which is called, on the main thread, when a signal is
+ * sent to the dispatcher object.
+ */
 static void main_thread_dispatcher();
 
 
 void nuc::init_threads() {
-    dispatcher = new Glib::Dispatcher();
-    
+    dispatcher = new Glib::Dispatcher();    
     dispatcher->connect(sigc::ptr_fun(main_thread_dispatcher));
     
     thread_pool = new Glib::ThreadPool();

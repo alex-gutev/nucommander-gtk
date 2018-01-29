@@ -31,39 +31,47 @@
 
 namespace nuc {
     /**
-     * Abstract filelister interface.
+     * Abstract lister interface.
      *
-     * This class provides a generic interface for listing the contents of
-     * directories, regardless of whether the directories are OS
-     * directories or virtual directories such as archives.
-     *
-     * The interface also provides an implementation of a thread-safe
-     * callback mechanism.
+     * Provides a generic interface for listing the contents of a
+     * directory. The class is subclassed to provide implementations
+     * for listing: regular directories, archives, remote directories,
+     * etc.
      */
-    class lister {        
-    public:        
+    class lister {
+    public:
         /**
-         * A simple entry structures containing two fields:
+         * A simple entry structure containing two fields:
          *
-         * name: The name of the entry as a c string.
-         * type: The type of the entry as a dirent constant.
+         * name: The name of the entry as a C string.
+         * type: The type of the entry as a 'dirent' constant.
          */
         struct entry {
             const char *name;
             uint8_t type;
         };
-        
+
+        /**
+         * Error exception.
+         */
         class error : public std::exception {
-            int m_code;
+            /** Error code */
+            const int m_code;
             
         public:
+            /**
+             * Constructs an error exception object with an error
+             * code.
+             */
             error(int code) : m_code(code) {}
-            
+
+            /**
+             * Returns the error code.
+             */
             int code() const {
                 return m_code;
             }
         };
-        
         
         virtual ~lister() = default;
         
@@ -73,46 +81,45 @@ namespace nuc {
         virtual void open(const path_str &path) = 0;
         
         /**
-         * Opens the directory with file descriptor fd. This may
-         * not be supported by all listers.
+         * Opens the directory with file descriptor fd. This operation
+         * might not be supported by all subclasses. The method
+         * 'opens_fd' can be used to determine whetherthe lister
+         * object supports opening from a file descriptor.
          * 
-         * fd:      The file descriptor
-         * 
-         * Returns true if opening a file descriptor is supported
-         * by the lister, false if not supported.
+         * fd: The file descriptor.
          */
         virtual void open(int fd) {}
         
         /**
-         * Reads the next entry into the entry
-         * object 'ent'.
+         * Reads the next entry into the entry object 'ent'.
          * 
-         * Returns true if an entry was read, false
-         * if there are no more entries.
+         * Returns true if an entry was read, false if there are no
+         * more entries.
          * 
-         * Throws 'error' with the value
-         * of 'errno'.
+         * Throws 'error' with a suitable error code.
          */
         virtual bool read_entry(entry &ent) = 0;
         /**
-         * Retrieves the stat attributes of the last
-         * entry read, and stores them into the stat struct
-         * 'st'. Must be called after read_entry.
+         * Retrieves the stat attributes of the last entry read, and
+         * stores them into the stat struct 'st'. Must be called after
+         * read_entry.
          * 
-         * Returns true if the stat attributes were retrieved,
-         * false otherwise.
+         * Returns true if the stat attributes were retrieved, false
+         * otherwise. Should not through any exceptions as failure to
+         * retrieve stat attributes is not a critical error.
          */
         virtual bool entry_stat(struct stat &st) = 0;
         
         /**
-         * Closes open file handles.
+         * Closes all open file handles. Should not through any
+         * exceptions as close errors are not handled when reading.
          */
         virtual void close() = 0;
         
         /**
          * Returns the file descriptor of the directory being listed.
          *
-         * If this is not supported (reads_fd() returns false) -1 is
+         * If this is not supported (opens_fd() returns false) -1 is
          * returned.
          */
         virtual int fd() const {
@@ -120,17 +127,19 @@ namespace nuc {
         }
         
         /**
-         * Returns true if the lister supports reading directly from a
-         * file descriptor i.e. open(int fd, bool dupfd) can be used.  If
-         * the return value is false only the open(path_str path) method
-         * can be used.
+         * Returns true if the lister supports obtaining a handle to
+         * the directory from a file descriptor as opposed to a file
+         * path.
          */
-        static bool reads_fd() {
+        virtual bool opens_fd() {
             return false;
         }
         
     protected:
-        
+
+        /**
+         * Throws an 'error' exception with error code 'code'.
+         */
         void raise_error(int code) {
             throw error(code);
         }

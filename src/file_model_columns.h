@@ -23,10 +23,17 @@
 #include <gtkmm/treemodelcolumn.h>
 
 namespace nuc {
+    /**
+     * Model for the file list tree view.
+     */
     class file_model_columns : public Gtk::TreeModelColumnRecord {
     public:
+        /**
+         * File name.
+         */
         Gtk::TreeModelColumn<Glib::ustring> name;
-        
+
+        /** Constructor */
         file_model_columns() {
             add(name);
         }

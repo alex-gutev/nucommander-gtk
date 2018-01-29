@@ -22,8 +22,8 @@
 
 using namespace nuc;
 
-path_components::iter::iter(const std::string &path, size_t pos) : path(path), pos(pos) {
-    if (pos != std::string::npos) {
+path_components::iter::iter(const path_str &path, size_t pos) : path(path), pos(pos) {
+    if (pos != path_str::npos) {
         next_pos = next_slash();
         
         if (next_pos == pos)
@@ -31,11 +31,11 @@ path_components::iter::iter(const std::string &path, size_t pos) : path(path), p
     }
 }
 
-std::vector<std::string> path_components::all(const std::string &path) {
+std::vector<path_str> path_components::all(const path_str &path) {
     path_components comps(path);
-    std::vector<std::string> all;
+    std::vector<path_str> all;
     
-    for (std::string comp : comps) {
+    for (path_str comp : comps) {
         all.push_back(comp);
     }
     
@@ -47,15 +47,14 @@ size_t path_components::iter::next_slash() {
     return path.find('/', pos);
 }
 
+size_t path_components::iter::next_non_slash() const{
+    return path.find_first_not_of('/', next_pos);
+}
 
 void path_components::iter::next() {
-    // Strip all leading slashes at next_pos
-    // Search for next slash
-    // Set as next_pos
+    pos = next_non_slash();
     
-    pos = path.find_first_not_of('/', next_pos);
-    
-    if (pos == std::string::npos) {
+    if (pos == path_str::npos) {
         return;
     }
     
@@ -72,9 +71,9 @@ path_components::iter path_components::begin() {
 }
 
 path_components::iter path_components::end() {
-    return iter(path, std::string::npos);
+    return iter(path, path_str::npos);
 }
 
-std::string path_components::iter::operator*() const {
+path_str path_components::iter::operator*() const {
     return path.substr(pos, next_pos - pos);
 }

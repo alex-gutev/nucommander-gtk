@@ -26,19 +26,28 @@
 
 namespace nuc {
     class app_window;
-    
+
+    /**
+     * Application class.
+     */
     class NuCommander : public Gtk::Application {
     protected:
         NuCommander();
     
         void on_activate() override;
-        //void on_open(const Gio::Application::type_vec_files &files, const Glib::ustring &hint) override;
         
     private:
+        /**
+         * Creates a new application window.
+         */
         app_window *create_app_window();
+        
         void on_hide_window(Gtk::Window *window);
         
     public:
+        /**
+         * Creates a new NuCommander application object.
+         */
         static Glib::RefPtr<NuCommander> create();
     };
 }

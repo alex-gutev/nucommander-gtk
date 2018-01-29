@@ -25,11 +25,24 @@
 
 #include <stdint.h>
 
+/**
+ * Contains type alias used throughout the project.
+ */
+
 namespace nuc {
+    /**
+     * Path string type.
+     */
     typedef std::string path_str;
-    
+
+    /**
+     * Integer type used to store 'dirent' file type constants.
+     */
     typedef uint8_t file_type;
-    
+
+    /**
+     * File map type.
+     */
     template <typename T>
     using file_map = std::unordered_multimap<path_str, T>;
 }

@@ -25,8 +25,8 @@
 namespace nuc {
     
     /**
-     * filelister subclass for reading directories which are accessible
-     * using the OS's file system API.
+     * Implements the lister interface for reading regular on disk
+     * directories.
      */
     class dir_lister : public lister {
         /** Directory handle. */
@@ -34,41 +34,35 @@ namespace nuc {
         
         /** Last entry read. */
         struct dirent *last_ent;
-        
+
         /**
-         * Gets the stat attributes of an entry.
-         *
-         * First the stat system call is attempted, if it fails lstat is
-         * attempted. If both calls fail an error value is returned.
-         *
-         * ent: The entry as returned by readdir.
-         * st:  Pointer to the struct stat where the attributes will be stored.
-         *
-         * Returns 0 if successful, non-zero on error.
+         * Returns the next entry or nullptr if there are no more
+         * entries. If an error occurs, an 'error' exception is thrown
+         * with the value of 'errno'.
          */
-        int get_stat(const struct dirent *ent, struct stat *st);
-        
         struct dirent *next_ent();
         
     public:
+        /**
+         * Destructor. Closes the directory handle, if open.
+         */
         virtual ~dir_lister();
+
+        /** Method Overrides */
         
         virtual void open(const path_str &path);
         virtual void open(int fd);
-        
+
         virtual void close();
-        
+
         virtual bool read_entry(entry &ent);
         virtual bool entry_stat(struct stat &st);
-        
-        /**
-         * Returns the file descriptor of the directory.
-         */
+
         virtual int fd() const {
             return dirfd(dp);
         }
         
-        static bool reads_fd() {
+        virtual bool opens_fd() const {
             return true;
         }
     };

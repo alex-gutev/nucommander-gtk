@@ -26,10 +26,10 @@ using namespace nuc;
 
 
 dir_entry &dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
-    path_str key = ent_name_key(ent.name);
+    path_str key = canonicalized_path(ent.name);
     
     dir_entry &dir_ent = map.emplace(key, dir_entry(ent, st))->second;
-    dir_ent.display_name(file_name(key));
+    dir_ent.subpath(key);
     
     if (m_parse_dirs) {
         add_components(key, dir_ent);
@@ -38,7 +38,7 @@ dir_entry &dir_tree::add_entry(const lister::entry &ent, const struct stat &st) 
     return dir_ent;
 }
 
-void dir_tree::add_components(const path_str& path, dir_entry &ent) {
+void dir_tree::add_components(const path_str &path, dir_entry &ent) {
     path_components comps(path);
     
     file_map<dir_entry *> *parent_map = &m_base_dir;
@@ -47,14 +47,14 @@ void dir_tree::add_components(const path_str& path, dir_entry &ent) {
     for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
         std::string comp = *it;
         
-        dir_entry &comp_ent = it.last() ? ent : make_dir_ent(sub_path, comp);
+        dir_entry &comp_ent = it.last() ? ent : make_dir_ent(sub_path);
         add_to_map(*parent_map, comp, &comp_ent);
         
         parent_map = &comp_ent.child_ents();
     }
 }
 
-void dir_tree::add_to_map(file_map<dir_entry* > &map, const path_str &name, dir_entry *ent) {
+void dir_tree::add_to_map(file_map<dir_entry *> &map, const path_str &name, dir_entry *ent) {
     auto range = map.equal_range(name);
     
     for (auto it = range.first; it != range.second; ++it) {
@@ -66,7 +66,7 @@ void dir_tree::add_to_map(file_map<dir_entry* > &map, const path_str &name, dir_
     map.emplace(name, ent);
 }
 
-dir_entry &dir_tree::make_dir_ent(const path_str &path, const path_str &name) {
+dir_entry &dir_tree::make_dir_ent(const path_str &path) {
     auto range = map.equal_range(path);
     
     for (auto it = range.first; it != range.second; ++it) {
@@ -78,14 +78,9 @@ dir_entry &dir_tree::make_dir_ent(const path_str &path, const path_str &name) {
     }
     
     dir_entry &ent = map.emplace(path, dir_entry(path, DT_DIR))->second;
-    
-    ent.display_name(name);
+    ent.subpath(path);
     
     return ent;
-}
-
-path_str dir_tree::ent_name_key(const path_str& orig_name) {
-    return canonicalized_path(orig_name);
 }
 
 

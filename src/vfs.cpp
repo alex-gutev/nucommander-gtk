@@ -43,6 +43,11 @@ void vfs::cancel() {
     if (op) op->cancel();
 }
 
+void vfs::free_op() {
+    op->release();
+    op = nullptr;
+}
+
 void vfs::commit_read() {
     cur_tree.swap(new_tree);
     new_tree.clear();
@@ -76,9 +81,6 @@ void vfs::op_main(operation &op, const std::string &path) {
 
 void vfs::op_finish(bool cancelled) {
     callback(*this, cancelled ? CANCELLED : FINISH);
-    
-    op->release();
-    this->op = nullptr;
 }
 
 void vfs::add_entry(operation &op, const lister::entry &ent, const struct stat &st) {

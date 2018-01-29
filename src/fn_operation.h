@@ -23,16 +23,31 @@
 #include "operation.h"
 
 namespace nuc {
-    
+    /**
+     * operation subclass template, allowing callables to specified as
+     * the main and finish methods.
+     */
     template <typename FnMain, typename FnFinish>
     class fn_operation : public nuc::operation {
+        /**
+         * main method callable.
+         */
         FnMain fn_main;
+        /**
+         * finish method callable.
+         */
         FnFinish fn_finish;
         
     public:
-        using operation::no_cancel;
-        
+        /**
+         * Constructs an operation with callable objects serving as
+         * the main and finish methods. The callables receive an extra
+         * parameter (as the first parameter): a reference to
+         * operation object itself.
+         */
         fn_operation(FnMain main, FnFinish finish) : fn_main(main), fn_finish(finish) {}
+
+        /** Method overrides. */
         
         virtual void main() {
             fn_main(*this);
@@ -41,7 +56,13 @@ namespace nuc {
             fn_finish(*this, cancelled);
         }
     };
-    
+
+    /**
+     * Creates a new fn_operation with main and finish callables.
+     *
+     * main:   The callable replacing the main method.
+     * finish: The callable replacing the finish method.
+     */
     template <typename FnMain, typename FnFinish>
     operation *make_operation(FnMain main, FnFinish finish) {
         return new fn_operation<FnMain, FnFinish>(main, finish);

@@ -26,14 +26,40 @@
 #include "types.h"
 #include "path_components.h"
 
+/**
+ * Path utility functions.
+ */
+
 namespace nuc {
+    /**
+     * Returns the file name (basename) of 'path'.
+     */
     path_str file_name(const path_str &path);
+    /**
+     * Returns the file extension of the file in 'path'.
+     */
     path_str file_extension(const path_str &path);
-    
+
+    /**
+     * Appends the component 'comp' to the path string 'path'. If
+     * 'path' does not end in a '/', and it is not an empty string,
+     * a '/' is inserted before the component, otherwise it is not
+     * inserted.
+     */
     void append_component(path_str &path, const path_str &comp);
-    
+
+    /**
+     * Creates a path string from an array of path components.
+     */
     path_str path_from_components(const std::vector<path_str> &comps);
-    
+
+    /**
+     * Returns the canonical representation of a path by removing all
+     * '.', '..' components and double slashes. Leading '..'
+     * components or '..' components which refer to a parent directory
+     * of the base directory in 'path', e.g. /foo/../../bar, are not
+     * removed.
+     */
     path_str canonicalized_path(const path_str &path);
 }
 

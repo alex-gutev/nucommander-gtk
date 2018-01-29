@@ -25,8 +25,7 @@
 
 #include <sigc++/sigc++.h>
 
-nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {
-}
+nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {}
 
 Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::create() {
     return Glib::RefPtr<NuCommander>(new NuCommander());

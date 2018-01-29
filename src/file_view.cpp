@@ -19,8 +19,6 @@
 
 #include "file_view.h"
 
-#include <iostream>
-
 #include "async_task.h"
 
 using namespace nuc;
@@ -33,7 +31,8 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     init_vfs();
     init_file_list();
     init_path_entry();
-    
+
+    // Exclude entry widget from tab focus chain
     set_focus_chain({file_list});;
 }
 
@@ -49,7 +48,8 @@ void file_view::init_model() {
     
     auto column = file_list->get_column(0);
     column->set_sort_column(columns.name);
-    
+
+    // Set "Name" as the default sort column
     list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
 }
 
@@ -62,7 +62,7 @@ void file_view::init_vfs() {
 }
 
 void file_view::init_path_entry() {
-    path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::path_entry_activate));
+    path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
 }
 
 
@@ -72,16 +72,16 @@ void file_view::vfs_callback(vfs::op_stage stage) {
             begin_read();
             break;
             
-        case nuc::vfs::FINISH:
+        case nuc::vfs::CANCELLED:
             finish_read();
             break;
             
-        case nuc::vfs::CANCELLED:
-            std::cout << "cancelled\n";
+        case nuc::vfs::FINISH:
+            finish_read();
+            add_new_rows();
             break;
             
         case nuc::vfs::ERROR:
-            std::cout << "error\n";
             break;
     }
 }
@@ -90,8 +90,11 @@ void file_view::begin_read() {
     list_store->clear();
 }
 
-
 void file_view::finish_read() {
+    vfs.free_op();
+}
+
+void file_view::add_new_rows() {
     vfs.commit_read();
     vfs.for_each([=] (dir_entry &ent) {
         add_row(ent);
@@ -105,7 +108,7 @@ void file_view::finish_read() {
 
 void file_view::add_row(dir_entry &ent) {
     auto row = *list_store->append();
-    row[columns.name] = ent.display_name();
+    row[columns.name] = ent.file_name();
 }
 
 
@@ -124,14 +127,7 @@ void file_view::read_path(const std::string& path) {
 }
 
 
-void file_view::path_entry_activate() {
+void file_view::on_path_entry_activate() {
     read_path(path_entry->get_text());
     file_list->grab_focus();
 }
-
-
-
-
-
-
-

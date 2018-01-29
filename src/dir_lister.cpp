@@ -34,7 +34,7 @@ dir_lister::~dir_lister() {
     close();
 }
 
-void dir_lister::open(const path_str& path) {
+void dir_lister::open(const path_str &path) {
     dp = opendir(path.c_str());
     
     if (!dp) {
@@ -66,12 +66,11 @@ void dir_lister::open(int fd) {
 
 void dir_lister::close() {
     if (dp) closedir(dp);
+    dp = nullptr;
 }
 
 
-bool dir_lister::read_entry(lister::entry& ent) {
-    errno = 0;
-    
+bool dir_lister::read_entry(lister::entry &ent) {
     last_ent = next_ent();
     
     if (!last_ent) {
