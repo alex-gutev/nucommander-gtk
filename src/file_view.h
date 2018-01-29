@@ -26,6 +26,7 @@
 #include <gtkmm/frame.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/treeview.h>
+#include <gtkmm/scrolledwindow.h>
 #include <gtkmm/liststore.h>
 
 #include "file_model_columns.h"
@@ -52,6 +53,11 @@ namespace nuc {
          */
         Gtk::TreeView *file_list;
 
+        /**
+         * Scrolled window widget in which the file list tree view widget is contained.
+         */
+        Gtk::ScrolledWindow *scroll_window;
+        
         /**
          * List store, storing the rows (entries) of the tree view
          * widget.
