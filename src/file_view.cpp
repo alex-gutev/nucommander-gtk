@@ -23,6 +23,8 @@
 
 #include <gdk/gdkkeysyms.h>
 
+#include <algorithm>
+
 using namespace nuc;
 
 file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & builder)
@@ -77,6 +79,7 @@ void file_view::init_file_list() {
         file_list->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
     
+    file_list->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
 
     // Add X event handlers
     
@@ -163,11 +166,12 @@ void file_view::reset_list() {
 
     // Select previously selected row
     select_row(selected_row);
+    
+    // Reset move to old flag
+    move_to_old = false;
 }
 
 void file_view::new_list() {
-    old_path.clear();
-    
     vfs.commit_read();
     
     // Clear old list
@@ -176,7 +180,18 @@ void file_view::new_list() {
 
     // Add new rows to list
     add_rows();
-    select_row(0);
+    
+    // Selection
+    if (move_to_old) {
+        move_to_old = false;
+        select_old();
+    }
+    else {
+        select_row(0);
+    }
+    
+    // Clear previous path
+    old_path.clear();
 }
 
 
@@ -193,6 +208,24 @@ void file_view::add_rows() {
 void file_view::add_row(dir_entry &ent) {
     auto row = *list_store->append();
     row[columns.name] = ent.file_name();
+    row[columns.ent] = &ent;
+}
+
+void file_view::select_old() {
+    int selection = 0;
+    std::string old_name(file_name(old_path));
+    
+    auto rows = list_store->children();
+    auto row = std::find_if(rows.begin(), rows.end(), [this, &old_name] (const Gtk::TreeRow &row) {
+        dir_entry *ent = row[columns.ent];
+        return ent->file_name() == old_name;
+    });
+    
+    if (row) {
+        selection = file_list->get_model()->get_path(row)[0];
+    }
+    
+    select_row(selection);
 }
 
 
@@ -221,6 +254,7 @@ void file_view::read_path(const std::string &path) {
     vfs.read(path);
 }
 
+
 size_t file_view::selected_row_index() const {
     auto row = file_list->get_selection()->get_selected();
     if (row) {
@@ -234,8 +268,10 @@ size_t file_view::selected_row_index() const {
 void file_view::select_row(size_t index) {
     auto row = list_store->children()[index];
     
-    if (row)
+    if (row) {
         file_list->get_selection()->select(row);
+        file_list->scroll_to_row(list_store->get_path(row));
+    }
 }
 
 
@@ -245,12 +281,48 @@ void file_view::on_path_entry_activate() {
 }
 
 bool file_view::on_keypress(GdkEventKey *e) {
-    if (e->keyval == GDK_KEY_Escape) {
-        if (reading) {
-            vfs.cancel();
-            return true;
-        }
+    switch (e->keyval) {
+        case GDK_KEY_Escape:
+            if (reading) {
+                vfs.cancel();
+                return true;
+            }
+            break;
+            
+        case GDK_KEY_Return: {
+            auto row = *file_list->get_selection()->get_selected();
+            
+            if (row) {
+                // Emi activate signal. This should be emitted by
+                // default however the signal is not emiited if the
+                // selection was changed programmatically.
+                file_list->row_activated(list_store->get_path(row), *file_list->get_column(0));
+                return true;
+            }
+            
+        } break;
     }
-        
+    
     return false;
 }
+
+void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
+    auto row = list_store->children()[row_path[0]];
+
+    dir_entry &ent = *row[columns.ent];
+
+    switch (ent.ent_type()) {
+        case DT_PARENT:
+            move_to_old = true;
+            path(removed_last_component(cur_path));
+            break;
+            
+        case DT_DIR:
+            path(appended_component(cur_path, ent.file_name()));
+            break;
+            
+        case DT_REG:
+            break;
+    }
+}
+

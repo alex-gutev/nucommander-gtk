@@ -67,6 +67,13 @@ namespace nuc {
         bool reading = false;
         
         /**
+         * Flag: If true the selection is moved to the entry
+         * corresponding to the previous directory, after reading the
+         * new directory list.
+         */
+        bool move_to_old = false;
+        
+        /**
          * Parent directory pseudo entry.
          */
         dir_entry parent_entry{"..", DT_PARENT};
@@ -224,6 +231,12 @@ namespace nuc {
          */
         void select_row(size_t row);
         
+        /**
+         * Moves the selection to the entry corresponding to the
+         * previous directory.
+         */
+        void select_old();
+        
         
         /** Signal Handlers */
         
@@ -237,6 +250,13 @@ namespace nuc {
          * Treeview keypress event handler.
          */
         bool on_keypress(GdkEventKey *e);
+        
+        /**
+         * Signal handler for the row activate signal of the tree
+         * view.  The signal is emitted when a row is "double clicked"
+         * or the enter key is pressed while there is a selected row.
+         */
+        void on_row_activate(const Gtk::TreeModel::Path &path, Gtk::TreeViewColumn *column);
         
     public:
         /**

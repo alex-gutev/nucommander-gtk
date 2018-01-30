@@ -53,6 +53,33 @@ void nuc::append_component(path_str &path, const path_str &comp) {
     path.append(comp);
 }
 
+nuc::path_str nuc::appended_component(path_str path, const path_str &comp) {
+    append_component(path, comp);
+    return path;
+}
+
+
+void nuc::remove_last_component(nuc::path_str &path) {
+    size_t pos = path.rfind('/');
+    
+    if (pos == path_str::npos) {
+        pos = 0;
+    }
+    else if (pos == 0) {
+        pos = 1;
+    }
+    
+    path.resize(pos);
+}
+
+nuc::path_str nuc::removed_last_component(nuc::path_str path) {
+    remove_last_component(path);
+    return path;
+}
+
+
+
+
 nuc::path_str nuc::path_from_components(const std::vector<path_str> &comps) {
     path_str path;
     

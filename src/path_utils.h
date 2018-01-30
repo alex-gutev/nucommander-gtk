@@ -31,6 +31,8 @@
  */
 
 namespace nuc {
+    /** Retrieving various parts */
+    
     /**
      * Returns the file name (basename) of 'path'.
      */
@@ -40,6 +42,9 @@ namespace nuc {
      */
     path_str file_extension(const path_str &path);
 
+    
+    /** Path components */
+    
     /**
      * Appends the component 'comp' to the path string 'path'. If
      * 'path' does not end in a '/', and it is not an empty string,
@@ -49,10 +54,35 @@ namespace nuc {
     void append_component(path_str &path, const path_str &comp);
 
     /**
+     * Returns a new path string with a component appended to an
+     * existing path.
+     * 
+     * path: The exisitng path string, on which to append the
+     *       component.
+     *
+     * comp: The component to append.
+     * 
+     * Returns the new path string.
+     */
+    path_str appended_component(path_str path, const path_str &comp);
+    
+    /**
      * Creates a path string from an array of path components.
      */
     path_str path_from_components(const std::vector<path_str> &comps);
 
+    /**
+     * Removes the last path component of the path string 'path'.
+     */
+    void remove_last_component(path_str &path);
+    
+    /**
+     * Returns a new string which is a copy of 'path' with the last
+     * component removed.
+     */
+    path_str removed_last_component(path_str path);
+    
+    
     /**
      * Returns the canonical representation of a path by removing all
      * '.', '..' components and double slashes. Leading '..'

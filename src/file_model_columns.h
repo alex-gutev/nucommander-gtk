@@ -22,6 +22,8 @@
 
 #include <gtkmm/treemodelcolumn.h>
 
+#include "dir_entry.h"
+
 namespace nuc {
     /**
      * Model for the file list tree view.
@@ -33,9 +35,15 @@ namespace nuc {
          */
         Gtk::TreeModelColumn<Glib::ustring> name;
 
+        /**
+         * Pointer to the directory entry.
+         */
+        Gtk::TreeModelColumn<dir_entry *> ent;
+        
         /** Constructor */
         file_model_columns() {
             add(name);
+            add(ent);
         }
     };    
 }
