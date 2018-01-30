@@ -85,3 +85,8 @@ nuc::path_str nuc::canonicalized_path(const path_str &path) {
     
     return path_from_components(new_comps);
 }
+
+bool nuc::is_root_path(const path_str &path) {
+    // TODO: add more sophisticated checks for non-local file systems
+    return path == "/";
+}

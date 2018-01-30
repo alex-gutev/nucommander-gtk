@@ -42,7 +42,7 @@ app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject,
     
     // TODO: Add error checking
     
-    set_default_size(500, 600);
+    set_default_size(800, 600);
         
     builder->get_widget("pane_view", pane_view);
 

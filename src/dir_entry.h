@@ -26,6 +26,16 @@
 #include "path_utils.h"
 
 namespace nuc {
+    enum {
+        /**
+         * Parent directory pseudo-entry type.
+         * 
+         * DT_WHT has the maximum value, 1 is added to it to produce
+         * a custom type constant
+         */
+        DT_PARENT = DT_WHT + 1
+    };
+    
     /**
      * Directory Entry.
      * 

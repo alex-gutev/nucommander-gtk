@@ -45,6 +45,36 @@ namespace nuc {
      */
     class file_view : public Gtk::Frame {
         /**
+         * The path prior to initiating initiating a read operation
+         * for the new path.
+         *
+         * Used to reset the path if the operation fails or is cancelled.
+         */
+        std::string old_path;
+        /**
+         * The current path.
+         */
+        std::string cur_path;
+        
+        /**
+         * VFS - responsible for reading the directory.
+         */
+        nuc::vfs vfs;
+        
+        /**
+         * Flag for whether there is an ongoing read operation.
+         */
+        bool reading = false;
+        
+        /**
+         * Parent directory pseudo entry.
+         */
+        dir_entry parent_entry{"..", DT_PARENT};
+        
+        
+        /** Widgets */
+        
+        /**
          * Path text entry widget.
          */
         Gtk::Entry *path_entry;
@@ -54,25 +84,52 @@ namespace nuc {
         Gtk::TreeView *file_list;
 
         /**
-         * Scrolled window widget in which the file list tree view widget is contained.
+         * Scrolled window widget in which the file list tree view
+         * widget is contained.
          */
         Gtk::ScrolledWindow *scroll_window;
+        
+
+        /** Tree View Model */
         
         /**
          * List store, storing the rows (entries) of the tree view
          * widget.
          */
         Glib::RefPtr<Gtk::ListStore> list_store;
+        
+        /**
+         * Empty list store.
+         * 
+         * The list store model is used to display an empty tree view,
+         * while reading the new directory list, without discarding
+         * the old list.
+         * 
+         * When a directory read operation is initiated, the model is
+         * switched to this model, when the operation completes
+         * successfully the 'list_store' model is cleared, the new
+         * entries are added to the model and the tree view's model is
+         * switched to it. If the operation fails or is cancelled the
+         * model is simply switched to 'list_store' to redisplay the
+         * old list
+         */
+        Glib::RefPtr<Gtk::ListStore> empty_list;
+        
         /**
          * Tree view column model.
          */
         file_model_columns columns;
 
+        
+        /** Tree view state */
+        
         /**
-         * VFS - responsible for reading the directory.
+         * The previously selected row, prior to beginning the read
+         * operation.
          */
-        nuc::vfs vfs;
-
+        size_t selected_row = 0;
+        
+        
         
         /**
          * Initializes the file list tree view widget: sets the tree
@@ -84,7 +141,14 @@ namespace nuc {
          * the tree view.
          */
         void init_model();
-
+        /**
+         * Creates a list store model, with the column model record
+         * 'columns'.
+         * 
+         * Returns the list store model.
+         */
+        Glib::RefPtr<Gtk::ListStore> create_model();
+        
         /**
          * Initializes the path text entry. Connects a signal handler,
          * to the activate signal, which begins a background read
@@ -108,6 +172,8 @@ namespace nuc {
         void entry_path(const std::string &path);
 
         
+        /** Callbacks */
+        
         /**
          * VFS callback method.
          */
@@ -124,21 +190,53 @@ namespace nuc {
          */
         void finish_read();
 
+
+        /**
+         * Restores the old file list and path.
+         */
+        void reset_list();
+
+        /**
+         * Replaces the file list with the new list, read in the
+         * last completed operation.
+         */
+        void new_list();
         
         /**
-         * Adds the new rows read to the file list store.
+         * Adds the new rows, read, to the file list store.
          */
-        void add_new_rows();
+        void add_rows();
         /**
          * Adds a single row (entry) to the file list store.
          */
         void add_row(dir_entry &ent);
 
+        
+        /** Selection */
+        
+        /**
+         * Returns the index of the currently selected row.
+         */
+        size_t selected_row_index() const;
+        
+        /**
+         * Selects the row at index 'row'.
+         */
+        void select_row(size_t row);
+        
+        
+        /** Signal Handlers */
+        
         /**
          * Path entry "activate" signal handler. Called when the text
-         * in the path entry is changed and the entre key is pressed.
+         * in the path entry is changed and the enter key is pressed.
          */
         void on_path_entry_activate();
+        
+        /**
+         * Treeview keypress event handler.
+         */
+        bool on_keypress(GdkEventKey *e);
         
     public:
         /**

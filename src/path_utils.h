@@ -61,6 +61,12 @@ namespace nuc {
      * removed.
      */
     path_str canonicalized_path(const path_str &path);
+
+
+    /**
+     * Returns true if 'path' is the file system root.
+     */
+    bool is_root_path(const path_str &path);
 }
 
 #endif // PATH_UTILS_H

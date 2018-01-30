@@ -21,6 +21,8 @@
 
 #include "async_task.h"
 
+#include <gdk/gdkkeysyms.h>
+
 using namespace nuc;
 
 file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & builder)
@@ -33,7 +35,7 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     init_file_list();
     init_path_entry();
 
-    // Exclude entry widget from tab focus chain
+    // Exclude entry widget from tab order focus chain.
     set_focus_chain({file_list});;
 }
 
@@ -74,20 +76,34 @@ void file_view::init_file_list() {
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
         file_list->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
+    
+
+    // Add X event handlers
+    
+    file_list->add_events(Gdk::KEY_PRESS_MASK);
+    file_list->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_keypress));
 }
 
 void file_view::init_model() {
-    list_store = Gtk::ListStore::create(columns);
+    list_store = create_model();
+    empty_list = create_model();
     
     file_list->set_model(list_store);
     file_list->append_column("Name", columns.name);
     
     auto column = file_list->get_column(0);
     column->set_sort_column(columns.name);
+}
 
+Glib::RefPtr<Gtk::ListStore> file_view::create_model() {
+    auto list_store = Gtk::ListStore::create(columns);
+    
     // Set "Name" as the default sort column
     list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
+    
+    return list_store;
 }
+
 
 void file_view::init_vfs() {
     vfs.callback = [=] (nuc::vfs &, nuc::vfs::op_stage stage) {
@@ -95,6 +111,8 @@ void file_view::init_vfs() {
             vfs_callback(stage);
         });
     };
+    
+    parent_entry.subpath("..");
 }
 
 void file_view::init_path_entry() {
@@ -107,14 +125,20 @@ void file_view::vfs_callback(vfs::op_stage stage) {
         case nuc::vfs::BEGIN:
             begin_read();
             break;
+        
+        case nuc::vfs::FINISH:
+            finish_read();
+            
+            if (!vfs.status())
+                new_list();
+            else
+                reset_list();
+            
+            break;
             
         case nuc::vfs::CANCELLED:
             finish_read();
-            break;
-            
-        case nuc::vfs::FINISH:
-            finish_read();
-            add_new_rows();
+            reset_list();
             break;
             
         case nuc::vfs::ERROR:
@@ -122,24 +146,48 @@ void file_view::vfs_callback(vfs::op_stage stage) {
     }
 }
 
-void file_view::begin_read() {
-    list_store->clear();
-}
+void file_view::begin_read() {}
 
 void file_view::finish_read() {
+    reading = false;
     vfs.free_op();
 }
 
-void file_view::add_new_rows() {
+
+void file_view::reset_list() {
+    path_entry->set_text(old_path);
+    std::swap(old_path, cur_path);
+    
+    // Reset to old list
+    file_list->set_model(list_store);
+
+    // Select previously selected row
+    select_row(selected_row);
+}
+
+void file_view::new_list() {
+    old_path.clear();
+    
     vfs.commit_read();
+    
+    // Clear old list
+    list_store->clear();
+    file_list->set_model(list_store);
+
+    // Add new rows to list
+    add_rows();
+    select_row(0);
+}
+
+
+
+void file_view::add_rows() {
+    if (!is_root_path(cur_path))
+        add_row(parent_entry);
+    
     vfs.for_each([=] (dir_entry &ent) {
         add_row(ent);
     });
-    
-    auto row = list_store->children()[0];
-    
-    if (row)
-        file_list->get_selection()->select(row);
 }
 
 void file_view::add_row(dir_entry &ent) {
@@ -158,12 +206,51 @@ void file_view::entry_path(const std::string &path) {
     path_entry->set_text(path);
 }
 
-void file_view::read_path(const std::string& path) {
+void file_view::read_path(const std::string &path) {
+    selected_row = selected_row_index();
+    
+    // Set model to empty list to display an empty tree view without
+    // discarding the old list
+    file_list->set_model(empty_list);
+    
+    std::swap(old_path, cur_path);
+    cur_path = path;
+    
+
+    reading = true;
     vfs.read(path);
+}
+
+size_t file_view::selected_row_index() const {
+    auto row = file_list->get_selection()->get_selected();
+    if (row) {
+        auto path = file_list->get_model()->get_path(row);
+        return path[0];
+    }
+
+    return 0;
+}
+
+void file_view::select_row(size_t index) {
+    auto row = list_store->children()[index];
+    
+    if (row)
+        file_list->get_selection()->select(row);
 }
 
 
 void file_view::on_path_entry_activate() {
     read_path(path_entry->get_text());
     file_list->grab_focus();
+}
+
+bool file_view::on_keypress(GdkEventKey *e) {
+    if (e->keyval == GDK_KEY_Escape) {
+        if (reading) {
+            vfs.cancel();
+            return true;
+        }
+    }
+        
+    return false;
 }

@@ -80,6 +80,10 @@ void vfs::op_main(operation &op, const std::string &path) {
 }
 
 void vfs::op_finish(bool cancelled) {
+    if (cancelled || op_status) {
+        new_tree.clear();
+    }
+
     callback(*this, cancelled ? CANCELLED : FINISH);
 }
 
