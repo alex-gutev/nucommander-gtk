@@ -147,6 +147,13 @@ namespace nuc {
         void ent_type(uint8_t type) {
             m_type = type;
         }
+
+        /**
+         * Returns the type of the underlying file as a dirent (DT_ )
+         * constant. If the type of the underlying file is unknown
+         * (DT_UNKNOWN), the entry type is returned instead.
+         */
+        file_type type() const;
         
         /**
          * Returns the stat attributes.

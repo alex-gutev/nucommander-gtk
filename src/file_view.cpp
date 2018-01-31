@@ -311,7 +311,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
     dir_entry &ent = *row[columns.ent];
 
-    switch (ent.ent_type()) {
+    switch (ent.type()) {
         case DT_PARENT:
             move_to_old = true;
             path(removed_last_component(cur_path));
