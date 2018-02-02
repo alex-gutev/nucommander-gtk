@@ -25,7 +25,14 @@
 
 #include <algorithm>
 
+// For debugging only
+//#include <iostream>
+//#include <stdio.h>
+
 using namespace nuc;
+
+
+//// Constructor
 
 file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & builder)
     : Gtk::Frame(cobject) {
@@ -41,6 +48,9 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     set_focus_chain({file_list});;
 }
 
+
+//// Initialization
+
 void file_view::init_file_list() {
     init_model();
     
@@ -55,7 +65,7 @@ void file_view::init_file_list() {
     // other adjustment object. Currently GTK compares the new values
     // set to the previous values and fires change signals only if
     // they are different, thus no flag is needed to determine which
-    // adjustment object fired the initial change signal
+    // adjustment object fired the initial change signal.
     
     adj->signal_changed().connect([this] {
         auto adj = file_list->get_vadjustment();
@@ -69,22 +79,29 @@ void file_view::init_file_list() {
         );
     });
     
-    adj->signal_value_changed().connect([=] {
-        scroll_window->get_vadjustment()->set_value(adj->get_value());
+    adj->signal_value_changed().connect([this] {
+        scroll_window->get_vadjustment()->set_value(file_list->get_vadjustment()->get_value());
     });
     
     file_list->set_vadjustment(adj);
+
+    // Scroll window adjustment signals
     
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
         file_list->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
     
+    
+    // Add tree view signal handlers
+    
     file_list->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
+    file_list->get_selection()->signal_changed().connect(sigc::mem_fun(this, &file_view::on_selection_changed));
 
+    
     // Add X event handlers
     
     file_list->add_events(Gdk::KEY_PRESS_MASK);
-    file_list->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_keypress));
+    file_list->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_keypress), false);
 }
 
 void file_view::init_model() {
@@ -92,9 +109,16 @@ void file_view::init_model() {
     empty_list = create_model();
     
     file_list->set_model(list_store);
-    file_list->append_column("Name", columns.name);
     
-    auto column = file_list->get_column(0);
+    // TODO: Move creation of columns and cells into seperate function
+    
+    auto cell = Gtk::manage(new Gtk::CellRendererText);
+    int ncols = file_list->append_column("Name", *cell);
+    
+    auto column = file_list->get_column(ncols - 1);
+    
+    column->add_attribute(cell->property_text(), columns.name);
+    column->add_attribute(cell->property_foreground_rgba(), columns.color);
     column->set_sort_column(columns.name);
 }
 
@@ -107,6 +131,12 @@ Glib::RefPtr<Gtk::ListStore> file_view::create_model() {
     return list_store;
 }
 
+void file_view::init_path_entry() {
+    path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
+}
+
+
+/// VFS Initialization
 
 void file_view::init_vfs() {
     vfs.callback = [=] (nuc::vfs &, nuc::vfs::op_stage stage) {
@@ -118,11 +148,6 @@ void file_view::init_vfs() {
     parent_entry.subpath("..");
 }
 
-void file_view::init_path_entry() {
-    path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
-}
-
-
 void file_view::vfs_callback(vfs::op_stage stage) {
     switch (stage) {
         case nuc::vfs::BEGIN:
@@ -133,7 +158,7 @@ void file_view::vfs_callback(vfs::op_stage stage) {
             finish_read();
             
             if (!vfs.status())
-                new_list();
+                get_new_list();
             else
                 reset_list();
             
@@ -148,6 +173,8 @@ void file_view::vfs_callback(vfs::op_stage stage) {
             break;
     }
 }
+
+
 
 void file_view::begin_read() {}
 
@@ -171,7 +198,7 @@ void file_view::reset_list() {
     move_to_old = false;
 }
 
-void file_view::new_list() {
+void file_view::get_new_list() {
     vfs.commit_read();
     
     // Clear old list
@@ -207,8 +234,10 @@ void file_view::add_rows() {
 
 void file_view::add_row(dir_entry &ent) {
     auto row = *list_store->append();
+    
     row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
+    row[columns.marked] = false;
 }
 
 void file_view::select_old() {
@@ -229,31 +258,20 @@ void file_view::select_old() {
 }
 
 
+//// Marking Rows
 
-void file_view::path(const std::string &path) {
-    entry_path(path);
-    read_path(path);
+void file_view::mark_row(Gtk::TreeRow row) {
+    dir_entry *ent = row[columns.ent];
+    
+    if (ent->type() != DT_PARENT) {
+        bool marked = row[columns.marked] = !row[columns.marked];
+
+        row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
+    }
 }
 
-void file_view::entry_path(const std::string &path) {
-    path_entry->set_text(path);
-}
 
-void file_view::read_path(const std::string &path) {
-    selected_row = selected_row_index();
-    
-    // Set model to empty list to display an empty tree view without
-    // discarding the old list
-    file_list->set_model(empty_list);
-    
-    std::swap(old_path, cur_path);
-    cur_path = path;
-    
-
-    reading = true;
-    vfs.read(path);
-}
-
+//// Selection
 
 size_t file_view::selected_row_index() const {
     auto row = file_list->get_selection()->get_selected();
@@ -280,32 +298,6 @@ void file_view::on_path_entry_activate() {
     file_list->grab_focus();
 }
 
-bool file_view::on_keypress(GdkEventKey *e) {
-    switch (e->keyval) {
-        case GDK_KEY_Escape:
-            if (reading) {
-                vfs.cancel();
-                return true;
-            }
-            break;
-            
-        case GDK_KEY_Return: {
-            auto row = *file_list->get_selection()->get_selected();
-            
-            if (row) {
-                // Emi activate signal. This should be emitted by
-                // default however the signal is not emiited if the
-                // selection was changed programmatically.
-                file_list->row_activated(list_store->get_path(row), *file_list->get_column(0));
-                return true;
-            }
-            
-        } break;
-    }
-    
-    return false;
-}
-
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
     auto row = list_store->children()[row_path[0]];
 
@@ -326,3 +318,122 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
     }
 }
 
+void file_view::on_selection_changed() {
+    if (mark_rows) {
+        size_t selection = selected_row_index();
+        size_t start, end;
+        
+        if (selection > selected_row) {
+            start = selected_row;
+            end = selection - mark_end_offset;
+        }
+        else {
+            start = selection + mark_end_offset;
+            end = selected_row;
+        }
+        
+        for (size_t i = start; i <= end; i++) {
+            mark_row(list_store->children()[i]);
+        }
+        
+        mark_rows = false;
+    }
+}
+
+
+bool file_view::on_keypress(const GdkEventKey *e) {
+    switch (e->keyval) {
+        case GDK_KEY_Escape:
+            return keypress_escape();
+            
+        case GDK_KEY_Return:
+            return keypress_return();
+
+        case GDK_KEY_Up:
+        case GDK_KEY_Down:
+            return keypress_arrow(e);
+            
+        case GDK_KEY_Home:
+        case GDK_KEY_End:
+            keypress_change_selection(e, true);
+            break;
+            
+        case GDK_KEY_Page_Down:
+        case GDK_KEY_Page_Up:
+            keypress_change_selection(e, false);
+            break;
+    }
+    
+    return false;
+}
+
+
+
+bool file_view::keypress_return() {
+    auto row = *file_list->get_selection()->get_selected();
+
+    if (row) {
+        // Emit activate signal. This should be emitted by
+        // automatically by the widget however the signal is not
+        // emiited if the selection was changed programmatically.
+        file_list->row_activated(list_store->get_path(row), *file_list->get_column(0));
+        return true;
+    }
+
+    return false;
+}
+
+bool file_view::keypress_escape() {
+    if (reading) {
+        vfs.cancel();
+        return true;
+    }
+
+    return false;
+}
+
+bool file_view::keypress_arrow(const GdkEventKey *e) {
+    if (e->state & GDK_SHIFT_MASK) {
+        auto row = file_list->get_selection()->get_selected();
+        if (row) {
+            mark_row(*row);
+        }
+    }
+    return false;
+}
+
+void file_view::keypress_change_selection(const GdkEventKey *e, bool mark_sel) {
+    if (e->state & GDK_SHIFT_MASK) {
+        selected_row = selected_row_index();
+        mark_rows = true;
+        mark_end_offset = mark_sel ? 0 : 1;
+    }
+}
+
+
+
+/// Changing the current path
+
+void file_view::path(const std::string &path) {
+    entry_path(path);
+    read_path(path);
+}
+
+void file_view::entry_path(const std::string &path) {
+    path_entry->set_text(path);
+}
+
+void file_view::read_path(const std::string &path) {
+    selected_row = selected_row_index();
+    
+    // Set model to empty list to display an empty tree view without
+    // discarding the old list
+    file_list->set_model(empty_list);
+    
+    std::swap(old_path, cur_path);
+    cur_path = path;
+    
+
+    reading = true;
+    vfs.read(path);
+}

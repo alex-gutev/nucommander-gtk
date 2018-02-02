@@ -44,6 +44,8 @@ namespace nuc {
      * to user events triggered by the child widgets.
      */
     class file_view : public Gtk::Frame {
+        /* Paths */
+        
         /**
          * The path prior to initiating initiating a read operation
          * for the new path.
@@ -55,9 +57,12 @@ namespace nuc {
          * The current path.
          */
         std::string cur_path;
+
+
+        /* Background operation state */
         
         /**
-         * VFS - responsible for reading the directory.
+         * VFS object - performs the actual reading of the directory.
          */
         nuc::vfs vfs;
         
@@ -79,7 +84,7 @@ namespace nuc {
         dir_entry parent_entry{"..", DT_PARENT};
         
         
-        /** Widgets */
+        /* Widgets */
         
         /**
          * Path text entry widget.
@@ -97,11 +102,11 @@ namespace nuc {
         Gtk::ScrolledWindow *scroll_window;
         
 
-        /** Tree View Model */
+        /* Tree View Model */
         
         /**
-         * List store, storing the rows (entries) of the tree view
-         * widget.
+         * List store model. Stores the rows (entries) of the tree
+         * view widget.
          */
         Glib::RefPtr<Gtk::ListStore> list_store;
         
@@ -112,13 +117,13 @@ namespace nuc {
          * while reading the new directory list, without discarding
          * the old list.
          * 
-         * When a directory read operation is initiated, the model is
-         * switched to this model, when the operation completes
-         * successfully the 'list_store' model is cleared, the new
-         * entries are added to the model and the tree view's model is
-         * switched to it. If the operation fails or is cancelled the
-         * model is simply switched to 'list_store' to redisplay the
-         * old list
+         * When a directory read operation is initiated, the tree
+         * view's model is switched to this model. When the operation
+         * completes successfully the 'list_store' model is cleared,
+         * the new entries are added to the model and the tree view's
+         * model is switched back to it. If the operation fails or is
+         * cancelled the model is simply switched to 'list_store' to
+         * redisplay the old list
          */
         Glib::RefPtr<Gtk::ListStore> empty_list;
         
@@ -128,7 +133,7 @@ namespace nuc {
         file_model_columns columns;
 
         
-        /** Tree view state */
+        /* Tree view state */
         
         /**
          * The previously selected row, prior to beginning the read
@@ -136,11 +141,27 @@ namespace nuc {
          */
         size_t selected_row = 0;
         
-        
+        /**
+         * True if the rows between the previous selection and current
+         * selection should be marked. Used to mark a range of rows in
+         * response to the Home/End/Page Up/Down, with the shift
+         * modifier, key press.
+         */
+        bool mark_rows = false;
         
         /**
-         * Initializes the file list tree view widget: sets the tree
-         * view's model.
+         * The offset, from the current selected row, of the last row
+         * to mark. If 0, the current selected row is marked. Used in
+         * conjunction with 'mark_rows'.
+         */
+        int mark_end_offset = 0;
+
+
+        /* Private Methods */
+        
+        /**
+         * Initializes the file list tree view widget: sets the model
+         * and connects the signal handlers.
          */
         void init_file_list();
         /**
@@ -156,6 +177,7 @@ namespace nuc {
          */
         Glib::RefPtr<Gtk::ListStore> create_model();
         
+        
         /**
          * Initializes the path text entry. Connects a signal handler,
          * to the activate signal, which begins a background read
@@ -164,10 +186,13 @@ namespace nuc {
         void init_path_entry();
 
         /**
-         * Initializes the VFS callback.
+         * Initializes the VFS: sets the callback and creates the
+         * pseudo parent entry.
          */
         void init_vfs();
 
+
+        /* Setting the path */
         
         /**
          * Begins reading the directory at 'path'.
@@ -179,7 +204,7 @@ namespace nuc {
         void entry_path(const std::string &path);
 
         
-        /** Callbacks */
+        /* Callbacks */
         
         /**
          * VFS callback method.
@@ -187,8 +212,6 @@ namespace nuc {
         void vfs_callback(nuc::vfs::op_stage stage);
         /**
          * Called when the vfs callback is called at the BEGIN stage.
-         *
-         * Removes all rows in the file list store.
          */
         void begin_read();
         /**
@@ -198,19 +221,21 @@ namespace nuc {
         void finish_read();
 
 
+        /* Adding/removing rows from the list store */
+        
         /**
          * Restores the old file list and path.
          */
         void reset_list();
 
         /**
-         * Replaces the file list with the new list, read in the
-         * last completed operation.
+         * Replaces the file list with the new list, read in the last
+         * completed operation.
          */
-        void new_list();
+        void get_new_list();
         
         /**
-         * Adds the new rows, read, to the file list store.
+         * Adds the new rows to the file list store.
          */
         void add_rows();
         /**
@@ -219,10 +244,10 @@ namespace nuc {
         void add_row(dir_entry &ent);
 
         
-        /** Selection */
+        /* Selection */
         
         /**
-         * Returns the index of the currently selected row.
+         * Returns the index of the current selected row.
          */
         size_t selected_row_index() const;
         
@@ -233,9 +258,18 @@ namespace nuc {
         
         /**
          * Moves the selection to the entry corresponding to the
-         * previous directory.
+         * previous directory (the entry with the same name as the
+         * basename of 'old_path').
          */
         void select_old();
+
+        
+        /* Marking */
+
+        /**
+         * Marks the row at index 'row'.
+         */
+        void mark_row(Gtk::TreeRow row);
         
         
         /** Signal Handlers */
@@ -243,20 +277,74 @@ namespace nuc {
         /**
          * Path entry "activate" signal handler. Called when the text
          * in the path entry is changed and the enter key is pressed.
+         *
+         * Initiatiates a new background read operation, and returns
+         * focus to the tree view.
          */
         void on_path_entry_activate();
         
         /**
-         * Treeview keypress event handler.
-         */
-        bool on_keypress(GdkEventKey *e);
-        
-        /**
          * Signal handler for the row activate signal of the tree
          * view.  The signal is emitted when a row is "double clicked"
-         * or the enter key is pressed while there is a selected row.
+         * or the enter key is pressed while a row is selected.
+         *
+         * If the entry corresponding to the selected row is a
+         * directory, changes the path to the directory.
          */
         void on_row_activate(const Gtk::TreeModel::Path &path, Gtk::TreeViewColumn *column);
+        
+        /**
+         * Signal handler for the selection changed event.
+         *
+         * If the selection was changed using the Home/End/Page
+         * Up/Down keys, while the shift was held down ('mark_rows' is
+         * true), marks all rows between the previous selected row
+         * ('selected_row'), and the current selected row (minus
+         * 'mark_end_offset' rows the selected row).
+         */
+        void on_selection_changed();
+        
+        /**
+         * Treeview keypress event handler.
+         */
+        bool on_keypress(const GdkEventKey *e);
+        
+
+        
+        /** Keypress handlers */
+
+        /**
+         * Handler for the enter/return key press event.
+         */
+        bool keypress_return();
+        /**
+         * Handler for the escape key press event.
+         */
+        bool keypress_escape();
+
+        /**
+         * Handler for the up/down arrow key press event.
+         * 
+         * e: The keyboard event.
+         */
+        bool keypress_arrow(const GdkEventKey *e);
+      
+        /**
+         * Handler for a keypress which changes the current selection:
+         * Home/End/Page Up/Down.
+         * 
+         * Sets 'mark_rows' to true in order for all rows between the
+         * current selection and the new selection to be marked (when
+         * the selection changed signal is emitted), if the shift
+         * modifier key was held down.
+         * 
+         * e:        The keyboard event.
+         *
+         * mark_sel: True if the new selected row should also be
+         *           marked, false if the last row to be marked is the
+         *           row before the selected row.
+         */
+        void keypress_change_selection(const GdkEventKey *e, bool mark_sel);
         
     public:
         /**

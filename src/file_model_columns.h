@@ -21,6 +21,7 @@
 #define FILEMODELCOLUMNS_H
 
 #include <gtkmm/treemodelcolumn.h>
+#include <gdkmm/rgba.h>
 
 #include "dir_entry.h"
 
@@ -39,11 +40,23 @@ namespace nuc {
          * Pointer to the directory entry.
          */
         Gtk::TreeModelColumn<dir_entry *> ent;
+
+        /**
+         * Flag: true if the row is marked.
+         */
+        Gtk::TreeModelColumn<bool> marked;
+        
+        /**
+         * Text colour of the row.
+         */
+        Gtk::TreeModelColumn<Gdk::RGBA> color;
         
         /** Constructor */
         file_model_columns() {
             add(name);
             add(ent);
+            add(marked);
+            add(color);
         }
     };    
 }
