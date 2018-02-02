@@ -200,6 +200,9 @@ void file_view::reset_list() {
 
 void file_view::get_new_list() {
     vfs.commit_read();
+
+    // Clear marked set
+    marked_set.clear();
     
     // Clear old list
     list_store->clear();
@@ -267,6 +270,13 @@ void file_view::mark_row(Gtk::TreeRow row) {
         bool marked = row[columns.marked] = !row[columns.marked];
 
         row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
+
+        if (marked) {
+            marked_set.emplace(ent->file_name(), row);
+        }
+        else {
+            marked_set.erase(ent->file_name());
+        }
     }
 }
 

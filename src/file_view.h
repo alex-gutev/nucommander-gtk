@@ -29,6 +29,8 @@
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/liststore.h>
 
+#include <unordered_map>
+
 #include "file_model_columns.h"
 #include "vfs.h"
 
@@ -156,6 +158,15 @@ namespace nuc {
          */
         int mark_end_offset = 0;
 
+        /**
+         * Set of marked rows.
+         *
+         * The set is represented as a map where the key is the name
+         * of the entry and the value is the row in tree view
+         * corresponding to the entry.
+         */
+        std::unordered_map<std::string, Gtk::TreeRow> marked_set;
+        
 
         /* Private Methods */
         
