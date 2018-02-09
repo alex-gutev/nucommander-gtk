@@ -31,10 +31,10 @@ namespace nuc {
     /**
      * Virtual file system abstraction.
      *
-     * Allows directories to be read, regardless of whether they are
-     * regular directories, archives, remote directories (provided a
-     * suitable lister subclass is implemented), abstracting away the
-     * choosing of the lister object.
+     * Reads directories, choosing the correct lister object for the
+     * directory, and presents a uniform file system abstraction, in
+     * which a single directory, in the directory tree, can be viewed
+     * at a time.
      *
      * TODO: Implement path case canonicalization and support for
      * archives.
@@ -45,6 +45,9 @@ namespace nuc {
          */
         std::string cur_path;
 
+        
+        /* Directory Tree */
+        
         /**
          * The directory tree of the entries read in the previous
          * operation.
@@ -56,6 +59,9 @@ namespace nuc {
          */
         dir_tree new_tree;
 
+        
+        /* Background Operation */
+        
         /**
          * Pointer to the current running operation, nullptr if none.
          */
@@ -78,6 +84,7 @@ namespace nuc {
          */
         void op_finish(bool cancelled);
 
+        
         /**
          * Adds an entry to the 'new_tree' directory tree. The adding
          * of the entry is performed with 'op' in the "no cancel"
@@ -87,33 +94,59 @@ namespace nuc {
         
     public:
         /**
-         * List operation stage constants.
-         */
-        enum op_stage {
-            /** Operation began. */
-            BEGIN = 0,
-            /** Operation completed. */
-            FINISH,
-            /** An error occured. */
-            ERROR,
-            /** Operation cancelled. */
-            CANCELLED
-        };
-
-        /**
-         * Callback function type. Receives two parameters:
+         * Begin callback function type. 
          *
-         * vfs:   Reference to the vfs object.
-         * stage: op_stage constant identifying the operation stage.
-         * 
-         * When called with stage == FINISH or CANCELLED, there will
-         * be no further invocations of the callback.
+         * Called, on the background thread, before beginning a
+         * background operation. Takes the following arguments:
+         *
+         * bool: True if this a refresh operation, false if this is a
+         *       new read operation.
          */
-        typedef std::function<void(vfs &, op_stage)> callback_fn;
+        typedef std::function<void(bool)> begin_fn;
+        /**
+         * New entry callback function type.
+         *
+         * Called, on the background thread, when a new entry is
+         * read. Takes the following arguments:
+         *
+         * dir_entry &: Reference to the entry.
+         */
+        typedef std::function<void(dir_entry &)> new_entry_fn;
+        /**
+         * Finish callback function type.
+         *
+         * Called, on the background thread, after the background
+         * operation has completed or is cancelled. After this
+         * callback is called there will be no further invocations of
+         * this and the new entry callbackks. 
+         *
+         * Takes the following arguments:
+         *
+         * bool: True if the operation was cancelled, false if it ran
+         *       to completion.
+         *
+         * int:  The error code, 0 if no error occurred.
+         */
+        typedef std::function<void(bool, int)> finish_fn;
 
-        /** Callback function object. */
-        callback_fn callback;
+        
+        /**
+         * Sets the begin callback function.
+         */
+        template <typename F>
+        void callback_begin(F&& fn);
+        /**
+         * Sets the new entry callback function.
+         */
+        template <typename F>
+        void callback_new_entry(F&& fn);
+        /**
+         * Sets the finish callback function.
+         */
+        template <typename F>
+        void callback_finish(F&& fn);
 
+        
         /**
          * Initiates a background read operation for the directory at
          * 'path'.
@@ -122,8 +155,7 @@ namespace nuc {
 
         /**
          * Cancels the background operation if any. The operation is
-         * cancelled when the callback is called with stage ==
-         * CANCELLED/FINISH.
+         * considered cancelled when the finish callback is called.
          */
         void cancel();
 
@@ -152,20 +184,57 @@ namespace nuc {
          */
         template <typename F>
         void for_each(F f);
-        
-    private:
 
+    private:
         /**
-         * Calls the callback a stage, changes the operation state to
-         * "no cancel" before calling the callback and back to
-         * "can_cancel" after the callback returns.
+         * New entry callback function.
          */
-        void call_callback(operation &op, op_stage stage);
+        new_entry_fn cb_new_entry;
+        /**
+         * Finish callback function.
+         */
+        finish_fn cb_finish;
+        /**
+         * Begin callback function.
+         */
+        begin_fn cb_begin;
+
+        
+        /**
+         * Calls the begin callback. The operation 'op' is switched to
+         * the no cancel state, before calling the callback, and
+         * switched to the can_cancel state, after calling the
+         * callback.
+         */
+        void call_begin(operation &op, bool refresh);
+        /**
+         * Calls the new entry callback.
+         */
+        void call_new_entry(dir_entry &ent);
+        /**
+         * Calls the finish callback.
+         */
+        void call_finish(bool cancelled, int error);
     };
 }
 
 
 /** Template Implementation */
+
+template <typename F>
+void nuc::vfs::callback_begin(F&& fn) {
+    cb_begin = std::forward<F>(fn);
+}
+
+template <typename F>
+void nuc::vfs::callback_new_entry(F&& fn) {
+    cb_new_entry = std::forward<F>(fn);
+}
+
+template <typename F>
+void nuc::vfs::callback_finish(F&& fn) {
+    cb_finish = std::forward<F>(fn);
+}
 
 template <typename F>
 void nuc::vfs::for_each(F f) {
@@ -176,3 +245,7 @@ void nuc::vfs::for_each(F f) {
 
 
 #endif // NUC_VFS_H
+
+// Local Variables:
+// mode: c++
+// End:

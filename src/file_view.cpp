@@ -24,6 +24,7 @@
 #include <gdk/gdkkeysyms.h>
 
 #include <algorithm>
+#include <functional>
 
 // For debugging only
 //#include <iostream>
@@ -105,10 +106,11 @@ void file_view::init_file_list() {
 }
 
 void file_view::init_model() {
-    list_store = create_model();
+    cur_list = create_model();
+    new_list = create_model();
     empty_list = create_model();
     
-    file_list->set_model(list_store);
+    file_list->set_model(cur_list);
     
     // TODO: Move creation of columns and cells into seperate function
     
@@ -139,57 +141,48 @@ void file_view::init_path_entry() {
 /// VFS Initialization
 
 void file_view::init_vfs() {
-    vfs.callback = [=] (nuc::vfs &, nuc::vfs::op_stage stage) {
-        dispatch_main([=] {
-            vfs_callback(stage);
-        });
-    };
+    using namespace std::placeholders;
+    
+    vfs.callback_begin(std::bind(&file_view::vfs_begin, this, _1));
+    vfs.callback_new_entry(std::bind(&file_view::vfs_new_entry, this, _1));
+    vfs.callback_finish(std::bind(&file_view::vfs_finish, this, _1, _2));
     
     parent_entry.subpath("..");
 }
 
-void file_view::vfs_callback(vfs::op_stage stage) {
-    switch (stage) {
-        case nuc::vfs::BEGIN:
-            begin_read();
-            break;
-        
-        case nuc::vfs::FINISH:
-            finish_read();
-            
-            if (!vfs.status())
-                get_new_list();
-            else
-                reset_list();
-            
-            break;
-            
-        case nuc::vfs::CANCELLED:
-            finish_read();
-            reset_list();
-            break;
-            
-        case nuc::vfs::ERROR:
-            break;
-    }
+void file_view::vfs_begin(bool refresh) {
+    if (!is_root_path(cur_path))
+        create_row(*new_list->append(), parent_entry);    
 }
 
+void file_view::vfs_new_entry(dir_entry &ent) {
+    create_row(*new_list->append(), ent);
+}
 
+void file_view::vfs_finish(bool cancelled, int error) {
+    dispatch_main([=] {
+        reading = false;
+        vfs.free_op();
 
-void file_view::begin_read() {}
-
-void file_view::finish_read() {
-    reading = false;
-    vfs.free_op();
+        if (!error && !cancelled) {
+            set_new_list();
+        }
+        else {
+            reset_list();
+        }
+    });
 }
 
 
 void file_view::reset_list() {
     path_entry->set_text(old_path);
     std::swap(old_path, cur_path);
+
+    // Clear new list
+    new_list->clear();
     
     // Reset to old list
-    file_list->set_model(list_store);
+    file_list->set_model(cur_list);
 
     // Select previously selected row
     select_row(selected_row);
@@ -198,18 +191,18 @@ void file_view::reset_list() {
     move_to_old = false;
 }
 
-void file_view::get_new_list() {
+void file_view::set_new_list() {
     vfs.commit_read();
 
     // Clear marked set
     marked_set.clear();
-    
-    // Clear old list
-    list_store->clear();
-    file_list->set_model(list_store);
 
-    // Add new rows to list
-    add_rows();
+    // Swap models and switch model to 'new_list'
+    cur_list.swap(new_list);
+    file_list->set_model(cur_list);
+
+    // Clear old list
+    new_list->clear();
     
     // Selection
     if (move_to_old) {
@@ -225,29 +218,17 @@ void file_view::get_new_list() {
 }
 
 
-
-void file_view::add_rows() {
-    if (!is_root_path(cur_path))
-        add_row(parent_entry);
-    
-    vfs.for_each([=] (dir_entry &ent) {
-        add_row(ent);
-    });
-}
-
-void file_view::add_row(dir_entry &ent) {
-    auto row = *list_store->append();
-    
+void file_view::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
-    row[columns.marked] = false;
+    row[columns.marked] = false;    
 }
 
 void file_view::select_old() {
     int selection = 0;
     std::string old_name(file_name(old_path));
     
-    auto rows = list_store->children();
+    auto rows = cur_list->children();
     auto row = std::find_if(rows.begin(), rows.end(), [this, &old_name] (const Gtk::TreeRow &row) {
         dir_entry *ent = row[columns.ent];
         return ent->file_name() == old_name;
@@ -294,11 +275,11 @@ size_t file_view::selected_row_index() const {
 }
 
 void file_view::select_row(size_t index) {
-    auto row = list_store->children()[index];
+    auto row = cur_list->children()[index];
     
     if (row) {
         file_list->get_selection()->select(row);
-        file_list->scroll_to_row(list_store->get_path(row));
+        file_list->scroll_to_row(cur_list->get_path(row));
     }
 }
 
@@ -309,7 +290,7 @@ void file_view::on_path_entry_activate() {
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = list_store->children()[row_path[0]];
+    auto row = cur_list->children()[row_path[0]];
 
     dir_entry &ent = *row[columns.ent];
 
@@ -343,7 +324,7 @@ void file_view::on_selection_changed() {
         }
         
         for (size_t i = start; i <= end; i++) {
-            mark_row(list_store->children()[i]);
+            mark_row(cur_list->children()[i]);
         }
         
         mark_rows = false;
@@ -386,7 +367,7 @@ bool file_view::keypress_return() {
         // Emit activate signal. This should be emitted by
         // automatically by the widget however the signal is not
         // emiited if the selection was changed programmatically.
-        file_list->row_activated(list_store->get_path(row), *file_list->get_column(0));
+        file_list->row_activated(cur_list->get_path(row), *file_list->get_column(0));
         return true;
     }
 
@@ -442,7 +423,6 @@ void file_view::read_path(const std::string &path) {
     
     std::swap(old_path, cur_path);
     cur_path = path;
-    
 
     reading = true;
     vfs.read(path);

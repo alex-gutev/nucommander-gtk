@@ -35,7 +35,7 @@ void vfs::read(const path_str& path) {
         });
         
         op_status = 0;
-        op->run();        
+        op->run();
     }
 }
 
@@ -56,8 +56,8 @@ void vfs::commit_read() {
 
 void vfs::op_main(operation &op, const std::string &path) {
     std::unique_ptr<lister> listr(new dir_lister());
-    
-    call_callback(op, BEGIN);
+
+    call_begin(op, false);
     
     try {
         listr->open(path);
@@ -74,7 +74,6 @@ void vfs::op_main(operation &op, const std::string &path) {
     catch (lister::error &e) {
         op.no_cancel([=] {
             op_status = e.code();
-            callback(*this, ERROR);
         });
     }
 }
@@ -84,21 +83,30 @@ void vfs::op_finish(bool cancelled) {
         new_tree.clear();
     }
 
-    callback(*this, cancelled ? CANCELLED : FINISH);
+    call_finish(cancelled, op_status);
 }
 
 void vfs::add_entry(operation &op, const lister::entry &ent, const struct stat &st) {
     op.no_cancel([=] {
-        new_tree.add_entry(ent, st);
+        dir_entry &new_ent = new_tree.add_entry(ent, st);
+        call_new_entry(new_ent);
     });
 }
 
-void vfs::call_callback(operation &op, vfs::op_stage stage) {
+
+
+//// Callbacks
+
+void vfs::call_begin(operation &op, bool refresh) {
     op.no_cancel([=] {
-        callback(*this, stage);
+        cb_begin(refresh);
     });
 }
 
+void vfs::call_new_entry(dir_entry &ent) {
+    cb_new_entry(ent);
+}
 
-
-
+void vfs::call_finish(bool cancelled, int error) {
+    cb_finish(cancelled, error);
+}

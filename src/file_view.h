@@ -107,10 +107,17 @@ namespace nuc {
         /* Tree View Model */
         
         /**
-         * List store model. Stores the rows (entries) of the tree
-         * view widget.
+         * Current list store model. Stores the entries currently
+         * visible in the tree view widget.
          */
-        Glib::RefPtr<Gtk::ListStore> list_store;
+        Glib::RefPtr<Gtk::ListStore> cur_list;
+        /**
+         * New list store model. Stores the new entires, currently
+         * being read. After the operation completes successfully,
+         * this list store is set as the tree view's model, 'cur_list'
+         * is cleared and 'new_list' and 'cur_list' are swapped.
+         */
+        Glib::RefPtr<Gtk::ListStore> new_list;
         
         /**
          * Empty list store.
@@ -118,14 +125,6 @@ namespace nuc {
          * The list store model is used to display an empty tree view,
          * while reading the new directory list, without discarding
          * the old list.
-         * 
-         * When a directory read operation is initiated, the tree
-         * view's model is switched to this model. When the operation
-         * completes successfully the 'list_store' model is cleared,
-         * the new entries are added to the model and the tree view's
-         * model is switched back to it. If the operation fails or is
-         * cancelled the model is simply switched to 'list_store' to
-         * redisplay the old list
          */
         Glib::RefPtr<Gtk::ListStore> empty_list;
         
@@ -216,21 +215,20 @@ namespace nuc {
 
         
         /* Callbacks */
-        
-        /**
-         * VFS callback method.
-         */
-        void vfs_callback(nuc::vfs::op_stage stage);
-        /**
-         * Called when the vfs callback is called at the BEGIN stage.
-         */
-        void begin_read();
-        /**
-         * Called when the vfs callback is called at the FINISH or
-         * CANCELLED stage.
-         */
-        void finish_read();
 
+        /**
+         * VFS begin callback.
+         */
+        void vfs_begin(bool refresh);
+        /**
+         * VFS new entry callback.
+         */
+        void vfs_new_entry(dir_entry &entry);
+        /**
+         * VFS finish callback.
+         */
+        void vfs_finish(bool cancelled, int error);
+        
 
         /* Adding/removing rows from the list store */
         
@@ -240,21 +238,18 @@ namespace nuc {
         void reset_list();
 
         /**
-         * Replaces the file list with the new list, read in the last
-         * completed operation.
+         * Switches the tree view's model to 'new_list', clears
+         * 'cur_list' and swaps the two models.
          */
-        void get_new_list();
-        
-        /**
-         * Adds the new rows to the file list store.
-         */
-        void add_rows();
-        /**
-         * Adds a single row (entry) to the file list store.
-         */
-        void add_row(dir_entry &ent);
+        void set_new_list();
 
+        /**
+         * Fills in the tree view row's columns with the details of
+         * the entry 'ent'.
+         */
+        void create_row(Gtk::TreeRow row, dir_entry &ent);
         
+
         /* Selection */
         
         /**
@@ -373,3 +368,7 @@ namespace nuc {
 }
 
 #endif // NUC_FILE_VIEW_H
+
+// Local Variables:
+// mode: c++
+// End:
