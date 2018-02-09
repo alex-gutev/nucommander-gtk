@@ -230,7 +230,7 @@ namespace nuc {
         void vfs_finish(bool cancelled, int error);
         
 
-        /* Adding/removing rows from the list store */
+        /* Resetting/Setting the treeview model */
         
         /**
          * Restores the old file list and path.
@@ -248,6 +248,12 @@ namespace nuc {
          * the entry 'ent'.
          */
         void create_row(Gtk::TreeRow row, dir_entry &ent);
+        
+        /**
+         * Sets the sort column (and sort order) of 'new_list' to be
+         * the same as 'old_list'.
+         */
+        void set_sort_column();
         
 
         /* Selection */

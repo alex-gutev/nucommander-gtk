@@ -151,8 +151,11 @@ void file_view::init_vfs() {
 }
 
 void file_view::vfs_begin(bool refresh) {
+    // Disable sorting while adding new entries to improve performance.
+    new_list->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_ASCENDING);
+    
     if (!is_root_path(cur_path))
-        create_row(*new_list->append(), parent_entry);    
+        create_row(*new_list->append(), parent_entry);
 }
 
 void file_view::vfs_new_entry(dir_entry &ent) {
@@ -197,6 +200,9 @@ void file_view::set_new_list() {
     // Clear marked set
     marked_set.clear();
 
+    // Sort new_list using cur_list's sort order
+    set_sort_column();
+    
     // Swap models and switch model to 'new_list'
     cur_list.swap(new_list);
     file_list->set_model(cur_list);
@@ -217,12 +223,22 @@ void file_view::set_new_list() {
     old_path.clear();
 }
 
+void file_view::set_sort_column() {
+    int col_id;
+    Gtk::SortType order;
+    
+    if (cur_list->get_sort_column_id(col_id, order)) {
+        new_list->set_sort_column(col_id, order);
+    }
+}
+
 
 void file_view::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
     row[columns.marked] = false;    
 }
+
 
 void file_view::select_old() {
     int selection = 0;
