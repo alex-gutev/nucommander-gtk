@@ -74,8 +74,8 @@ namespace nuc {
      * background thread.
      */
     template <typename F>
-    void dispatch_async(F fn) {
-        global_thread_pool().push(fn);
+    void dispatch_async(F&& fn) {
+        global_thread_pool().push(std::forward<F>(fn));
     }
 
     /**
@@ -85,10 +85,14 @@ namespace nuc {
      * thread.
      */
     template <typename F>
-    void dispatch_main(F fn) {
+    void dispatch_main(F&& fn) {
         global_main_queue().emplace(std::forward<F>(fn));
         global_dispatcher().emit();
     }
 }
 
 #endif // ASYNC_TASK_H
+
+// Local Variables:
+// mode: c++
+// End:
