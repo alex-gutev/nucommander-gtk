@@ -20,12 +20,13 @@
 #ifndef NUC_VFS_H
 #define NUC_VFS_H
 
+#include <functional>
+
 #include "fn_operation.h"
 #include "dir_tree.h"
 
 #include "lister.h"
-
-#include <functional>
+#include "dir_monitor.h"
 
 namespace nuc {
     /**
@@ -77,7 +78,7 @@ namespace nuc {
         /**
          * Operation main method. Reads the directory at 'path'.
          */
-        void op_main(operation &op, const std::string &path);
+        void op_main(cancel_state &state, const std::string &path);
         /**
          * Operation finish method. Calls the callback with stage =
          * FINISH/CANCELLED.
@@ -90,7 +91,7 @@ namespace nuc {
          * of the entry is performed with 'op' in the "no cancel"
          * state, using the 'operation::no_cancel' method.
          */
-        void add_entry(operation &op, const lister::entry &ent, const struct stat &st);
+        void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
         
     public:
         /**
@@ -206,7 +207,7 @@ namespace nuc {
          * switched to the can_cancel state, after calling the
          * callback.
          */
-        void call_begin(operation &op, bool refresh);
+        void call_begin(cancel_state &state, bool refresh);
         /**
          * Calls the new entry callback.
          */

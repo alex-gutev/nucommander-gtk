@@ -22,31 +22,6 @@
 
 using namespace nuc;
 
-void operation::enter_no_cancel() {
-    int exp_val = CAN_CANCEL;
-    
-    if (!cancel_state.compare_exchange_strong(exp_val, NO_CANCEL))
-        throw cancelled();
-}
-
-void operation::exit_no_cancel() {
-    int exp_val = NO_CANCEL;
-    
-    if (!cancel_state.compare_exchange_strong(exp_val, CAN_CANCEL))
-        throw cancelled();
-}
-
-void operation::test_cancel() {
-    if (cancel_state.load() == CANCELLED)
-        throw cancelled();
-}
-
-void operation::call_finish(bool cancelled) {
-    if (!finished.test_and_set()) {
-        finish(cancelled);
-    }
-}
-
 void operation::run() {
     dispatch_async([=] {
         bool cancelled = false;
@@ -54,22 +29,17 @@ void operation::run() {
         try {
             main();
         }
-        catch (operation::cancelled &e) {
+        catch (cancel_state::cancelled &e) {
             cancelled = true;
         }
         
-        call_finish(cancelled);
+        state.call_finish(cancelled);
         release();
     });
 }
 
 void operation::cancel() {
-    // Set cancel state to cancelled
-    int val = cancel_state.exchange(CANCELLED);
-    
-    if (val == CAN_CANCEL) {
-        call_finish(true);
-    }
+    state.cancel();
 }
 
 void operation::release() {
@@ -78,3 +48,6 @@ void operation::release() {
     }
 }
 
+void operation::free() {
+    delete this;
+}

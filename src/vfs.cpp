@@ -28,9 +28,9 @@ using namespace nuc;
 
 void vfs::read(const path_str& path) {
     if (!op) {
-        op = make_operation([=] (operation &op) {
-            op_main(op, path);
-        }, [=] (operation &op, bool cancelled) {
+        op = make_operation([=] (cancel_state &state) {
+            op_main(state, path);
+        }, [=] (cancel_state &state, bool cancelled) {
             op_finish(cancelled);
         });
         
@@ -54,10 +54,10 @@ void vfs::commit_read() {
 }
 
 
-void vfs::op_main(operation &op, const std::string &path) {
+void vfs::op_main(cancel_state &state, const std::string &path) {
     std::unique_ptr<lister> listr(new dir_lister());
 
-    call_begin(op, false);
+    call_begin(state, false);
     
     try {
         listr->open(path);
@@ -67,12 +67,12 @@ void vfs::op_main(operation &op, const std::string &path) {
         
         while (listr->read_entry(ent)) {
             if (listr->entry_stat(st)) {
-                add_entry(op, ent, st);
+                add_entry(state, ent, st);
             }
         }
     }
     catch (lister::error &e) {
-        op.no_cancel([=] {
+        state.no_cancel([=] {
             op_status = e.code();
         });
     }
@@ -86,8 +86,8 @@ void vfs::op_finish(bool cancelled) {
     call_finish(cancelled, op_status);
 }
 
-void vfs::add_entry(operation &op, const lister::entry &ent, const struct stat &st) {
-    op.no_cancel([=] {
+void vfs::add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st) {
+    state.no_cancel([=] {
         dir_entry &new_ent = new_tree.add_entry(ent, st);
         call_new_entry(new_ent);
     });
@@ -97,7 +97,7 @@ void vfs::add_entry(operation &op, const lister::entry &ent, const struct stat &
 
 //// Callbacks
 
-void vfs::call_begin(operation &op, bool refresh) {
+void vfs::call_begin(cancel_state &op, bool refresh) {
     op.no_cancel([=] {
         cb_begin(refresh);
     });

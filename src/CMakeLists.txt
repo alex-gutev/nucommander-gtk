@@ -35,6 +35,9 @@ add_sources(
     dir_entry.h
     dir_entry.cpp
     
+    cancel_state.h
+    cancel_state.cpp
+    
     operation.h
     operation.cpp
     fn_operation.h

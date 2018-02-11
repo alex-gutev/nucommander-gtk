@@ -21,7 +21,8 @@
 #define NUC_OPERATION_H
 
 #include <atomic>
-#include <exception>
+
+#include "cancel_state.h"
 
 namespace nuc {
     /**
@@ -61,43 +62,16 @@ namespace nuc {
      */
     class operation {
         /**
-         * Cancellation state constants.
-         */
-        enum {
-            /** Operation can be cancelled. */
-            CAN_CANCEL = 0,
-            /** In the no cancel state. */
-            NO_CANCEL = 1,
-            /** Operation has been cancelled. */
-            CANCELLED  = 2
-        };
-        
-        /**
          * Reference Count.
          *
          * Initially two for the owner's reference and for the
          * reference of the background operation itself.
          */
-        std::atomic<int> ref_count {2};
-        
-        /**
-         * Cancellation State.
-         */
-        std::atomic<int> cancel_state {CAN_CANCEL};
-        
-        /**
-         * Boolean flag for whether the 'finish' has been called.
-         */
-        std::atomic_flag finished = ATOMIC_FLAG_INIT;
-        
-        
-        /**
-         * Calls the finish() method if it has not been called
-         * already.
-         */
-        void call_finish(bool cancelled);
+        std::atomic<int> ref_count {2};        
         
     protected:
+        /** Operation cancellation state. */
+        cancel_state state;
         
         /**
          * Destructor. Protected as the class takes care of its own
@@ -107,44 +81,6 @@ namespace nuc {
         virtual ~operation() = default;
         
     public:
-        
-        /**
-         * Enters the "no cancel" state. Throws a 'cancelled'
-         * exception, if the operation has been cancelled.
-         */
-        void enter_no_cancel();
-        
-        /**
-         * Exits the "no cancel" state. Throws a 'cancelled' exception
-         * if the operation was cancelled whilst in the no cancel
-         * state.
-         */
-        void exit_no_cancel();
-        
-        /**
-         * Tests whether the operation has been cancelled.  If the
-         * operation has been cancelled, a cancelled exception is
-         * thrown.
-         */
-        void test_cancel();
-        
-        /**
-         * Executes the callable 'f' in the "no cancel" state,
-         * effectively the call to 'f' is preceeded by
-         * 'enter_no_cancel()', and followed by 'exit_no_cancel()'.
-         */
-        template <typename F>
-        void no_cancel(F f) {
-            enter_no_cancel();
-            f();
-            exit_no_cancel();
-        }
-        
-        /**
-         * Operation cancelled exception.
-         */
-        class cancelled : public std::exception {};
-        
         /**
          * Runs the operation on a background thread.
          */
@@ -163,6 +99,13 @@ namespace nuc {
          * requires its reference to the operation object.
          */
         void release();
+
+        /**
+         * Immediately frees the memory held by the operation
+         * object. This method should not be called after the
+         * operation has been run (after run() has been called).
+         */
+        void free();
         
         /**
          * Operation main method.
@@ -173,22 +116,26 @@ namespace nuc {
         virtual void main() = 0;
         
         /**
-         * Operation finish method.
+         * Finish signal.
          * 
-         * Guaranteed to be called once, after the operation finishes
-         * or has been cancelled. This method may be called on a
-         * background thread or on the same thread from which 'cancel'
-         * is called.
+         * Guaranteed to be emitted once, after the operation finishes
+         * or has been cancelled. The signal handler(s) may be called
+         * on a background thread or on the same thread from which
+         * 'cancel' was called.
          *
          * Its purpose is to inform the owner of the operation that it
          * has completed/cancelled. The operation may still be running
          * when this method is called, however it should not
-         * communicate with the owner.
-         *
-         * cancelled: true if the operation was cancelled.
+         * communicate with the owner after emitting this signal.
          */
-        virtual void finish(bool cancelled) {}
+        cancel_state::signal_finish_type signal_finish() {
+            return state.signal_finish();
+        }
     };
 }
 
 #endif // NUC_OPERATION_H
+
+// Local Variables:
+// mode: c++
+// End:
