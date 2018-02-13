@@ -42,6 +42,9 @@ add_sources(
     operation.cpp
     fn_operation.h
     
+    task_queue.h
+    task_queue.cpp
+    
     vfs.h
     vfs.cpp
 )
