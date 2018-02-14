@@ -22,7 +22,8 @@
 
 #include <functional>
 
-#include "fn_operation.h"
+#include "task_queue.h"
+
 #include "dir_tree.h"
 
 #include "lister.h"
@@ -61,13 +62,13 @@ namespace nuc {
         dir_tree new_tree;
 
         
-        /* Background Operation */
-        
+        /* Background Tasks */
+
         /**
-         * Pointer to the current running operation, nullptr if none.
+         * Background task queue.
          */
-        operation *op = nullptr;
-        
+        task_queue queue;
+
         /**
          * Status of the last operation: 0 - the operation was
          * successful, non-zero the operation failed with the non-zero
@@ -75,23 +76,26 @@ namespace nuc {
          */
         int op_status = 0;
         
+
+        /* Reading Tasks */
+
         /**
-         * Operation main method. Reads the directory at 'path'.
+         * Read directory task. Reads the directory at 'path'.
          */
-        void op_main(cancel_state &state, const std::string &path);
+        void read_dir(cancel_state &state, const std::string &path);
         /**
-         * Operation finish method. Calls the callback with stage =
-         * FINISH/CANCELLED.
+         * Task finish callback. Calls the finish callback.
          */
-        void op_finish(bool cancelled);
+        void finish_read(bool cancelled);
 
         
         /**
          * Adds an entry to the 'new_tree' directory tree. The adding
-         * of the entry is performed with 'op' in the "no cancel"
-         * state, using the 'operation::no_cancel' method.
+         * of the entry is performed with the cancellation state set
+         * to "no cancel".
          */
         void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
+
         
     public:
         /**
@@ -119,7 +123,7 @@ namespace nuc {
          * Called, on the background thread, after the background
          * operation has completed or is cancelled. After this
          * callback is called there will be no further invocations of
-         * this and the new entry callbackks. 
+         * any of the callbacks regarding the last completed operation.
          *
          * Takes the following arguments:
          *
@@ -157,15 +161,13 @@ namespace nuc {
         /**
          * Cancels the background operation if any. The operation is
          * considered cancelled when the finish callback is called.
+         *
+         * This function should only in between the begin callback and
+         * finish callback being called.
          */
         void cancel();
 
-        /**
-         * Frees the last operation's state. cancel should not be
-         * called after this method.
-         */
-        void free_op();
-
+        
         /**
          * Returns the status (error code) of the last operation.
          */
@@ -202,10 +204,10 @@ namespace nuc {
 
         
         /**
-         * Calls the begin callback. The operation 'op' is switched to
-         * the no cancel state, before calling the callback, and
-         * switched to the can_cancel state, after calling the
-         * callback.
+         * Calls the begin callback. The cancellation is switched
+         * switched to the "no cancel" state, before calling the
+         * callback, and switched to the "can cancel" state, after
+         * calling the callback.
          */
         void call_begin(cancel_state &state, bool refresh);
         /**

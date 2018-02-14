@@ -52,11 +52,6 @@ namespace nuc {
          */
         typedef std::function<void(cancel_state &)> task_type;
 
-        /**
-         * Queue cancelled signal type.
-         */
-        typedef sigc::signal<void> signal_cancel_type;
-
         
         /**
          * Pointer to the current cancellation state object.
@@ -78,13 +73,6 @@ namespace nuc {
          * Flag: True if there is a background task loop running.
          */
         std::atomic_flag running = ATOMIC_FLAG_INIT;
-
-        /**
-         * Finished/cancelled signal.
-         *
-         * Emitted when the background task is cancelled.
-         */
-        signal_cancel_type m_signal_cancel;
         
 
         /* Methods */
@@ -111,7 +99,7 @@ namespace nuc {
          * thrown.
          *
          * If the queue is not empty, the task at the head of the
-         * queue is dequeued and stored in task and true is returned.
+         * queue is dequeued, stored in task and true is returned.
          *
          * If the queue is empty, task is not modified, the running
          * flag is cleared, and false is returned.
@@ -129,6 +117,9 @@ namespace nuc {
          * there is no current cancellation state (state is null), a
          * new cancellation state is created, stored in state, and
          * returned.
+         *
+         * This function does not lock the mutex, thus should only be
+         * called after locking the mutex.
          */
         std::shared_ptr<cancel_state> get_cancel_state();
         
@@ -144,6 +135,22 @@ namespace nuc {
          * a background thread.
          */
         void add(task_type task);
+
+        /**
+         * Adds a new task to the queue and connects a callback to the
+         * finish/cancel signal of the task's cancellation state.
+         *
+         * This callback is called after the task finishes or when the
+         * task is cancelled, guaranteed to be called only once.
+         *
+         * The callback might not be called if the task is cancelled
+         * before it has run.
+         *
+         * @param task    The task function.
+         * @param finish  The finish callback function.
+         */
+        template <typename T, typename F>
+        void add(T task, F finish);
         
         /**
          * Cancels the running task and removes all queued tasks from
@@ -155,16 +162,24 @@ namespace nuc {
          * cancellation state (when signal_cancel is emitted).
          */
         void cancel();
-        
-        /**
-         * Cancelled signal.
-         *
-         * This signal is emitted when the queue is cancelled.
-         */
-        signal_cancel_type signal_cancel() {
-            return m_signal_cancel;
-        }
     };
+}
+
+
+/* Template Implementation */
+
+template <typename T, typename F>
+void nuc::task_queue::add(T task, F finish) {
+    add([=] (cancel_state &state) {
+        state.no_cancel([&state, &finish] {
+            state.signal_finish().connect(finish);
+        });
+        
+        task(state);
+        
+        state.call_finish(false);
+        cancel();
+    });
 }
 
 #endif // NUC_TASK_QUEUE_H

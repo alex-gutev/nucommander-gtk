@@ -46,8 +46,20 @@ namespace nuc {
          * Operation cancelled exception.
          */
         class cancelled : public std::exception {};
-        
 
+        
+        /** Default constructor */
+        cancel_state() = default;
+
+        /**
+         * Disable copying as the cancellation state should not be
+         * copied. If it is accidentally copied, it is most likely a
+         * bug.
+         */
+        cancel_state(const cancel_state &) = delete;
+        cancel_state& operator=(const cancel_state &) = delete;
+
+        
         /**
          * Enters the "no cancel" state. Throws a 'cancelled'
          * exception, if the operation has been cancelled.

@@ -21,31 +21,18 @@
 
 #include "dir_lister.h"
 
-#include <memory>
-
 
 using namespace nuc;
 
 void vfs::read(const path_str& path) {
-    if (!op) {
-        op = make_operation([=] (cancel_state &state) {
-            op_main(state, path);
-        }, [=] (cancel_state &state, bool cancelled) {
-            op_finish(cancelled);
-        });
-        
-        op_status = 0;
-        op->run();
-    }
+    using namespace std::placeholders;
+    
+    queue.add(std::bind(&vfs::read_dir, this, _1, path),
+              std::bind(&vfs::finish_read, this, _1));
 }
 
 void vfs::cancel() {
-    if (op) op->cancel();
-}
-
-void vfs::free_op() {
-    op->release();
-    op = nullptr;
+    queue.cancel();
 }
 
 void vfs::commit_read() {
@@ -54,9 +41,12 @@ void vfs::commit_read() {
 }
 
 
-void vfs::op_main(cancel_state &state, const std::string &path) {
+/// Read tasks
+
+void vfs::read_dir(cancel_state &state, const std::string &path) {
     std::unique_ptr<lister> listr(new dir_lister());
 
+    op_status = 0;
     call_begin(state, false);
     
     try {
@@ -64,7 +54,7 @@ void vfs::op_main(cancel_state &state, const std::string &path) {
         
         lister::entry ent;
         struct stat st;
-        
+
         while (listr->read_entry(ent)) {
             if (listr->entry_stat(st)) {
                 add_entry(state, ent, st);
@@ -72,33 +62,32 @@ void vfs::op_main(cancel_state &state, const std::string &path) {
         }
     }
     catch (lister::error &e) {
-        state.no_cancel([=] {
-            op_status = e.code();
-        });
+        op_status = e.code();
     }
-}
-
-void vfs::op_finish(bool cancelled) {
-    if (cancelled || op_status) {
-        new_tree.clear();
-    }
-
-    call_finish(cancelled, op_status);
 }
 
 void vfs::add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st) {
-    state.no_cancel([=] {
+    state.no_cancel([this, &ent, &st] {
         dir_entry &new_ent = new_tree.add_entry(ent, st);
         call_new_entry(new_ent);
     });
 }
 
 
+void vfs::finish_read(bool cancelled) {
+    if (cancelled || op_status) {
+        new_tree.clear();
+    }
+
+    call_finish(cancelled, !cancelled ? op_status : 0);
+}
+
+
 
 //// Callbacks
 
-void vfs::call_begin(cancel_state &op, bool refresh) {
-    op.no_cancel([=] {
+void vfs::call_begin(cancel_state &state, bool refresh) {
+    state.no_cancel([=] {
         cb_begin(refresh);
     });
 }

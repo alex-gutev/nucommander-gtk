@@ -165,7 +165,6 @@ void file_view::vfs_new_entry(dir_entry &ent) {
 void file_view::vfs_finish(bool cancelled, int error) {
     dispatch_main([=] {
         reading = false;
-        vfs.free_op();
 
         if (!error && !cancelled) {
             set_new_list();

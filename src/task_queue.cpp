@@ -87,8 +87,6 @@ void task_queue::cancel() {
 
 
 void task_queue::cancelled(bool cancelled) {
-    m_signal_cancel.emit();
-    
     dispatch_async([=] {
         std::shared_ptr<cancel_state> cstate;
         
