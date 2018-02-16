@@ -41,19 +41,21 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     builder->get_widget("file_list", file_list);
     builder->get_widget("scroll_window", scroll_window);
     
-    init_vfs();
     init_file_list();
     init_path_entry();
 
     // Exclude entry widget from tab order focus chain.
-    set_focus_chain({file_list});;
+    set_focus_chain({file_list});
 }
 
 
 //// Initialization
 
 void file_view::init_file_list() {
-    init_model();
+    // Associate file list controller with tree view widget
+    flist.tree_view(file_list);
+
+    flist.signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
     
     // Create a seperate vertical adjustment object for the tree view
     // in order to disable "smooth scrolling" when navigating using
@@ -91,46 +93,11 @@ void file_view::init_file_list() {
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
         file_list->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
-    
-    
+
+
     // Add tree view signal handlers
     
     file_list->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
-    file_list->get_selection()->signal_changed().connect(sigc::mem_fun(this, &file_view::on_selection_changed));
-
-    
-    // Add X event handlers
-    
-    file_list->add_events(Gdk::KEY_PRESS_MASK);
-    file_list->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_keypress), false);
-}
-
-void file_view::init_model() {
-    cur_list = create_model();
-    new_list = create_model();
-    empty_list = create_model();
-    
-    file_list->set_model(cur_list);
-    
-    // TODO: Move creation of columns and cells into seperate function
-    
-    auto cell = Gtk::manage(new Gtk::CellRendererText);
-    int ncols = file_list->append_column("Name", *cell);
-    
-    auto column = file_list->get_column(ncols - 1);
-    
-    column->add_attribute(cell->property_text(), columns.name);
-    column->add_attribute(cell->property_foreground_rgba(), columns.color);
-    column->set_sort_column(columns.name);
-}
-
-Glib::RefPtr<Gtk::ListStore> file_view::create_model() {
-    auto list_store = Gtk::ListStore::create(columns);
-    
-    // Set "Name" as the default sort column
-    list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
-    
-    return list_store;
 }
 
 void file_view::init_path_entry() {
@@ -138,185 +105,26 @@ void file_view::init_path_entry() {
 }
 
 
-/// VFS Initialization
 
-void file_view::init_vfs() {
-    using namespace std::placeholders;
-    
-    vfs.callback_begin(std::bind(&file_view::vfs_begin, this, _1));
-    vfs.callback_new_entry(std::bind(&file_view::vfs_new_entry, this, _1));
-    vfs.callback_finish(std::bind(&file_view::vfs_finish, this, _1, _2));
-    
-    parent_entry.subpath("..");
-}
-
-void file_view::vfs_begin(bool refresh) {
-    // Disable sorting while adding new entries to improve performance.
-    new_list->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_ASCENDING);
-    
-    if (!is_root_path(cur_path))
-        create_row(*new_list->append(), parent_entry);
-}
-
-void file_view::vfs_new_entry(dir_entry &ent) {
-    create_row(*new_list->append(), ent);
-}
-
-void file_view::vfs_finish(bool cancelled, int error) {
-    dispatch_main([=] {
-        reading = false;
-
-        if (!error && !cancelled) {
-            set_new_list();
-        }
-        else {
-            reset_list();
-        }
-    });
-}
-
-
-void file_view::reset_list() {
-    path_entry->set_text(old_path);
-    std::swap(old_path, cur_path);
-
-    // Clear new list
-    new_list->clear();
-    
-    // Reset to old list
-    file_list->set_model(cur_list);
-
-    // Select previously selected row
-    select_row(selected_row);
-    
-    // Reset move to old flag
-    move_to_old = false;
-}
-
-void file_view::set_new_list() {
-    vfs.commit_read();
-
-    // Clear marked set
-    marked_set.clear();
-
-    // Sort new_list using cur_list's sort order
-    set_sort_column();
-    
-    // Swap models and switch model to 'new_list'
-    cur_list.swap(new_list);
-    file_list->set_model(cur_list);
-
-    // Clear old list
-    new_list->clear();
-    
-    // Selection
-    if (move_to_old) {
-        move_to_old = false;
-        select_old();
-    }
-    else {
-        select_row(0);
-    }
-    
-    // Clear previous path
-    old_path.clear();
-}
-
-void file_view::set_sort_column() {
-    int col_id;
-    Gtk::SortType order;
-    
-    if (cur_list->get_sort_column_id(col_id, order)) {
-        new_list->set_sort_column(col_id, order);
-    }
-}
-
-
-void file_view::create_row(Gtk::TreeRow row, dir_entry &ent) {
-    row[columns.name] = ent.file_name();
-    row[columns.ent] = &ent;
-    row[columns.marked] = false;    
-}
-
-
-void file_view::select_old() {
-    int selection = 0;
-    std::string old_name(file_name(old_path));
-    
-    auto rows = cur_list->children();
-    auto row = std::find_if(rows.begin(), rows.end(), [this, &old_name] (const Gtk::TreeRow &row) {
-        dir_entry *ent = row[columns.ent];
-        return ent->file_name() == old_name;
-    });
-    
-    if (row) {
-        selection = file_list->get_model()->get_path(row)[0];
-    }
-    
-    select_row(selection);
-}
-
-
-//// Marking Rows
-
-void file_view::mark_row(Gtk::TreeRow row) {
-    dir_entry *ent = row[columns.ent];
-    
-    if (ent->type() != DT_PARENT) {
-        bool marked = row[columns.marked] = !row[columns.marked];
-
-        row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
-
-        if (marked) {
-            marked_set.emplace(ent->file_name(), row);
-        }
-        else {
-            marked_set.erase(ent->file_name());
-        }
-    }
-}
-
-
-//// Selection
-
-size_t file_view::selected_row_index() const {
-    auto row = file_list->get_selection()->get_selected();
-    if (row) {
-        auto path = file_list->get_model()->get_path(row);
-        return path[0];
-    }
-
-    return 0;
-}
-
-void file_view::select_row(size_t index) {
-    auto row = cur_list->children()[index];
-    
-    if (row) {
-        file_list->get_selection()->select(row);
-        file_list->scroll_to_row(cur_list->get_path(row));
-    }
-}
-
+//// Signal Handlers
 
 void file_view::on_path_entry_activate() {
-    read_path(path_entry->get_text());
+    flist.path(path_entry->get_text());
     file_list->grab_focus();
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = cur_list->children()[row_path[0]];
+    auto row = flist.list()->children()[row_path[0]];
 
-    dir_entry &ent = *row[columns.ent];
+    dir_entry &ent = *row[flist.columns.ent];
 
     switch (ent.type()) {
         case DT_PARENT:
-            move_to_old = true;
-            path(removed_last_component(cur_path));
+            path(removed_last_component(flist.path()), true);
             break;
             
         case DT_DIR:
-            path(appended_component(cur_path, ent.file_name()));
+            path(appended_component(flist.path(), ent.file_name()));
             break;
             
         case DT_REG:
@@ -324,121 +132,19 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
     }
 }
 
-void file_view::on_selection_changed() {
-    if (mark_rows) {
-        size_t selection = selected_row_index();
-        size_t start, end;
-        
-        if (selection > selected_row) {
-            start = selected_row;
-            end = selection - mark_end_offset;
-        }
-        else {
-            start = selection + mark_end_offset;
-            end = selected_row;
-        }
-        
-        for (size_t i = start; i <= end; i++) {
-            mark_row(cur_list->children()[i]);
-        }
-        
-        mark_rows = false;
-    }
-}
-
-
-bool file_view::on_keypress(const GdkEventKey *e) {
-    switch (e->keyval) {
-        case GDK_KEY_Escape:
-            return keypress_escape();
-            
-        case GDK_KEY_Return:
-            return keypress_return();
-
-        case GDK_KEY_Up:
-        case GDK_KEY_Down:
-            return keypress_arrow(e);
-            
-        case GDK_KEY_Home:
-        case GDK_KEY_End:
-            keypress_change_selection(e, true);
-            break;
-            
-        case GDK_KEY_Page_Down:
-        case GDK_KEY_Page_Up:
-            keypress_change_selection(e, false);
-            break;
-    }
-    
-    return false;
-}
-
-
-
-bool file_view::keypress_return() {
-    auto row = *file_list->get_selection()->get_selected();
-
-    if (row) {
-        // Emit activate signal. This should be emitted by
-        // automatically by the widget however the signal is not
-        // emiited if the selection was changed programmatically.
-        file_list->row_activated(cur_list->get_path(row), *file_list->get_column(0));
-        return true;
-    }
-
-    return false;
-}
-
-bool file_view::keypress_escape() {
-    if (reading) {
-        vfs.cancel();
-        return true;
-    }
-
-    return false;
-}
-
-bool file_view::keypress_arrow(const GdkEventKey *e) {
-    if (e->state & GDK_SHIFT_MASK) {
-        auto row = file_list->get_selection()->get_selected();
-        if (row) {
-            mark_row(*row);
-        }
-    }
-    return false;
-}
-
-void file_view::keypress_change_selection(const GdkEventKey *e, bool mark_sel) {
-    if (e->state & GDK_SHIFT_MASK) {
-        selected_row = selected_row_index();
-        mark_rows = true;
-        mark_end_offset = mark_sel ? 0 : 1;
-    }
-}
-
-
-
-/// Changing the current path
-
-void file_view::path(const std::string &path) {
+void file_view::on_path_changed(const path_str &path) {
     entry_path(path);
-    read_path(path);
+}
+
+
+
+//// Changing the current path
+
+void file_view::path(const std::string &path, bool move_to_old) {
+    entry_path(path);
+    flist.path(path, move_to_old);
 }
 
 void file_view::entry_path(const std::string &path) {
     path_entry->set_text(path);
-}
-
-void file_view::read_path(const std::string &path) {
-    selected_row = selected_row_index();
-    
-    // Set model to empty list to display an empty tree view without
-    // discarding the old list
-    file_list->set_model(empty_list);
-    
-    std::swap(old_path, cur_path);
-    cur_path = path;
-
-    reading = true;
-    vfs.read(path);
 }
