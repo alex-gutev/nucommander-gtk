@@ -26,13 +26,15 @@ using namespace nuc;
 // The default constructor call m_attr() is required to value
 // initialize all members of the stat struct to zero
 
-dir_entry::dir_entry(const path_str orig_name, uint8_t type) : 
-    m_orig_subpath(orig_name), m_type(type), m_attr() {}
+dir_entry::dir_entry(const path_str orig_name, uint8_t type)
+    : m_orig_subpath(orig_name), m_subpath(canonicalized_path(orig_name)),
+      m_file_name(nuc::file_name(m_subpath)), m_type(type), m_attr() {}
 
 dir_entry::dir_entry(const lister::entry &ent) : dir_entry(ent.name, ent.type) {}
 
-dir_entry::dir_entry(const lister::entry &ent, const struct stat &st)
-    : m_orig_subpath(ent.name), m_type(ent.type), m_attr(st) {}
+dir_entry::dir_entry(const lister::entry &ent, const struct stat &st) : dir_entry(ent.name, ent.type) {
+    m_attr = st;
+}
 
 file_type dir_entry::type() const {
     file_type type = IFTODT(m_attr.st_mode);

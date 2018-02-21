@@ -26,10 +26,10 @@ using namespace nuc;
 
 
 dir_entry &dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
-    path_str key = canonicalized_path(ent.name);
+    dir_entry dent(ent, st);
+    path_str key = dent.subpath();
     
-    dir_entry &dir_ent = map.emplace(key, dir_entry(ent, st))->second;
-    dir_ent.subpath(key);
+    dir_entry &dir_ent = map.emplace(key, std::move(dent))->second;
     
     if (m_parse_dirs) {
         add_components(key, dir_ent);
@@ -78,7 +78,6 @@ dir_entry &dir_tree::make_dir_ent(const path_str &path) {
     }
     
     dir_entry &ent = map.emplace(path, dir_entry(path, DT_DIR))->second;
-    ent.subpath(path);
     
     return ent;
 }

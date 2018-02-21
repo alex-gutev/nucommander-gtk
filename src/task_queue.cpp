@@ -24,18 +24,28 @@
 
 using namespace nuc;
 
+std::shared_ptr<task_queue> task_queue::create() {
+    return std::make_shared<task_queue>();
+}
+
+
 void task_queue::add(task_type task) {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<mutex_type> lock(mutex);
     queue.emplace(task);
-    
-    if (!running.test_and_set()) {
+
+    begin_loop();
+}
+
+void task_queue::begin_loop() {
+    if (!running.test_and_set() && !paused) {
         std::shared_ptr<cancel_state> state = get_cancel_state();
+        std::shared_ptr<task_queue> ptr = shared_from_this();
+        
         dispatch_async([=] {
-            run_tasks(state);
+            ptr->run_tasks(state);
         });
     }
 }
-
 
 void task_queue::run_tasks(std::shared_ptr<cancel_state> state) {
     task_type task;
@@ -49,11 +59,11 @@ void task_queue::run_tasks(std::shared_ptr<cancel_state> state) {
 }
 
 bool task_queue::next_task(std::shared_ptr<cancel_state> state, task_type &task) {
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<mutex_type> lock(mutex);
     
     state->test_cancel();
     
-    if (!queue.empty()) {
+    if (!queue.empty() && !paused) {
         task = std::move(queue.front());
         queue.pop();
         return true;
@@ -66,7 +76,14 @@ bool task_queue::next_task(std::shared_ptr<cancel_state> state, task_type &task)
 std::shared_ptr<cancel_state> task_queue::get_cancel_state() {
     if (!state) {
         state = std::make_shared<cancel_state>();
-        state->signal_finish().connect(sigc::mem_fun(*this, &task_queue::cancelled));
+
+        std::weak_ptr<task_queue> ptr(shared_from_this());
+        
+        state->signal_finish().connect([=] (bool cancelled) {
+            if (auto this_ptr = ptr.lock()) {
+                this_ptr->cancelled(cancelled);
+            }
+        });
     }
     
     return state;
@@ -78,7 +95,7 @@ void task_queue::cancel() {
     std::queue<task_type> old_queue;
     
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<mutex_type> lock(mutex);
         
         queue.swap(old_queue);
         state->cancel();
@@ -87,20 +104,37 @@ void task_queue::cancel() {
 
 
 void task_queue::cancelled(bool cancelled) {
+    auto ptr = shared_from_this();
+    
     dispatch_async([=] {
-        std::shared_ptr<cancel_state> cstate;
-        
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            
-            state = nullptr;
-            cstate = get_cancel_state();
-            
-            running.test_and_set();
-        }
-        
-        run_tasks(cstate);
+        ptr->resume_loop();
     });
 }
 
+void task_queue::resume_loop() {
+    std::shared_ptr<cancel_state> cstate;
+        
+    {
+        std::lock_guard<mutex_type> lock(mutex);
+            
+        state = nullptr;
+        cstate = get_cancel_state();
+        
+        running.test_and_set();
+    }
+        
+    run_tasks(cstate);    
+}
 
+void task_queue::pause() {
+    std::lock_guard<mutex_type> lock(mutex);
+
+    paused = true;
+}
+
+void task_queue::resume() {
+    std::lock_guard<mutex_type> lock(mutex);
+
+    paused = false;
+    begin_loop();
+}

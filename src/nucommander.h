@@ -42,7 +42,7 @@ namespace nuc {
          */
         app_window *create_app_window();
         
-        void on_hide_window(Gtk::Window *window);
+        void on_hide_window(app_window* window);
         
     public:
         /**
@@ -53,3 +53,7 @@ namespace nuc {
 }
 
 #endif // NUCOMMANDER_H
+
+// Local Variables:
+// mode: c++
+// End:

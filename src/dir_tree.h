@@ -125,8 +125,8 @@ namespace nuc {
         
         /**
          * Creates and adds a new entry to the tree, from the
-         * information 'lister::entry' and 'stat' objects returned by
-         * the lister object.
+         * information in the 'lister::entry' and 'stat' objects
+         * returned by the lister object.
          *
          * ent: The 'lister::entry' object returned by the lister.
          * st:  The 'stat' object returned by the lister.
@@ -167,6 +167,14 @@ namespace nuc {
             return m_base_dir;
         }
 
+        /**
+         * Returns a reference to the map (index) containing all
+         * entries in the directory tree.
+         */
+        auto index() -> decltype(map) & {
+            return map;
+        }
+
         /** 
          * Iterator to the first entry in the directory tree. 
          */
@@ -185,3 +193,7 @@ namespace nuc {
 }
 
 #endif // NUC_DIR_TREE_H
+
+// Local Variables:
+// mode: c++
+// End:

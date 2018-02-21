@@ -32,14 +32,19 @@
 
 namespace nuc {
     /**
-     * Control's the tree model of the tree view where the file list
-     * is displayed.
+     * Controls the tree model of the tree view where the file list is
+     * displayed.
      *
      * Responsible for intiating background read operations,
      * populating the model with the content's of the directory, and
      * resetting the list when the background operation is cancelled.
      */
     class file_list_controller {
+        /**
+         * Row index type. Matches the Gtk type.
+         */
+        typedef Gtk::TreeNodeChildren::size_type index_type;
+        
         /**
          * Path changed signal type.
          *
@@ -53,8 +58,8 @@ namespace nuc {
         /* Paths */
         
         /**
-         * The path prior to initiating initiating a read operation
-         * for the new path.
+         * The path prior to initiating a read operation for the new
+         * path.
          *
          * Used to reset the path if the operation fails or is cancelled.
          */
@@ -75,12 +80,7 @@ namespace nuc {
         /**
          * VFS object - performs the actual reading of the directory.
          */
-        nuc::vfs vfs;
-        
-        /**
-         * Flag for whether there is an ongoing read operation.
-         */
-        bool reading = false;
+        std::shared_ptr<nuc::vfs> vfs;
         
         /**
          * Flag: If true the selection should be moved to the entry
@@ -112,9 +112,11 @@ namespace nuc {
         Glib::RefPtr<Gtk::ListStore> cur_list;
         /**
          * New list store model. Stores the new entires, currently
-         * being read. After the operation completes successfully,
-         * this list store is set as the tree view's model, 'cur_list'
-         * is cleared and 'new_list' and 'cur_list' are swapped.
+         * being read. 
+         *
+         * After the operation completes successfully, this list store
+         * is set as the tree view's model, 'cur_list' is cleared and
+         * 'new_list' and 'cur_list' are swapped.
          */
         Glib::RefPtr<Gtk::ListStore> new_list;
         
@@ -156,6 +158,9 @@ namespace nuc {
          * The set is represented as a map where the key is the name
          * of the entry and the value is the tree view row
          * corresponding to the entry.
+         *
+         * TODO: use a multi_map as archives may have duplicate files.
+         * TODO: use a Gtk::TreeRowReference not Gtk::TreeRow.
          */
         std::unordered_map<std::string, Gtk::TreeRow> marked_set;
 
@@ -199,7 +204,7 @@ namespace nuc {
         /**
          * VFS finish callback.
          */
-        void vfs_finish(bool cancelled, int error);
+        void vfs_finish(bool cancelled, int error, bool refresh);
 
 
         /* Resetting/Setting the treeview model */
@@ -209,6 +214,15 @@ namespace nuc {
          */
         void reset_list();
 
+        /**
+         * Switches the tree view's model to 'new_list' and restores
+         * the previous selection if an entry with the same name, as
+         * the previously selected entry, still exits.
+         *
+         * TODO: Update marked set.
+         */
+        void set_updated_list();
+        
         /**
          * Switches the tree view's model to 'new_list', clears
          * 'cur_list' and swaps the two models.
@@ -226,7 +240,7 @@ namespace nuc {
          * the same as 'old_list'.
          */
         void set_sort_column();
-        
+
 
         /* Selection */
         
@@ -239,6 +253,12 @@ namespace nuc {
          * Selects the row at index 'row'.
          */
         void select_row(size_t row);
+
+        /**
+         * Selects the entry with basename of 'old_path' as its name
+         * if 'move_to_old' is true. Otherwise simply selects entry 0.
+         */
+        void restore_selection();
         
         /**
          * Moves the selection to the entry corresponding to the
@@ -246,6 +266,12 @@ namespace nuc {
          * basename of 'old_path').
          */
         void select_old();
+
+        /**
+         * Selects the first entry named 'name'. If there is no such
+         * entry, selects the row at min(row, number of rows - 1).
+         */
+        void select_named(const path_str &name, index_type row = 0);
 
         
         /* Marking */
@@ -275,7 +301,6 @@ namespace nuc {
         bool on_keypress(const GdkEventKey *e);
         
 
-        
         /** Keypress handlers */
 
         /**
@@ -360,6 +385,20 @@ namespace nuc {
          */
         Glib::RefPtr<Gtk::ListStore> list() {
             return cur_list;
+        }
+
+        /**
+         * Asynchronous cleanup method.
+         *
+         * @param fn The cleanup function to call once it is safe to
+         *           deallocate the object.
+         *
+         * This method should only be called on the main thread. The
+         * function fn will be called on the main thread.
+         */
+        template <typename F>
+        void cleanup(F fn) {
+            vfs->cleanup(fn);
         }
     };
 }

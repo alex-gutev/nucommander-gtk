@@ -36,7 +36,7 @@ nuc::app_window *nuc::NuCommander::create_app_window() {
     
     add_window(*window);
     
-    window->signal_hide().connect(sigc::bind<Gtk::Window*>(sigc::mem_fun(*this, &NuCommander::on_hide_window), window));
+    window->signal_hide().connect(sigc::bind<app_window*>(sigc::mem_fun(*this, &NuCommander::on_hide_window), window));
     
     return window;
 }
@@ -50,6 +50,8 @@ void nuc::NuCommander::on_activate() {
     window->present();
 }
 
-void nuc::NuCommander::on_hide_window(Gtk::Window *window) {
-    delete window;
+void nuc::NuCommander::on_hide_window(app_window *window) {
+    window->cleanup([=] {
+        delete window;
+    });
 }

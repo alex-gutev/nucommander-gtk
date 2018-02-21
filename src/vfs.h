@@ -21,6 +21,8 @@
 #define NUC_VFS_H
 
 #include <functional>
+#include <atomic>
+#include <memory>
 
 #include "task_queue.h"
 
@@ -41,7 +43,7 @@ namespace nuc {
      * TODO: Implement path case canonicalization and support for
      * archives.
      */
-    class vfs {
+    class vfs : public std::enable_shared_from_this<vfs> {
         /**
          * The current path.
          */
@@ -67,7 +69,7 @@ namespace nuc {
         /**
          * Background task queue.
          */
-        task_queue queue;
+        std::shared_ptr<task_queue> queue;
 
         /**
          * Status of the last operation: 0 - the operation was
@@ -75,8 +77,83 @@ namespace nuc {
          * value being the error code.
          */
         int op_status = 0;
-        
 
+        /**
+         * Flag: true if a read operation is ongoing.
+         */
+        std::atomic<bool> reading{false};
+        /**
+         * Flag: true if an update/refresh operation is ongoing.
+         */
+        std::atomic<bool> updating{false};
+
+        /**
+         * Flag: Once set no more background tasks will be initiated.
+         *
+         * This is set when the object begins cleaning up.
+         */
+        bool finalized = false;
+
+        
+        /**
+         * Adds a task to the background task queue.
+         * 
+         * Task function prototype:
+         *
+         *     void(vfs *this, cancel_state &state)
+         *
+         * An std::shared_ptr, of the vfs object, is created (using
+         * shared_from_this()). The task is wrapped in a lambda
+         * function which captures the shared_ptr (by copy), and calls
+         * the task function passing in the raw 'this' pointer
+         * (obtained using shared_ptr::get()) as the first argument.
+         *
+         * The task holds a strong reference to the vfs object thus,
+         * 'this' will not be deallocated before the task has finished
+         * executing (unless the task is cancelled before it is run).
+         *
+         * To use a method as the task, simply pass a pointer to the
+         * method, using std::bind to bind additional arguments. Do
+         * not use a lambda which captures the 'this' pointer directly
+         * as that does not ensure that the object will be in memory
+         * when the task is run.
+         */
+        template <typename F>
+        void queue_task(F task);
+
+        /**
+         * Same as the queue_task, however allows a finish callback to
+         * be specified.
+         *
+         * Finish callback prototype:
+         *
+         *    void(vfs *this, cancel_state &state)
+         *
+         * As in queue_task(task), the task and finish callbacks are
+         * wrapped in lambda functions which hold a strong reference
+         * to the vfs object.
+         */
+        template <typename T, typename F>
+        void queue_task(T task, F finish);
+
+        /**
+         * Queue the function fn to be run on the main thread.
+         *
+         * The function fn is wrapped in a lambda which captures a
+         * weak pointer to the object. If the object is still in
+         * memory when the lambda is run, the function is called with
+         * the raw pointer passed as the first argument.
+         */
+        template <typename F>
+        void queue_main(F fn);
+        
+        /**
+         * Cancels the directory monitor and all background tasks, and
+         * sets the finalized flag.
+         */
+        void finalize();
+
+        
         /* Reading Tasks */
 
         /**
@@ -84,7 +161,7 @@ namespace nuc {
          */
         void read_dir(cancel_state &state, const std::string &path);
         /**
-         * Task finish callback. Calls the finish callback.
+         * Read task finish callback. Calls the finish callback.
          */
         void finish_read(bool cancelled);
 
@@ -96,6 +173,57 @@ namespace nuc {
          */
         void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
 
+
+        /* Directory Monitoring */
+
+        dir_monitor monitor;
+
+        /**
+         * Begins monitoring the directory at path.
+         */
+        void monitor_dir(const path_str &path, bool paused = false);
+        
+        /**
+         * Signal handler for the file event signal.
+         */
+        void file_event(dir_monitor::event e);
+
+        /**
+         * Event handler for the EVENTS_BEGIN event. This event is
+         * sent before the first event in a series of events.
+         */
+        void begin_changes(cancel_state &state);
+
+        /**
+         * Event handler for the EVENTS_END event. This event is sent
+         * after a time interval has elapsed after the last event.
+         */
+        void end_changes(cancel_state &state);
+
+        /**
+         * Handler functions for the create, change, delete and rename
+         * file events.
+         */
+        void file_created(cancel_state &state, const path_str &path);
+        void file_changed(cancel_state &state, const path_str &path);
+        void file_deleted(cancel_state &state, const path_str &path);
+        void file_renamed(cancel_state &state, const path_str &src, const path_str &dest);
+
+        /**
+         * Obtains the stat attributes of a file. First the stat
+         * system call is attempted, it that fails the lstat system
+         * call is attempted.
+         *
+         * @param path The file path.
+         *
+         * @param st   Pointer to the stat struct where the stat
+         *             attributes will be read into
+         *
+         * @return true if successful, false if both stat and lstat
+         *         failed.
+         */
+        static bool file_stat(const path_str &path, struct stat *st);
+        
         
     public:
         /**
@@ -132,8 +260,17 @@ namespace nuc {
          *
          * int:  The error code, 0 if no error occurred.
          */
-        typedef std::function<void(bool, int)> finish_fn;
+        typedef std::function<void(bool, int, bool)> finish_fn;
 
+        
+        /* Constructor */
+        vfs();
+
+        /**
+         * Creates a new vfs object and returns an std::shared_ptr
+         * pointer to it.
+         */
+        static std::shared_ptr<vfs> create();
         
         /**
          * Sets the begin callback function.
@@ -155,18 +292,17 @@ namespace nuc {
         /**
          * Initiates a background read operation for the directory at
          * 'path'.
+         *
+         * Should only be called on the main thread, and should not be
+         * called again until the finish callback is called.
          */
         void read(const path_str &path);
 
         /**
          * Cancels the background operation if any. The operation is
          * considered cancelled when the finish callback is called.
-         *
-         * This function should only in between the begin callback and
-         * finish callback being called.
          */
         void cancel();
-
         
         /**
          * Returns the status (error code) of the last operation.
@@ -177,17 +313,33 @@ namespace nuc {
 
         /**
          * Discards the previous list of entries and replaces it with
-         * the list read in the operation which completed last.
+         * the list read in the previous operation.
+         *
+         * Should only be called on the main thread.
          */
         void commit_read();
 
         /**
-         * Calls the function function f on each entry (passed by
-         * reference as the first parameter).
+         * Calls the function function f on each entry (passed as the
+         * first parameter).
          */
         template <typename F>
         void for_each(F f);
 
+        /**
+         * Asynchronous cleanup method.
+         *
+         * Calls the cleanup method once all background tasks have
+         * been cancelled.
+         *
+         * @param fn The cleanup method.
+         *
+         * This method should only be called on the main thread. The
+         * function fn will be called on the main thread.
+         */
+        template <typename F>
+        void cleanup(F fn);
+        
     private:
         /**
          * New entry callback function.
@@ -217,7 +369,7 @@ namespace nuc {
         /**
          * Calls the finish callback.
          */
-        void call_finish(bool cancelled, int error);
+        void call_finish(bool cancelled, int error, bool refresh);
     };
 }
 
@@ -246,6 +398,15 @@ void nuc::vfs::for_each(F f) {
     }
 }
 
+
+template <typename F>
+void nuc::vfs::cleanup(F fn) {
+    finalize();
+    
+    queue->add([fn] (cancel_state &state) {
+        dispatch_main(fn);
+    });
+}
 
 #endif // NUC_VFS_H
 

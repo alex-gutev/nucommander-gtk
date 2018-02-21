@@ -28,6 +28,7 @@
 
 #include <glibmm.h>
 
+#include "cleanup_n.h"
 #include "file_view.h"
 
 namespace nuc {
@@ -91,8 +92,32 @@ namespace nuc {
          * Creates a new application window object.
          */
         static app_window *create();
+
+        /**
+         * Asynchronous cleanup method.
+         *
+         * @param fn The cleanup function to call once it is safe to
+         *           deallocate the object.
+         *
+         * This method should only be called on the main thread. The
+         * function fn will be called on the main thread.
+         */
+        template <typename F>
+        void cleanup(F fn);
     };
 }
 
+template <typename F>
+void nuc::app_window::cleanup(F fn) {
+    auto cleanup_fn = cleanup_n_fn(2, fn);
+    
+    left_view->cleanup(cleanup_fn);
+    right_view->cleanup(cleanup_fn);
+}
+
 #endif // APP_WINDOW_H
+
+// Local Variables:
+// mode: c++
+// End:
 

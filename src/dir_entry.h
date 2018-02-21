@@ -49,11 +49,6 @@ namespace nuc {
      */
     class dir_entry {
         /**
-         * The file name of the entry, i.e. the basename of the
-         * canonicalized subpath of the entry.
-         */
-        path_str m_file_name;
-        /**
          * Original non-canonicalized subpath of the entry.
          */
         path_str m_orig_subpath;
@@ -61,6 +56,11 @@ namespace nuc {
          * Canonicalized subpath.
          */
         path_str m_subpath;
+        /**
+         * The file name of the entry, i.e. the basename of the
+         * canonicalized subpath of the entry.
+         */
+        path_str m_file_name;
         
         /**
          * The type of the entry itself, not the underlying file, as a

@@ -134,6 +134,20 @@ namespace nuc {
          * the new path.
          */
         void path(const std::string &path, bool move_to_old = false);
+
+        /**
+         * Asynchronous cleanup method.
+         *
+         * @param fn The cleanup function to call once it is safe to
+         *           deallocate the object.
+         *
+         * This method should only be called on the main thread. The
+         * function fn will be called on the main thread.
+         */
+        template <typename F>
+        void cleanup(F fn) {
+            flist.cleanup(fn);
+        }
     };
 }
 

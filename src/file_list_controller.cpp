@@ -21,23 +21,25 @@
 
 #include "async_task.h"
 
+#include <algorithm>
+
 
 using namespace nuc;
 
 file_list_controller::file_list_controller() {
-	init_vfs();
+    init_vfs();
 }
 
 
 //// Initialization
 
 void file_list_controller::tree_view(Gtk::TreeView *view) {
-	this->view = view;
-	init_file_list();
+    this->view = view;
+    init_file_list();
 }
 
 void file_list_controller::init_file_list() {
-	init_model();
+    init_model();
 
     // Connect tree view signal handlers
     
@@ -83,16 +85,16 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
 void file_list_controller::init_vfs() {
     using namespace std::placeholders;
     
-    vfs.callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
-    vfs.callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1));
-    vfs.callback_finish(std::bind(&file_list_controller::vfs_finish, this, _1, _2));
+    vfs = nuc::vfs::create();
+    
+    vfs->callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
+    vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1));
+    vfs->callback_finish(std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3));
     
     parent_entry.subpath("..");
 }
 
 void file_list_controller::vfs_begin(bool refresh) {
-    reading = true;
-	
     // Disable sorting while adding new entries to improve performance.
     new_list->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_ASCENDING);
     
@@ -104,23 +106,29 @@ void file_list_controller::vfs_new_entry(dir_entry &ent) {
     create_row(*new_list->append(), ent);
 }
 
-void file_list_controller::vfs_finish(bool cancelled, int error) {
-    dispatch_main([=] {
-        reading = false;
-
-        if (!error && !cancelled) {
-            set_new_list();
+void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
+    if (!error && !cancelled) {
+        if (refresh) {
+            set_updated_list();
         }
         else {
-            reset_list();
+            set_new_list();
+            restore_selection();
+        
+            // Clear previous path
+            old_path.clear();                
         }
-    });
+    }
+    else {
+        // TODO: If refresh get selected row first
+        reset_list();
+    }
 }
 
 
 void file_list_controller::reset_list() {
-	m_signal_path.emit(old_path);
-	
+    m_signal_path.emit(old_path);
+
     std::swap(old_path, cur_path);
 
     // Clear new list
@@ -136,8 +144,29 @@ void file_list_controller::reset_list() {
     move_to_old = false;
 }
 
+void file_list_controller::set_updated_list() {
+    auto row = *view->get_selection()->get_selected();
+
+    bool selection = false;
+    path_str name;
+    index_type index;
+    
+    if (row) {
+        dir_entry *ent = row[columns.ent];
+        name = ent->file_name();
+        index = view->get_model()->get_path(row)[0];
+        
+        selection = true;
+    }
+
+    set_new_list();
+
+    if (selection)
+        select_named(name, index);    
+}
+
 void file_list_controller::set_new_list() {
-    vfs.commit_read();
+    vfs->commit_read();
 
     // Clear marked set
     marked_set.clear();
@@ -151,18 +180,6 @@ void file_list_controller::set_new_list() {
 
     // Clear old list
     new_list->clear();
-    
-    // Selection
-    if (move_to_old) {
-        move_to_old = false;
-        select_old();
-    }
-    else {
-        select_row(0);
-    }
-    
-    // Clear previous path
-    old_path.clear();
 }
 
 void file_list_controller::set_sort_column() {
@@ -181,23 +198,6 @@ void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.marked] = false;    
 }
 
-
-void file_list_controller::select_old() {
-    int selection = 0;
-    std::string old_name(file_name(old_path));
-    
-    auto rows = cur_list->children();
-    auto row = std::find_if(rows.begin(), rows.end(), [this, &old_name] (const Gtk::TreeRow &row) {
-        dir_entry *ent = row[columns.ent];
-        return ent->file_name() == old_name;
-    });
-    
-    if (row) {
-        selection = view->get_model()->get_path(row)[0];
-    }
-    
-    select_row(selection);
-}
 
 
 //// Marking Rows
@@ -240,6 +240,44 @@ void file_list_controller::select_row(size_t index) {
         view->scroll_to_row(cur_list->get_path(row));
     }
 }
+
+
+void file_list_controller::restore_selection() {
+    if (move_to_old) {
+        move_to_old = false;
+        select_old();
+    }
+    else {
+        select_row(0);
+    }    
+}
+
+void file_list_controller::select_old() {
+    select_named(file_name(old_path), 0);
+}
+
+void file_list_controller::select_named(const path_str &name, index_type row_ind) {
+    index_type selection = 0;
+
+    if (view->get_model()->children().size()) {
+        auto rows = cur_list->children();
+        auto row = std::find_if(rows.begin(), rows.end(), [&] (const Gtk::TreeRow &row) {
+            dir_entry *ent = row[columns.ent];
+            return ent->file_name() == name;
+        });
+
+        if (row) {
+            selection = view->get_model()->get_path(row)[0];
+        }
+        else {
+            selection = std::min(view->get_model()->children().size() - 1, row_ind);
+        }
+
+        select_row(selection);
+    }
+}
+
+
 
 void file_list_controller::on_selection_changed() {
     if (mark_rows) {
@@ -309,12 +347,7 @@ bool file_list_controller::keypress_return() {
 }
 
 bool file_list_controller::keypress_escape() {
-    if (reading) {
-        vfs.cancel();
-        return true;
-    }
-
-    return false;
+    vfs->cancel();
 }
 
 bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
@@ -348,7 +381,7 @@ void file_list_controller::path(const std::string &path, bool move_to_old) {
     std::swap(old_path, cur_path);
     cur_path = path;
 
-	this->move_to_old = move_to_old;
-	
-    vfs.read(path);
+    this->move_to_old = move_to_old;
+
+    vfs->read(path);
 }

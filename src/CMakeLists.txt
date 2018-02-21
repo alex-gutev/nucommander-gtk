@@ -40,6 +40,7 @@ add_sources(
     
     cancel_state.h
     cancel_state.cpp
+    cleanup_n.h
     
     operation.h
     operation.cpp
@@ -50,4 +51,7 @@ add_sources(
     
     vfs.h
     vfs.cpp
+    
+    dir_monitor.h
+    dir_monitor.cpp
 )
