@@ -36,6 +36,11 @@ dir_entry::dir_entry(const lister::entry &ent, const struct stat &st) : dir_entr
     m_attr = st;
 }
 
+dir_entry::dir_entry(path_str path, const struct stat &st) : dir_entry(std::move(path), IFTODT(st.st_mode & S_IFMT)) {
+    m_attr = st;
+}
+
+
 file_type dir_entry::type() const {
     file_type type = IFTODT(m_attr.st_mode);
     

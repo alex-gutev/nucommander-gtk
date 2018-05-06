@@ -174,6 +174,11 @@ namespace nuc {
         void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
 
 
+        /**
+         * Cancels ongoing update operations
+         */
+        void cancel_update();
+
         /* Directory Monitoring */
 
         dir_monitor monitor;

@@ -90,38 +90,43 @@ void vfs::finalize() {
 }
 
 /*
- * Assumptions which should hold:
+ * Assumptions:
  *
- *    read should only be called on the main thread, and not more than
+ *    read() should only be called on the main thread, and not more than
  *    once until the finish callback is called.
  *
  *    file events are only delivered on the main thread.
  *
- *    commit_read is only called on the main thread.
+ *    commit_read() is only called on the main thread.
  *
  * read() pauses the directory monitor and cancels any ongoing update
  * tasks. Since the file events are delivered on the same thread that
- * read() runs, no update tasks will be queued after read is called.
+ * read() is called on, no update tasks will be queued after read() is
+ * called.
  *
  * If queue.cancel() is called after the background task completes, it
- * will only result in an additional expense (cancelling an empty task
+ * will only result in an additional expense (canceling an empty task
  * queue) and not a race condition.
  */
 
 void vfs::read(const path_str& path) {
     using namespace std::placeholders;
 
-    // Prevent further update operations from being queued
-    monitor.pause();
-
-    // Cancel any ongoing update operations
-    if (updating)
-        queue->cancel();
+    cancel_update();
 
     cur_path = path;
 
     queue_task(std::bind(&vfs::read_dir, _1, _2, path),
                std::bind(&vfs::finish_read, _1, _2));
+}
+
+void vfs::cancel_update() {
+    // Prevent further update operations from being queued
+    monitor.pause();
+
+    // Cancel any ongoing update operations
+    if (updating)
+        queue->cancel();    
 }
 
 /*
@@ -139,7 +144,7 @@ void vfs::cancel() {
  * task queue (in the case of an update operation).
  *
  * The purpose of this function is for the controller to signal that
- * it will no longer be using the old directory list, until this
+ * it will no longer be using the old directory list. Until this
  * function is called it has to be kept in memory.
  *
  * 'reading' and 'updating' may both be true only if an update task
@@ -257,6 +262,7 @@ void vfs::file_event(dir_monitor::event e) {
             break;
             
         case dir_monitor::FILE_RENAMED:
+            queue_task(std::bind(&vfs::file_renamed, _1, _2, e.src(), e.dest()));
             break;
             
         // Directory events
@@ -273,9 +279,9 @@ void vfs::file_event(dir_monitor::event e) {
 
 
 /* 
- * begin_changes() sets the 'updating' flag to true, thus if a read
- * task is to be queued, the queued update task will first be
- * cancelled.
+ * When begin_changes() is called, the 'updating' flag is set to true,
+ * thus if a read task is to be queued, the queued update task will
+ * first be cancelled.
  *
  * Since begin_changes() (called in response to a file event) and
  * read() are both only called on the main thread, there is no
@@ -285,7 +291,7 @@ void vfs::file_event(dir_monitor::event e) {
  * begin_changes() is not called.
  *
  * If begin_changes() runs first, the 'updating' flag is set and the
- * update task is enqueued. When read() runs the queued update task is
+ * update task is queued. When read() runs the queued update task is
  * cancelled.
  */
 
@@ -296,7 +302,7 @@ void vfs::begin_changes(cancel_state &state) {
 
         // Copy current file index to new tree's file index
         new_tree.index() = cur_tree.index();
-    });    
+    });
 }
 
 /*
@@ -324,7 +330,7 @@ void vfs::end_changes(cancel_state &state) {
         queue->pause();
         
         call_finish(false, 0, true);
-    });    
+    });
 }
 
 
@@ -333,12 +339,7 @@ void vfs::file_created(cancel_state &state, const path_str &path) {
 
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
-            lister::entry ent;
-            
-            ent.name = file_name(path).c_str();
-            ent.type = IFTODT(st.st_mode & S_IFMT);
-            
-            new_tree.add_entry(ent, st);
+            new_tree.add_entry(dir_entry(file_name(path), st));
         });
     }    
 }
@@ -349,8 +350,12 @@ void vfs::file_changed(cancel_state &state, const path_str &path) {
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
             dir_entry *ent = new_tree.get_entry(file_name(path));
+
             if (ent) {
                 ent->attr(st);
+            }
+            else {
+                new_tree.add_entry(dir_entry(file_name(path), st));
             }
         });
     }    
@@ -363,7 +368,18 @@ void vfs::file_deleted(cancel_state &state, const path_str &path) {
 }
 
 void vfs::file_renamed(cancel_state &state, const path_str &src, const path_str &dest) {
-    // TODO: Change name of entry
+    state.no_cancel([&] {
+        dir_entry *ent = new_tree.get_entry(file_name(src));
+
+        if (ent) {
+            path_str dest_file = file_name(dest);
+            
+            new_tree.index().erase(dest_file);
+            
+            new_tree.add_entry(dir_entry(dest_file, ent->attr()));
+            new_tree.index().erase(ent->file_name());
+        }
+    });
 }
 
 
@@ -389,3 +405,4 @@ void vfs::call_finish(bool cancelled, int error, bool refresh) {
         self->cb_finish(cancelled, error, refresh);
     });
 }
+

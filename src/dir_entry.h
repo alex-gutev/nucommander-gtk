@@ -104,6 +104,8 @@ namespace nuc {
          * with given stat attributes.
          */
         dir_entry(const lister::entry &ent, const struct stat &st);
+
+        dir_entry(path_str path, const struct stat &st);
         
         /**
          * Returns the original non-canonicalized subpath.
@@ -182,3 +184,7 @@ namespace nuc {
 }
 
 #endif // NUC_DIR_ENTRY_H
+
+// Local Variables:
+// mode: c++
+// End:

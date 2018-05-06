@@ -132,6 +132,8 @@ namespace nuc {
          * st:  The 'stat' object returned by the lister.
          */
         dir_entry &add_entry(const lister::entry &ent, const struct stat &st);
+
+        dir_entry &add_entry(dir_entry ent);
         
         /**
          * Returns the pointer to the first entry with subpath 'subpath',
