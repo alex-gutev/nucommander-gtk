@@ -24,18 +24,6 @@
 #include "async_task.h"
 
 
-/* Issues/Bugs:
- *
- * Events can be lost if a read task cancels an update task, and the
- * read task, itself, is later cancelled, or fails. The old list will
- * be redisplayed however the changes to the directory haven't not
- * been applied on the old list.
- *
- * Fix: If an update task was cancelled before a failed/cancelled read
- * task was run, re-read the old directory.
- */
-
-
 using namespace nuc;
 
 /// Object Creation
@@ -109,22 +97,25 @@ void vfs::finalize() {
  * queue) and not a race condition.
  */
 
-void vfs::read(const path_str& path) {
-    using namespace std::placeholders;
 
+void vfs::read(const path_str& path) {
     cancel_update();
 
-    cur_path = path;
+    add_read_task(path, false);
+}
 
-    queue_task(std::bind(&vfs::read_dir, _1, _2, path),
-               std::bind(&vfs::finish_read, _1, _2));
+void vfs::add_read_task(const std::string &path, bool refresh) {
+    using namespace std::placeholders;
+    
+    queue_task(std::bind(&vfs::read_dir, _1, _2, path, refresh),
+               std::bind(&vfs::finish_read, _1, _2, path, refresh));
 }
 
 void vfs::cancel_update() {
-    // Prevent further update operations from being queued
+    // Prevent further update tasks from being queued
     monitor.pause();
 
-    // Cancel any ongoing update operations
+    // Cancel any ongoing update tasks
     if (updating)
         queue->cancel();    
 }
@@ -160,10 +151,9 @@ void vfs::commit_read() {
     if (reading) {
         monitor_dir(cur_path);
     }
-    else if (updating) {
-        queue->resume();
-    }
 
+    queue->resume();
+    
     reading = false;
     updating = false;
 }
@@ -171,16 +161,17 @@ void vfs::commit_read() {
 
 /// Read tasks
 
-void vfs::read_dir(cancel_state &state, const std::string &path) {
+void vfs::read_dir(cancel_state &state, const std::string &path, bool refresh) {
     std::unique_ptr<lister> listr(new dir_lister());
 
     state.no_cancel([=] {
-        reading = true;
+        if (!refresh) reading = true;
+        
         new_tree.clear();
     });
     
     op_status = 0;
-    call_begin(state, false);
+    call_begin(state, refresh);
     
     try {
         listr->open(path);
@@ -207,22 +198,38 @@ void vfs::add_entry(cancel_state &state, const lister::entry &ent, const struct 
 }
 
 
-void vfs::finish_read(bool cancelled) {
+void vfs::finish_read(bool cancelled, const path_str &path, bool refresh) {
+    using namespace std::placeholders;
+    
     if (cancelled || op_status) {
         new_tree.clear();
 
         reading = false;
-        
-        if (updating) {
-            // TODO: Reread directory, as previous update tasks were
-            // cancelled
+
+        if (refresh) {
+            updating = false;
+        }
+        else if (updating) {
+            // Read directory as update tasks were cancelled
+            add_read_task(cur_path, true);
         }
         else {
-            // TODO: Restart monitor on main thread
+            queue_main(std::bind(&vfs::resume_monitor, _1));
         }
     }
+    else {
+        cur_path = path;
+    }
 
-    call_finish(cancelled, !cancelled ? op_status : 0, false);
+    if (refresh) {
+        queue_main(std::bind(&vfs::resume_monitor, _1));
+    }
+
+    call_finish(cancelled, !cancelled ? op_status : 0, refresh);
+}
+
+void vfs::resume_monitor() {
+    monitor.resume();
 }
 
 
@@ -325,10 +332,6 @@ void vfs::end_changes(cancel_state &state) {
             call_new_entry(ent.second);
         }
 
-        // Pause queue to prevent read tasks from being run before
-        // commit_read is called.
-        queue->pause();
-        
         call_finish(false, 0, true);
     });
 }
@@ -401,6 +404,11 @@ void vfs::call_new_entry(dir_entry &ent) {
 }
 
 void vfs::call_finish(bool cancelled, int error, bool refresh) {
+    // Pause queue to prevent read tasks from being run before
+    // commit_read is called.
+    
+    if (!error) queue->pause();
+    
     queue_main([=] (vfs *self) {
         self->cb_finish(cancelled, error, refresh);
     });

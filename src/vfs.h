@@ -157,13 +157,24 @@ namespace nuc {
         /* Reading Tasks */
 
         /**
+         * Adds a read task to the task queue.
+         *
+         * @param path The path of the directory to read
+         *
+         * @param refresh True if the current directory is being
+         *                reread, false if a new directory is being
+         *                read.
+         */
+        void add_read_task(const std::string &path, bool refresh);
+        
+        /**
          * Read directory task. Reads the directory at 'path'.
          */
-        void read_dir(cancel_state &state, const std::string &path);
+        void read_dir(cancel_state &state, const std::string &path, bool refresh);
         /**
          * Read task finish callback. Calls the finish callback.
          */
-        void finish_read(bool cancelled);
+        void finish_read(bool cancelled, const path_str &path, bool refresh);
 
         
         /**
@@ -173,11 +184,11 @@ namespace nuc {
          */
         void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
 
-
         /**
-         * Cancels ongoing update operations
+         * Cancels all update tasks on the task queue.
          */
         void cancel_update();
+
 
         /* Directory Monitoring */
 
@@ -187,6 +198,13 @@ namespace nuc {
          * Begins monitoring the directory at path.
          */
         void monitor_dir(const path_str &path, bool paused = false);
+
+        /**
+         * Resumes the directory monitor.
+         *
+         * May only be called from the main thread.
+         */
+        void resume_monitor();
         
         /**
          * Signal handler for the file event signal.
@@ -373,6 +391,10 @@ namespace nuc {
         void call_new_entry(dir_entry &ent);
         /**
          * Calls the finish callback.
+         *
+         * If error is zero (task was successful), the task queue is
+         * paused in order to prevent other tasks running until
+         * commit_read() is called.
          */
         void call_finish(bool cancelled, int error, bool refresh);
     };
