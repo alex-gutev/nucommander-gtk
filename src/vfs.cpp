@@ -151,6 +151,9 @@ void vfs::commit_read() {
     if (reading) {
         monitor_dir(cur_path);
     }
+    else {
+        resume_monitor();
+    }
 
     queue->resume();
     
@@ -208,21 +211,26 @@ void vfs::finish_read(bool cancelled, const path_str &path, bool refresh) {
 
         if (refresh) {
             updating = false;
+
+            // Resume monitor which was created when this operation was initiated
+            queue_main(std::bind(&vfs::resume_monitor, _1));
         }
         else if (updating) {
             // Read directory as update tasks were cancelled
             add_read_task(cur_path, true);
+            
+            // Start new monitor for current directory.  Should be
+            // paused as the update flag is modified as soon as an
+            // event is received.
+            queue_main(std::bind(&vfs::monitor_dir, _1, cur_path, true));
         }
         else {
+            // Resume old directory monitor
             queue_main(std::bind(&vfs::resume_monitor, _1));
         }
     }
     else {
         cur_path = path;
-    }
-
-    if (refresh) {
-        queue_main(std::bind(&vfs::resume_monitor, _1));
     }
 
     call_finish(cancelled, !cancelled ? op_status : 0, refresh);
@@ -407,10 +415,11 @@ void vfs::call_finish(bool cancelled, int error, bool refresh) {
     // Pause queue to prevent read tasks from being run before
     // commit_read is called.
     
-    if (!error) queue->pause();
+    queue->pause();
     
     queue_main([=] (vfs *self) {
         self->cb_finish(cancelled, error, refresh);
+        if (cancelled || error) queue->resume();
     });
 }
 

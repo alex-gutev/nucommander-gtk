@@ -31,6 +31,8 @@ bool dir_monitor::monitor_dir(const path_str &path, bool pause) {
 
     paused = pause;
     
+    changing = false;
+    
     dir_file = Gio::File::create_for_path(path);
     monitor = dir_file->monitor_directory(Gio::FILE_MONITOR_WATCH_MOVES | Gio::FILE_MONITOR_WATCH_MOUNTS);
     
