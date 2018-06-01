@@ -149,6 +149,23 @@ namespace nuc {
             return nullptr;
         }
 
+
+        /**
+         * Removes an entry from the tree. 
+         *
+         * Can only be used for flat directory trees.
+         */
+        void remove_entry(const path_str &path) {
+            map.erase(path);
+        }
+
+        /**
+         * Renames an entry in the tree. 
+         *
+         * Can only be used for flat directory trees.
+         */
+        bool rename_entry(const path_str &src, const path_str &dest);
+
         /**
          * Returns all entries with a given subpath, as a pair where
          * the first element is the iterator to the first entry, and

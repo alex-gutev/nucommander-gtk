@@ -115,6 +115,15 @@ namespace nuc {
         }
 
         /**
+         * Changes the original sub-path of the entry and updates the
+         * canonicalized subpath and file name.
+         */
+        void orig_subpath(path_str path) {
+            m_orig_subpath = path;
+            subpath(canonicalized_path(std::move(path)));
+        }
+
+        /**
          * Returns the canonicalized subpath.
          */
         const path_str &subpath() const {

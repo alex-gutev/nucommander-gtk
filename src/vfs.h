@@ -76,7 +76,7 @@ namespace nuc {
          * successful, non-zero the operation failed with the non-zero
          * value being the error code.
          */
-        int op_status = 0;
+        int op_error = 0;
 
         /**
          * Flag: true if a read operation is ongoing.
@@ -185,7 +185,9 @@ namespace nuc {
         void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
 
         /**
-         * Cancels all update tasks on the task queue.
+         * Cancels all tasks on the task queue and cancels the
+         * directory monitor to prevent more update tasks from being
+         * queued.
          */
         void cancel_update();
 
@@ -331,7 +333,7 @@ namespace nuc {
          * Returns the status (error code) of the last operation.
          */
         int status() const {
-            return op_status;
+            return op_error;
         }
 
         /**
