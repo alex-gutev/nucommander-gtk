@@ -149,7 +149,7 @@ void vfs::read_dir(cancel_state &state, const std::string &path, bool refresh) {
 
         while (listr->read_entry(ent)) {
             if (listr->entry_stat(st)) {
-                add_entry(state, ent, st);
+                add_entry(state, refresh, ent, st);
             }
         }
     }
@@ -158,10 +158,10 @@ void vfs::read_dir(cancel_state &state, const std::string &path, bool refresh) {
     }
 }
 
-void vfs::add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st) {
-    state.no_cancel([this, &ent, &st] {
+void vfs::add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st) {
+    state.no_cancel([this, refresh, &ent, &st] {
         dir_entry &new_ent = new_tree.add_entry(ent, st);
-        call_new_entry(new_ent);
+        call_new_entry(new_ent, refresh);
     });
 }
 
@@ -271,7 +271,7 @@ void vfs::end_changes(cancel_state &state) {
         cb_begin(true);
 
         for (auto &ent : new_tree) {
-            call_new_entry(ent.second);
+            call_new_entry(ent.second, true);
         }
 
         call_finish(false, 0, true);
@@ -350,8 +350,8 @@ void vfs::call_begin(cancel_state &state, bool refresh) {
     });
 }
 
-void vfs::call_new_entry(dir_entry &ent) {
-    cb_new_entry(ent);
+void vfs::call_new_entry(dir_entry &ent, bool refresh) {
+    cb_new_entry(ent, refresh);
 }
 
 void vfs::call_finish(bool cancelled, int error, bool refresh) {

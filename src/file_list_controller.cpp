@@ -88,10 +88,8 @@ void file_list_controller::init_vfs() {
     vfs = nuc::vfs::create();
     
     vfs->callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
-    vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1));
+    vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1, _2));
     vfs->callback_finish(std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3));
-    
-    parent_entry.subpath("..");
 }
 
 void file_list_controller::vfs_begin(bool refresh) {
@@ -102,8 +100,14 @@ void file_list_controller::vfs_begin(bool refresh) {
         create_row(*new_list->append(), parent_entry);
 }
 
-void file_list_controller::vfs_new_entry(dir_entry &ent) {
-    create_row(*new_list->append(), ent);
+void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
+    Gtk::TreeRow row = *new_list->append();
+    create_row(row, ent);
+
+    if (refresh && marked_set.count(ent.file_name())) {
+        row[columns.marked] = true;
+        mark_row(new_list, new_marked_set, row, true);
+    }
 }
 
 void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
@@ -116,30 +120,31 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
             restore_selection();
         
             // Clear previous path
-            old_path.clear();                
+            old_path.clear();
         }
     }
     else {
-        // TODO: If refresh get selected row first
-        reset_list();
+        reset_list(refresh);
     }
 }
 
 
-void file_list_controller::reset_list() {
+void file_list_controller::reset_list(bool refresh) {
     m_signal_path.emit(old_path);
 
     std::swap(old_path, cur_path);
 
     // Clear new list
     new_list->clear();
-    
-    // Reset to old list
-    view->set_model(cur_list);
 
-    // Select previously selected row
-    select_row(selected_row);
-    
+    if (!refresh) {
+        // Reset to old list
+        view->set_model(cur_list);
+
+        // Select previously selected row
+        select_row(selected_row);        
+    }
+        
     // Reset move to old flag
     move_to_old = false;
 }
@@ -160,6 +165,8 @@ void file_list_controller::set_updated_list() {
     }
 
     set_new_list();
+
+    std::swap(marked_set, new_marked_set);
 
     if (selection)
         select_named(name, index);    
@@ -195,7 +202,7 @@ void file_list_controller::set_sort_column() {
 void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
-    row[columns.marked] = false;    
+    row[columns.marked] = false;
 }
 
 
@@ -208,14 +215,21 @@ void file_list_controller::mark_row(Gtk::TreeRow row) {
     if (ent->type() != DT_PARENT) {
         bool marked = row[columns.marked] = !row[columns.marked];
 
-        row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
+        mark_row(cur_list, marked_set, row, marked);
+    }
+}
 
-        if (marked) {
-            marked_set.emplace(ent->file_name(), row);
-        }
-        else {
-            marked_set.erase(ent->file_name());
-        }
+
+void file_list_controller::mark_row(Glib::RefPtr<Gtk::ListStore> model, entry_set& set, Gtk::TreeRow row, bool marked) {
+    dir_entry *ent = row[columns.ent];
+    
+    row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
+
+    if (marked) {
+        set.emplace(ent->file_name(), Gtk::TreeRowReference(model, model->get_path(row)));
+    }
+    else {
+        set.erase(ent->file_name());
     }
 }
 

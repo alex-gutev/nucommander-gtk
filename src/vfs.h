@@ -182,7 +182,7 @@ namespace nuc {
          * of the entry is performed with the cancellation state set
          * to "no cancel".
          */
-        void add_entry(cancel_state &state, const lister::entry &ent, const struct stat &st);
+        void add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st);
 
         /**
          * Cancels all tasks on the task queue and cancels the
@@ -269,7 +269,7 @@ namespace nuc {
          *
          * dir_entry &: Reference to the entry.
          */
-        typedef std::function<void(dir_entry &)> new_entry_fn;
+        typedef std::function<void(dir_entry &, bool)> new_entry_fn;
         /**
          * Finish callback function type.
          *
@@ -390,7 +390,7 @@ namespace nuc {
         /**
          * Calls the new entry callback.
          */
-        void call_new_entry(dir_entry &ent);
+        void call_new_entry(dir_entry &ent, bool refresh);
         /**
          * Calls the finish callback.
          *

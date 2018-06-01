@@ -24,6 +24,7 @@
 
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/treerowreference.h>
 
 #include <unordered_map>
 
@@ -54,6 +55,12 @@ namespace nuc {
          */
         typedef sigc::signal<void, const path_str &> signal_path_type;
 
+        /**
+         * Marked entries set type.
+         *
+         * TODO: use a multi_map as archives may have duplicate files.
+         */
+        typedef std::unordered_map<std::string, Gtk::TreeRowReference> entry_set;
         
         /* Paths */
         
@@ -153,17 +160,23 @@ namespace nuc {
         int mark_end_offset = 0;
 
         /**
-         * Set of marked rows.
+         * Set of marked entries.
          *
          * The set is represented as a map where the key is the name
          * of the entry and the value is the tree view row
          * corresponding to the entry.
          *
-         * TODO: use a multi_map as archives may have duplicate files.
-         * TODO: use a Gtk::TreeRowReference not Gtk::TreeRow.
          */
-        std::unordered_map<std::string, Gtk::TreeRow> marked_set;
+        entry_set marked_set;
 
+        /**
+         * Set of marked entries after a directory refresh.
+         *
+         * This set is updated while the directory is being refreshed,
+         * after which it is swapped with marked_set.
+         */
+        entry_set new_marked_set;
+        
 
         /* Private Methods */
 
@@ -200,7 +213,7 @@ namespace nuc {
         /**
          * VFS new entry callback.
          */
-        void vfs_new_entry(dir_entry &entry);
+        void vfs_new_entry(dir_entry &entry, bool refresh);
         /**
          * VFS finish callback.
          */
@@ -212,7 +225,7 @@ namespace nuc {
         /**
          * Restores the old file list and path.
          */
-        void reset_list();
+        void reset_list(bool refresh);
 
         /**
          * Switches the tree view's model to 'new_list' and restores
@@ -281,6 +294,16 @@ namespace nuc {
          */
         void mark_row(Gtk::TreeRow row);
 
+        /**
+         * Sets the row's marked attributes and adds/removes a tree
+         * row reference to it to/from the marked set.
+         *
+         * @param model  The model containing the entry row.
+         * @param set    Reference to the marked set to update.
+         * @param row    The entry's row.
+         * @param marked True if the entry is marked, false otherwise.
+         */
+        void mark_row(Glib::RefPtr<Gtk::ListStore> model, entry_set &set, Gtk::TreeRow row, bool marked);
 
         /** Signal Handlers */
 
