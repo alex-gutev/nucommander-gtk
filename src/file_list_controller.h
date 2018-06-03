@@ -61,6 +61,12 @@ namespace nuc {
          * TODO: use a multi_map as archives may have duplicate files.
          */
         typedef std::unordered_map<std::string, Gtk::TreeRowReference> entry_set;
+
+        /**
+         * Pointer to method type with the same signature as the
+         * finish callback.
+         */
+        typedef void(file_list_controller::*finish_method)(bool, int, bool);
         
         /* Paths */
         
@@ -203,6 +209,12 @@ namespace nuc {
          */
         void init_vfs();
 
+        /**
+         * Sets a method of this class as the finish callback
+         * function.
+         */
+        void set_finish_callback(finish_method method);
+
 
         /* Callbacks */
 
@@ -218,6 +230,35 @@ namespace nuc {
          * VFS finish callback.
          */
         void vfs_finish(bool cancelled, int error, bool refresh);
+
+        /**
+         * VFS finish callback for moving up the directory tree when
+         * the current directory is deleted.
+         *
+         * The callback method vfs_finish is replaced with this
+         * method, when the current directory is deleted. If the
+         * parent directory is read successfully, the file list is
+         * displayed and the callback is restored to vfs_finish. If
+         * the directory was not read successfully, and it is not the
+         * root directory, an attempt is made to read its parent
+         * directory.
+         */
+        void vfs_finish_move_up(bool cancelled, int error, bool refresh);
+        
+        /**
+         * Directory deleted signal handler.
+         */
+        void vfs_dir_deleted();
+
+        /**
+         * Initiates a read operation for the parent directory of the
+         * current directory, if it is not the root directory. The
+         * finish callback is set to vfs_finish_move_up.
+         *
+         * This function should be used only to move to the parent
+         * directory when the current directory has been deleted.
+         */
+        void read_parent_dir();
 
 
         /* Resetting/Setting the treeview model */

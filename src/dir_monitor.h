@@ -79,7 +79,6 @@ namespace nuc {
              */
             DIR_MODIFIED,
             DIR_DELETED,
-            DIR_RENAMED,
 
             /**
              * Sent before the first event in a block of events.

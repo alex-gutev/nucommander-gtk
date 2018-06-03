@@ -89,8 +89,18 @@ void file_list_controller::init_vfs() {
     
     vfs->callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
     vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1, _2));
-    vfs->callback_finish(std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3));
+    set_finish_callback(&file_list_controller::vfs_finish);
+
+    vfs->signal_deleted().connect(sigc::mem_fun(this, &file_list_controller::vfs_dir_deleted));
 }
+
+void file_list_controller::set_finish_callback(finish_method method) {
+    using namespace std::placeholders;
+    
+    vfs->callback_finish(std::bind(method, this, _1, _2, _3));    
+}
+
+
 
 void file_list_controller::vfs_begin(bool refresh) {
     // Disable sorting while adding new entries to improve performance.
@@ -125,6 +135,44 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
     }
     else {
         reset_list(refresh);
+    }
+}
+
+void file_list_controller::vfs_finish_move_up(bool cancelled, int error, bool refresh) {
+    if (!error) {
+        set_new_list();
+        restore_selection();
+
+        // Restore finish callback to vfs_finish
+        set_finish_callback(&file_list_controller::vfs_finish);
+    }
+    else {
+        read_parent_dir();
+    }
+}
+
+
+void file_list_controller::vfs_dir_deleted() {
+    read_parent_dir();
+}
+
+
+void file_list_controller::read_parent_dir() {
+    using namespace std::placeholders;
+
+    if (!is_root_path(cur_path)) {
+        cur_path = removed_last_component(cur_path);
+        m_signal_path.emit(cur_path);
+
+        set_finish_callback(&file_list_controller::vfs_finish_move_up);
+
+        move_to_old = false;
+        view->set_model(empty_list);
+
+        vfs->read(cur_path);
+    }
+    else {
+        set_finish_callback(&file_list_controller::vfs_finish);
     }
 }
 

@@ -287,6 +287,12 @@ namespace nuc {
          */
         typedef std::function<void(bool, int, bool)> finish_fn;
 
+        /**
+         * Signal type, of the signal sent when the directory has been
+         * deleted.
+         */
+        typedef sigc::signal<void> deleted_signal;
+
         
         /* Constructor */
         vfs();
@@ -313,6 +319,11 @@ namespace nuc {
         template <typename F>
         void callback_finish(F&& fn);
 
+        /**
+         * Returns the deleted signal, which is emitted when the
+         * directory is deleted.
+         */
+        deleted_signal signal_deleted();
         
         /**
          * Initiates a background read operation for the directory at
@@ -379,6 +390,10 @@ namespace nuc {
          */
         begin_fn cb_begin;
 
+        /**
+         * Deleted signal
+         */
+        deleted_signal sig_deleted;
         
         /**
          * Calls the begin callback. The cancellation is switched

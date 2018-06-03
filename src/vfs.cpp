@@ -23,7 +23,6 @@
 
 #include "async_task.h"
 
-#include <iostream>
 
 using namespace nuc;
 
@@ -36,6 +35,13 @@ vfs::vfs() : queue(task_queue::create()) {
 
 std::shared_ptr<vfs> vfs::create() {
     return std::make_shared<vfs>();
+}
+
+
+/// Accessors
+
+vfs::deleted_signal vfs::signal_deleted() {
+    return sig_deleted;
 }
 
 
@@ -245,12 +251,12 @@ void vfs::file_event(dir_monitor::event e) {
             
         // Directory events
         case dir_monitor::DIR_DELETED:
+            monitor.cancel();
+            sig_deleted.emit();
             break;
             
         case dir_monitor::DIR_MODIFIED:
-            break;
-            
-        case dir_monitor::DIR_RENAMED:
+            // TODO: Reread the directory
             break;
     }
 }
