@@ -19,8 +19,6 @@
 
 #include "vfs.h"
 
-#include "dir_lister.h"
-
 #include "async_task.h"
 
 
@@ -99,6 +97,63 @@ void vfs::add_read_task(const std::string &path, bool refresh) {
                std::bind(&vfs::finish_read, _1, _2, path, refresh));
 }
 
+void vfs::add_read_task(const std::string &path, create_lister_fn fn, bool refresh) {
+    using namespace std::placeholders;
+    
+    queue_task([=] (vfs *self, cancel_state &state) {
+        std::pair<lister*, dir_tree*> pair = fn();
+
+        self->list_dir(state, pair.first, pair.second, path, refresh);
+    }, std::bind(&vfs::finish_read, _1, _2, path, refresh));    
+}
+
+bool vfs::descend(const dir_entry &ent) {
+    using namespace std::placeholders;
+
+    if (cur_tree->is_subdir(ent)) {
+        queue_task(std::bind(&vfs::read_subdir, _1, ent.subpath()));
+        return true;
+    }
+    else {
+        auto fn = get_lister_fn(ent);
+
+        if (fn) {
+            cancel_update();
+            
+            add_read_task(appended_component(cur_path, ent.file_name()), fn, false);
+            return true;
+        }
+
+        return false;     
+    }
+}
+
+bool vfs::ascend() {
+    using namespace std::placeholders;
+    
+    if (!cur_tree->at_basedir()) {
+        queue_task(std::bind(&vfs::read_subdir, _1, removed_last_component(cur_tree->subpath())));
+
+        return true;
+    }
+
+    return false;
+}
+
+void vfs::read_subdir(const path_str &subpath) {
+    cb_begin(false);
+    
+    std::swap(cur_tree, new_tree);
+
+    if (const dir_tree::dir_map *dir = new_tree->subpath(subpath)) {
+        for (auto ent : *dir) {
+            call_new_entry(*ent.second, true);
+        }
+        
+        call_finish(false, 0, false);        
+    }    
+}
+
 void vfs::cancel_update() {
     // Prevent further update tasks from being queued
     monitor.pause();
@@ -117,7 +172,7 @@ void vfs::cancel() {
 
 void vfs::commit_read() {
     cur_tree.swap(new_tree);
-    new_tree.clear();
+    new_tree = nullptr;
 
     if (reading) {
         monitor_dir(cur_path);
@@ -136,12 +191,18 @@ void vfs::commit_read() {
 /// Read task
 
 void vfs::read_dir(cancel_state &state, const std::string &path, bool refresh) {
-    std::unique_ptr<lister> listr(new dir_lister());
+    auto pair = get_lister(path);
 
-    state.no_cancel([=] {
+    list_dir(state, pair.first, pair.second, path, refresh);
+}
+
+void vfs::list_dir(cancel_state& state, lister *ptr_listr, dir_tree *ptr_tree, const std::string& path, bool refresh) {
+    std::unique_ptr<lister> listr(ptr_listr);
+    std::unique_ptr<dir_tree> tree(ptr_tree);
+    
+    state.no_cancel([=, &tree] {
         if (!refresh) reading = true;
-        
-        new_tree.clear();
+        new_tree = std::move(tree);
     });
     
     op_error = 0;
@@ -166,8 +227,9 @@ void vfs::read_dir(cancel_state &state, const std::string &path, bool refresh) {
 
 void vfs::add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st) {
     state.no_cancel([this, refresh, &ent, &st] {
-        dir_entry &new_ent = new_tree.add_entry(ent, st);
-        call_new_entry(new_ent, refresh);
+        if (dir_entry *new_ent = new_tree->add_entry(ent, st)) {
+            call_new_entry(*new_ent, refresh);
+        }
     });
 }
 
@@ -176,7 +238,7 @@ void vfs::finish_read(bool cancelled, const path_str &path, bool refresh) {
     using namespace std::placeholders;
     
     if (cancelled || op_error) {
-        new_tree.clear();
+        new_tree = nullptr;
 
         reading = false;
 
@@ -264,11 +326,12 @@ void vfs::file_event(dir_monitor::event e) {
 
 void vfs::begin_changes(cancel_state &state) {
     state.no_cancel([=] {
-        new_tree.clear();
-        new_tree.parse_dirs(false);
-
+        // Create new directory tree directly since this event is only
+        // called for regular directories
+        new_tree.reset(new dir_tree());
+        
         // Copy current file index to new tree's file index
-        new_tree.index() = cur_tree.index();
+        new_tree->index() = cur_tree->index();
     });
 }
 
@@ -276,7 +339,7 @@ void vfs::end_changes(cancel_state &state) {
     state.no_cancel([=] {
         cb_begin(true);
 
-        for (auto &ent : new_tree) {
+        for (auto &ent : *new_tree) {
             call_new_entry(ent.second, true);
         }
 
@@ -296,8 +359,8 @@ void vfs::file_created(cancel_state &state, const path_str &path) {
         state.no_cancel([&] {
             const path_str name(file_name(path));
             
-            new_tree.remove_entry(name);
-            new_tree.add_entry(dir_entry(name, st));
+            remove_entry(name);
+            new_tree->add_entry(dir_entry(name, st));
         });
     }
 }
@@ -312,13 +375,13 @@ void vfs::file_changed(cancel_state &state, const path_str &path) {
         state.no_cancel([&] {
             const path_str name(file_name(path));
             
-            dir_entry *ent = new_tree.get_entry(name);
+            dir_entry *ent = new_tree->get_entry(name);
 
             if (ent) {
                 ent->attr(st);
             }
             else {
-                new_tree.add_entry(dir_entry(name, st));
+                new_tree->add_entry(dir_entry(name, st));
             }
         });
     }    
@@ -326,20 +389,38 @@ void vfs::file_changed(cancel_state &state, const path_str &path) {
 
 void vfs::file_deleted(cancel_state &state, const path_str &path) {
     state.no_cancel([=] {
-        new_tree.remove_entry(file_name(path));
+        remove_entry(file_name(path));
     });
 }
 
 void vfs::file_renamed(cancel_state &state, const path_str &src, const path_str &dest) {
     bool exists = false;
 
+    path_str src_name = file_name(src);
+    path_str dest_name = file_name(dest);
+    
     state.no_cancel([&] {
-        exists = new_tree.rename_entry(file_name(src), file_name(dest));
+        dir_entry *ent = new_tree->get_entry(src_name);
+
+        if (ent) {
+            exists = true;
+            
+            ent->orig_subpath(dest_name);
+
+            remove_entry(dest_name);
+            new_tree->add_entry(std::move(*ent));
+            
+            remove_entry(src_name);
+        }
     });
 
     if (!exists) {
         file_created(state, dest);
     }
+}
+
+void vfs::remove_entry(const path_str& name) {
+    new_tree->index().erase(name);
 }
 
 

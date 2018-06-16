@@ -26,9 +26,7 @@
 
 #include "task_queue.h"
 
-#include "dir_tree.h"
-
-#include "lister.h"
+#include "dir_type.h"
 #include "dir_monitor.h"
 
 namespace nuc {
@@ -40,10 +38,9 @@ namespace nuc {
      * which a single directory, in the directory tree, can be viewed
      * at a time.
      *
-     * TODO: Implement path case canonicalization and support for
-     * archives.
+     * TODO: Implement path case canonicalization
      */
-    class vfs : public std::enable_shared_from_this<vfs> {
+    class vfs : public std::enable_shared_from_this<vfs> {        
         /**
          * The current path.
          */
@@ -53,15 +50,15 @@ namespace nuc {
         /* Directory Tree */
         
         /**
-         * The directory tree of the entries read in the previous
-         * operation.
+         * The directory tree containing the current entries.
          */
-        dir_tree cur_tree;
+        std::unique_ptr<dir_tree> cur_tree = nullptr;
+
         /**
          * The directory tree into which the entries read in the
          * currently running operation are placed.
          */
-        dir_tree new_tree;
+        std::unique_ptr<dir_tree> new_tree = nullptr;
 
         
         /* Background Tasks */
@@ -162,15 +159,53 @@ namespace nuc {
          * @param path The path of the directory to read
          *
          * @param refresh True if the current directory is being
-         *                reread, false if a new directory is being
-         *                read.
+         *   reread, false if a new directory is being read.
          */
         void add_read_task(const std::string &path, bool refresh);
+
+        /**
+         * Adds a read task to the task queue.
+         *
+         * @param path The path of the directory to read
+         *
+         * @param fn A function which is called when the operation is
+         *   run to create the lister and dir_tree object for the
+         *   directory.
+         *
+         * @param refresh True if the current directory is being
+         *   reread, false if a new directory is being read.
+         */
+        void add_read_task(const std::string &path, create_lister_fn fn, bool refresh);
         
         /**
-         * Read directory task. Reads the directory at 'path'.
+         * Reads the directory at @a path.
+         *
+         * @param state The cancellation state.
+         *
+         * @param path  The path to read.
+         *
+         * @param refresh True if the directory is being reread.
          */
         void read_dir(cancel_state &state, const std::string &path, bool refresh);
+
+        /**
+         * Reads the directory at @a path using the lister object @a
+         * listr, and sets new_tree to @a tree.
+         *
+         * @param state The cancellation state.
+         *
+         * @param listr The lister object with which to read the
+         *   directory.
+         *
+         * @param tree  The directory tree into which to read the
+         *   entries. new_tree is set to this object.
+         *
+         * @param path  The path to read.
+         *
+         * @param refresh True if the directory is being reread.
+         */
+        void list_dir(cancel_state &state, lister* listr, dir_tree* tree, const std::string &path, bool refresh);
+        
         /**
          * Read task finish callback. Calls the finish callback.
          */
@@ -191,6 +226,15 @@ namespace nuc {
          */
         void cancel_update();
 
+        /**
+         * Reads a subdirectory of the directory tree if it exists.
+         *
+         * The subdirectory is obtained and the callback functions are
+         * called as though a read operation is being carried out.
+         *
+         * @param subdir The subdirectory to read.
+         */
+        void read_subdir(const path_str &subdir);
 
         /* Directory Monitoring */
 
@@ -235,8 +279,15 @@ namespace nuc {
         void file_renamed(cancel_state &state, const path_str &src, const path_str &dest);
 
         /**
+         * Removes an entry from the new directory tree (new_tree).
+         *
+         * @param subpath The subpath of the entry
+         */
+        void remove_entry(const path_str &subpath);
+        
+        /**
          * Obtains the stat attributes of a file. First the stat
-         * system call is attempted, it that fails the lstat system
+         * system call is attempted, if that fails the lstat system
          * call is attempted.
          *
          * @param path The file path.
@@ -334,6 +385,30 @@ namespace nuc {
          */
         void read(const path_str &path);
 
+        /**
+         * Attempts to list the contents of the entry @a ent.
+         *
+         * @param ent The entry to list, must be an entry which was
+         *   passed to the add entry callback between the last
+         *   invocations of the begin and end callbacks.
+         *
+         * @return True if the entry is a directory which can be
+         *   listed, false otherwise.
+         */
+        bool descend(const dir_entry &ent);
+
+        /**
+         * Attempts to list the contents of the parent directory. This
+         * can only be done if the VFS is currently in a virtual
+         * directory hierarchy which has been read all at
+         * once. Otherwise the parent directory has to be read using
+         * the read() method.
+         *
+         * @return True if the parent directory's contents were
+         *   listed, false otherwise.
+         */
+        bool ascend();
+        
         /**
          * Cancels the background operation if any. The operation is
          * considered cancelled when the finish callback is called.
@@ -437,7 +512,7 @@ void nuc::vfs::callback_finish(F&& fn) {
 
 template <typename F>
 void nuc::vfs::for_each(F f) {
-    for (auto &ent_pair : cur_tree) {
+    for (auto &ent_pair : *cur_tree) {
         f(ent_pair.second);
     }
 }

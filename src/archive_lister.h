@@ -17,38 +17,45 @@
  *
  */
 
-#ifndef NUC_DIR_LISTER_H
-#define NUC_DIR_LISTER_H
+#ifndef NUC_ARCHIVE_LISTER_H
+#define NUC_ARCHIVE_LISTER_H
 
 #include "lister.h"
+#include "archive_plugin.h"
 
 namespace nuc {
-    
     /**
-     * Implements the lister interface for reading regular on disk
-     * directories.
+     * Archive lister subclass.
+     *
+     * Lists the contents of archives using an archive plugin.
      */
-    class dir_lister : public lister {
-        /** Directory handle. */
-        DIR *dp = nullptr;
-        
-        /** Last entry read. */
-        struct dirent *last_ent;
+    class archive_lister : public lister {
+        /**
+         * Pointer to archive plugin with which the archive is read.
+         */
+        archive_plugin *plugin;
 
         /**
-         * Returns the next entry or nullptr if there are no more
-         * entries. If an error occurs, an 'error' exception is thrown
-         * with the value of 'errno'.
+         * Plugin-specific archive handle.
          */
-        struct dirent *next_ent();
+        void *handle = nullptr;
+
+        /**
+         * Last archive entry read.
+         */
+        nuc_arch_entry arch_entry;
         
     public:
         /**
-         * Destructor. Closes the directory handle, if open.
+         * Constructs an archive lister.
+         *
+         * @param plugin The plugin which reads the archive.
          */
-        virtual ~dir_lister();
+        archive_lister(archive_plugin *plugin) : plugin(plugin) {}
 
-        /** Method Overrides */
+        virtual ~archive_lister();
+
+        /* Method Overrides */
         
         virtual void open(const path_str &path);
 
@@ -59,8 +66,9 @@ namespace nuc {
     };
 }
 
-#endif // NUC_DIR_LISTER_H
+#endif // NUC_ARCHIVE_LISTER_H
 
 // Local Variables:
 // mode: c++
+// indent-tabs-mode: nil
 // End:

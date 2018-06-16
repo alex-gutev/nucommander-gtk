@@ -161,14 +161,12 @@ void file_list_controller::read_parent_dir() {
     using namespace std::placeholders;
 
     if (!is_root_path(cur_path)) {
-        cur_path = removed_last_component(cur_path);
+        set_path(removed_last_component(cur_path));
         m_signal_path.emit(cur_path);
 
+        prepare_read(false);
+
         set_finish_callback(&file_list_controller::vfs_finish_move_up);
-
-        move_to_old = false;
-        view->set_model(empty_list);
-
         vfs->read(cur_path);
     }
     else {
@@ -433,17 +431,54 @@ void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool 
 
 // Changing the path
 
-void file_list_controller::path(const std::string &path, bool move_to_old) {
+void file_list_controller::set_path(path_str path) {
+    std::swap(old_path, cur_path);
+    cur_path = std::move(path);
+}
+
+void file_list_controller::prepare_read(bool move_to_old) {
     selected_row = selected_row_index();
+    this->move_to_old = move_to_old;
     
     // Set model to empty list to display an empty tree view without
     // discarding the old list
     view->set_model(empty_list);
-    
-    std::swap(old_path, cur_path);
-    cur_path = path;
+}
 
-    this->move_to_old = move_to_old;
+void file_list_controller::path(const std::string &path, bool move_to_old) {
+    prepare_read(move_to_old);
+    set_path(path);
 
     vfs->read(path);
+}
+
+bool file_list_controller::descend(const dir_entry& ent) {
+    if (ent.ent_type() == DT_PARENT) {
+        set_path(removed_last_component(cur_path));
+        m_signal_path.emit(cur_path);
+
+        prepare_read(true);
+
+        if (!vfs->ascend()) {
+            vfs->read(cur_path);
+        }
+
+        return true;
+    }
+    else {
+        set_path(appended_component(cur_path, ent.file_name()));
+
+        if (vfs->descend(ent)) {
+            prepare_read(false);
+            m_signal_path.emit(cur_path);
+            
+            return true;
+        }
+        else {
+            std::swap(cur_path, old_path);
+            old_path.clear();
+
+            return false;
+        }        
+    }
 }

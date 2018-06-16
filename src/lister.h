@@ -1,4 +1,3 @@
-
 /*
  * NuCommander
  * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
@@ -81,16 +80,6 @@ namespace nuc {
         virtual void open(const path_str &path) = 0;
         
         /**
-         * Opens the directory with file descriptor fd. This operation
-         * might not be supported by all subclasses. The method
-         * 'opens_fd' can be used to determine whetherthe lister
-         * object supports opening from a file descriptor.
-         * 
-         * fd: The file descriptor.
-         */
-        virtual void open(int fd) {}
-        
-        /**
          * Reads the next entry into the entry object 'ent'.
          * 
          * Returns true if an entry was read, false if there are no
@@ -105,7 +94,7 @@ namespace nuc {
          * read_entry.
          * 
          * Returns true if the stat attributes were retrieved, false
-         * otherwise. Should not through any exceptions as failure to
+         * otherwise. Should not throw any exceptions as failure to
          * retrieve stat attributes is not a critical error.
          */
         virtual bool entry_stat(struct stat &st) = 0;
@@ -116,24 +105,6 @@ namespace nuc {
          */
         virtual void close() = 0;
         
-        /**
-         * Returns the file descriptor of the directory being listed.
-         *
-         * If this is not supported (opens_fd() returns false) -1 is
-         * returned.
-         */
-        virtual int fd() const {
-            return -1;
-        }
-        
-        /**
-         * Returns true if the lister supports obtaining a handle to
-         * the directory from a file descriptor as opposed to a file
-         * path.
-         */
-        virtual bool opens_fd() {
-            return false;
-        }
         
     protected:
 
@@ -147,3 +118,7 @@ namespace nuc {
 }
 
 #endif // NUC_LISTER_H
+
+// Local Variables:
+// mode: c++
+// End:

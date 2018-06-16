@@ -54,4 +54,25 @@ add_sources(
     
     dir_monitor.h
     dir_monitor.cpp
+    
+    archive_plugin_types.h
+    archive_plugin.h
+    archive_plugin.cpp
+    
+    archive_plugin_loader.h
+    archive_plugin_loader.cpp
+    
+    dir_type.h
+    dir_type.cpp
+    
+    archive_lister.h
+    archive_lister.cpp
+    
+    archive_tree.h
+    archive_tree.cpp
 )
+
+# Add current directory to include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(plugins/)

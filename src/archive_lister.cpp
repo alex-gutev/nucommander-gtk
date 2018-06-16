@@ -17,20 +17,45 @@
  *
  */
 
-#include "dir_tree.h"
+#include "archive_lister.h"
 
 using namespace nuc;
 
-dir_entry* dir_tree::add_entry(const lister::entry &ent, const struct stat &st) {
-    return add_entry(dir_entry(ent, st));
+archive_lister::~archive_lister() {
+    close();
 }
 
-dir_entry* dir_tree::add_entry(dir_entry ent) {
-    path_str key = ent.subpath();
-
-    dir_entry &dir_ent = map.emplace(key, std::move(ent))->second;
+void archive_lister::open(const path_str &path) {
+    int error = 0;
     
-    return &dir_ent;
+    if (!(handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &error))) {
+        raise_error(error);
+    }
+}
+
+void archive_lister::close() {
+    if (handle) plugin->close(handle);
+    handle = nullptr;
+}
+
+
+bool archive_lister::read_entry(lister::entry &ent) {
+    int err = plugin->read_entry(handle, &arch_entry);
+
+    if (err && err != NUC_AP_EOF) {
+        // Refine error handling
+        raise_error(errno);
+    }
+
+    ent.name = arch_entry.path;
+    ent.type = IFTODT(arch_entry.stat->st_mode & S_IFMT);
+
+    return err == NUC_AP_OK;
+}
+
+bool archive_lister::entry_stat(struct stat& st) {
+    st = *arch_entry.stat;
+    return true;
 }
 
 // Local Variables:

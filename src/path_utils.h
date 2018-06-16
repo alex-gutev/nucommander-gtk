@@ -97,6 +97,29 @@ namespace nuc {
      * Returns true if 'path' is the file system root.
      */
     bool is_root_path(const path_str &path);
+
+    /**
+     * Checks whether @a path is a direct child of @a dir.
+     *
+     * @param dir The parent directory
+     * @param path The path to test whether it is a child of @a dir
+     *
+     * @return True if @a path is a subpath of @a dir and its last
+     *    component is a child of @a dir.
+     */
+    bool is_child_of(path_str dir, const path_str &path);
+
+    /**
+     * Checks whether a path has any directory components.
+     * 
+     * @param path The path to test
+     *
+     * @return True if the path has directory components, false
+     *    otherwise.
+     */
+    inline bool has_dirs(const path_str &path) {
+        return path.find('/') != std::string::npos;
+    }
 }
 
 #endif // PATH_UTILS_H

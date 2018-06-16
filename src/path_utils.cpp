@@ -19,6 +19,8 @@
 
 #include "path_utils.h"
 
+#include <algorithm>
+
 nuc::path_str nuc::file_name(const path_str &path) {
     // Find last slash
     size_t slash_pos = path.rfind('/');
@@ -116,4 +118,16 @@ nuc::path_str nuc::canonicalized_path(const path_str &path) {
 bool nuc::is_root_path(const path_str &path) {
     // TODO: add more sophisticated checks for non-local file systems
     return path == "/";
+}
+
+bool nuc::is_child_of(path_str dir, const path_str &path) {
+    if (!dir.empty() && dir.back() != '/') {
+        dir.push_back('/');
+    }
+
+    if (dir.size() >= path.size()) return false;
+    
+    auto res = std::mismatch(dir.begin(), dir.end(), path.begin());
+
+    return res.first == dir.end() && std::find(res.second, path.end(), '/') == path.end();
 }

@@ -34,17 +34,35 @@ add_subdirectory(src)
 
 set(RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c)
 
+# Convert gresource.xml files to C, output resources.c
+
 add_custom_command(OUTPUT ${RESOURCES}
     COMMAND glib-compile-resources --target=resources.c --generate-source nucommander.gresource.xml
     DEPENDS src/window.glade src/fileview.glade src/nucommander.gresource.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+
+# Compile schemas and move to target directory
+  
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gschemas.compiled
+    COMMAND glib-compile-schemas --strict --targetdir=${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
+    DEPENDS src/nucommander.gschema.xml)
+    
+add_custom_target(gsettings_schema ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gschemas.compiled)    
+
+
 add_sources(${RESOURCES})
 
+
+# NuCommander executable
+
 add_executable(nucommander ${SRCS})
-target_link_libraries(nucommander ${GTKMM_LIBRARIES})
+add_dependencies(nucommander gsettings_schema archgeneric)
+
+target_link_libraries(nucommander ${GTKMM_LIBRARIES} dl)
 
 install(TARGETS nucommander RUNTIME DESTINATION bin)
+
 
 ## Tests
 

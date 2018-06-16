@@ -118,18 +118,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
     dir_entry &ent = *row[flist.columns.ent];
 
-    switch (ent.type()) {
-        case DT_PARENT:
-            path(removed_last_component(flist.path()), true);
-            break;
-            
-        case DT_DIR:
-            path(appended_component(flist.path(), ent.file_name()));
-            break;
-            
-        case DT_REG:
-            break;
-    }
+    flist.descend(ent);
 }
 
 void file_view::on_path_changed(const path_str &path) {

@@ -42,28 +42,6 @@ void dir_lister::open(const path_str &path) {
     }
 }
 
-void dir_lister::open(int fd) {
-    fd = dup(fd);
-    
-    if (fd < 0) {
-        raise_error(errno);
-    }
-    
-    dp = fdopendir(fd);
-    
-    if (!dp) {
-        int err = errno;
-        
-        ::close(fd);
-        
-        raise_error(err);
-    }
-    
-    if (lseek(fd, 0, SEEK_SET)) {
-        raise_error(errno);
-    }
-}
-
 void dir_lister::close() {
     if (dp) closedir(dp);
     dp = nullptr;

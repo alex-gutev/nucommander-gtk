@@ -250,6 +250,26 @@ namespace nuc {
          */
         void vfs_dir_deleted();
 
+        
+        /* Reading new directories */
+
+        /**
+         * Sets the current path (cur_path) to @a path and sets the
+         * old path (old_path) to the previous value of cur_path.
+         *
+         * @param path The new path.
+         */
+        void set_path(path_str path);
+
+        /**
+         * Records the current selected row in selected_row, sets the
+         * value of move_to_old and sets the view's model to the empty
+         * list.
+         *
+         * @param move_to_old The value of move_to_old to set.
+         */
+        void prepare_read(bool move_to_old);
+        
         /**
          * Initiates a read operation for the parent directory of the
          * current directory, if it is not the root directory. The
@@ -259,7 +279,7 @@ namespace nuc {
          * directory when the current directory has been deleted.
          */
         void read_parent_dir();
-
+        
 
         /* Resetting/Setting the treeview model */
         
@@ -434,6 +454,19 @@ namespace nuc {
             return cur_path;
         }
 
+        /**
+         * Attempts to change the directory to the entry @a ent. If @a
+         * ent is not a directory entry and is not a file which can be
+         * listed, this method does nothing. If @a ent is a directory
+         * entry a path changed signal is emitted.
+         *
+         * @param ent The entry to enter
+         *
+         * @return true if the entry is a directory entry that can be
+         *         listed, false otherwise.
+         */
+        bool descend(const dir_entry &ent);
+        
         /**
          * Path changed signal.
          *

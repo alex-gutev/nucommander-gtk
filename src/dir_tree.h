@@ -22,121 +22,128 @@
 
 #include "types.h"
 #include "lister.h"
-
 #include "dir_entry.h"
 
 namespace nuc {
     /**
-     * Creates a directory tree abstraction out of a flat list of
-     * files, such as the file list obtained from an archive.
-     * 
-     * The directory structure is parsed from the file paths.
-     */    
+     * Interface for creating a directory tree abstraction out of a
+     * flat list of files.
+     *
+     * This class (the base class) provides the generic interface
+     * however does not provide any directory tree abstraction, only a
+     * file index is stored to be able to quickly query whether a
+     * certain file exists in the tree. Actual directory abstractions
+     * should be provided by subclasses, this class is intended to be
+     * used only for regular directories where the entire list of
+     * files belongs to the base directory.
+     */
     class dir_tree {
+    protected:
         /**
-         * Map of all entries in the directory tree.
-         * 
+         * File index stored as an unordered multi-map where each key
+         * is the file subpath and the corresponding value is the
+         * 'dir_entry' object.
+         *
          * A multi-map is used since certain virtual file systems,
          * such as archives, may contain multiple files with the same
          * name.
          */
         file_map<dir_entry> map;
         
-        /**
-         * If true, the directory structure is parsed from the file
-         * paths. If false, the flat list of files is simply stored
-         * without parsing the directory structure.
-         */        
-        bool m_parse_dirs = false;
-        
-        /**
-         * Map of the entries in the base directory. Used only when
-         * 'm_parse_dirs' is true.
-         */        
-        file_map<dir_entry *> m_base_dir;
-        
-        /**
-         * Extracts and creates the intermediate directory components
-         * of an entry.
-         *
-         * path:    The canonicalized path to the entry.
-         * ent:     Pointer to the entry.
-         */
-        void add_components(const path_str &path, dir_entry &ent);
-        
-        /**
-         * Searches for a directory entry with subpath 'path', in the
-         * map. If the entry is found and it is a directory entry it
-         * is returned, otherwise a new directory entry is created.
-         * 
-         * path: The subpath of the entry, within the directory tree.
-         *
-         * Returns a reference to the entry.
-         */
-        dir_entry &make_dir_ent(const path_str &path);
-       
-        /**
-         * Adds an entry to a multi-map if the map does not already
-         * contain the entry. This is determined by checking whether
-         * the addresses of any of the existing entries in the map,
-         * with the same key, are equal to the address of theentry.
-         *
-         * map:   The multi-map, in which to add the entry.
-         * name:  The name of the entry.
-         * ent:   Pointer to the entry.
-         */
-        static void add_to_map(file_map<dir_entry *> &map, const path_str &name, dir_entry *ent);
-        
     public:
-        /**
-         * Removes all entries in the tree.
-         */
-        void clear() {
-            map.clear();
-            m_base_dir.clear();
-        }
-        
-        /**
-         * Swaps two directory trees.
-         */
-        void swap(dir_tree &fs) {
-            map.swap(fs.map);
-            m_base_dir.swap(fs.m_base_dir);
-        }
-        
-        /**
-         * Returns true if the directory structure is parsed from the
-         * file paths, false if only the flat list of files is stored.
-         */
-        bool parse_dirs() const {
-            return m_parse_dirs;
-        }
 
         /**
-         * Changes to either a directory tree or flat list.
-         * 
-         * parse_dirs: If true, the directory structure is parsed from
-         *             the file paths. If false only the flat list of
-         *             files is stored.
-         */
-        void parse_dirs(bool parse_dirs) {
-            m_parse_dirs = parse_dirs;
-        }
-        
-        /**
-         * Creates and adds a new entry to the tree, from the
-         * information in the 'lister::entry' and 'stat' objects
-         * returned by the lister object.
+         * Directory map type.
          *
-         * ent: The 'lister::entry' object returned by the lister.
-         * st:  The 'stat' object returned by the lister.
+         * A directory map is an unordered multi-map map of the
+         * entries in a sub-directory of the directory tree. The key
+         * is the entry file name (not the sub-path) and the value is
+         * a pointer to the 'dir_entry' object.
          */
-        dir_entry &add_entry(const lister::entry &ent, const struct stat &st);
+        typedef file_map<dir_entry*> dir_map;
 
-        dir_entry &add_entry(dir_entry ent);
+        /**
+         * Destructor.
+         *
+         * Virtual as the class is intended to be inherited from and
+         * used polymorphically.
+         */
+        virtual ~dir_tree() = default;
+
+        /**
+         * Adds an entry to the tree. The 'dir_entry' object is
+         * created from the information in the 'lister::entry' and
+         * 'stat' objects returned by the lister object.
+         *
+         * @param ent The 'lister::entry' object returned by the lister.
+         * @param st  The 'stat' attributes of the entry
+         *
+         * @return A pointer to the 'dir_entry' object is returned if
+         *    the entry is a direct child of the tree's current
+         *    subdirectory, otherwise nullptr is returned.
+         */
+        virtual dir_entry* add_entry(const lister::entry &ent, const struct stat &st);
+
+        /**
+         * Adds an entry to the tree, which is a copy of an existing
+         * entry.
+         *
+         * @param ent The entry to add to the tree.
+         *
+         * @return A pointer to the 'dir_entry' object is returned if
+         *    the entry is a direct child of the tree's current
+         *    subdirectory, otherwise nullptr is returned.
+         */
+        virtual dir_entry* add_entry(dir_entry ent);
+
+        /**
+         * Returns the current subdirectory of the tree. The empty
+         * string indicates the base directory.
+         *
+         * @return The current subdirectory.
+         */
+        virtual path_str subpath() const {
+            // The empty string cannot be a valid directory name.
+            return "";
+        }
         
         /**
-         * Returns the pointer to the first entry with subpath 'subpath',
+         * Sets the tree's subdirectory.
+         *
+         * @param path The subpath of the directory.
+         *
+         * @return If the subdirectory @a path exists in the tree, a
+         *    pointer to the directory map of its contents is
+         *    returned, otherwise nullptr is returned, if there is no
+         *    such subdirectory.
+         */
+        virtual dir_map const * subpath(const path_str &path) {
+            return nullptr;
+        }
+
+        /**
+         * @return True if the entry @a ent is a subdirectory of the
+         *    tree.
+         */
+        virtual bool is_subdir(const dir_entry &ent) const {
+            return false;
+        }
+
+        /**
+         * @return True if the directory tree is at the base
+         *    directory.
+         */
+        virtual bool at_basedir() const {
+            return true;
+        }
+        
+        /**
+         * Retrieves the first entry from the tree, at a particular
+         * subpath.
+         *
+         * @param subpath The subpath to the entry
+         *
+         * @return The pointer to the first entry with subpath @a subpath',
          * 'nullptr' if the entry was not found in the tree.
          */
         dir_entry *get_entry(const path_str &subpath) {
@@ -149,65 +156,38 @@ namespace nuc {
             return nullptr;
         }
 
-
-        /**
-         * Removes an entry from the tree. 
-         *
-         * Can only be used for flat directory trees.
-         */
-        void remove_entry(const path_str &path) {
-            map.erase(path);
-        }
-
-        /**
-         * Renames an entry in the tree. 
-         *
-         * Can only be used for flat directory trees.
-         */
-        bool rename_entry(const path_str &src, const path_str &dest);
-
         /**
          * Returns all entries with a given subpath, as a pair where
          * the first element is the iterator to the first entry, and
          * the second element is the past-the-end iterator.
          *
-         * subpath:  The subpath of the entry/entries.
+         * @param subpath:  The subpath to the entry/entries.
          */
         auto get_entries(const path_str &subpath) -> decltype(map.equal_range(subpath)) {
             return map.equal_range(subpath);
         }
 
         /**
-         * Returns a reference to the map of the entries in the base
-         * directory.  This should only be used to iterate over the
-         * base directory using begin() and end().
-         */
-        auto base_dir() -> decltype(m_base_dir) & {
-            return m_base_dir;
-        }
-
-        /**
-         * Returns a reference to the map (index) containing all
-         * entries in the directory tree.
+         * @return A reference to the map (index) containing all
+         *    entries in the directory tree.
          */
         auto index() -> decltype(map) & {
             return map;
         }
 
         /** 
-         * Iterator to the first entry in the directory tree. 
+         * @return Iterator to the first entry in the directory tree.
          */
         auto begin() -> decltype(map.begin()) {
             return map.begin();
         }
 
         /**
-         * Past-the-end iterator. 
+         * @return Past-the-end iterator. 
          */
         auto end() -> decltype(map.end()) {
             return map.end();
         }
-
     };
 }
 
@@ -215,4 +195,5 @@ namespace nuc {
 
 // Local Variables:
 // mode: c++
+// indent-tabs-mode: nil
 // End:
