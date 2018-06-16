@@ -59,6 +59,11 @@ dir_entry *archive_tree::add_components(const path_str &path, dir_entry &ent) {
         }
         else {
             dent = add_to_map(*parent_map, comp, &ent) ? &ent : nullptr;
+
+            if (ent.type() == DT_DIR) {
+                // Add to directory map, if not already present.
+                dirs[sub_path];
+            }
         }
 
         if (dent && in_subpath(sub_path)) {
