@@ -23,7 +23,7 @@ using namespace nuc;
 
 void cancel_state::call_finish(bool cancelled) {
     if (!finished.test_and_set()) {
-        m_signal_finish.emit(cancelled);
+        m_finish(cancelled);
     }
 }
 
@@ -57,6 +57,22 @@ void cancel_state::cancel() {
     }
 }
 
-cancel_state::signal_finish_type cancel_state::signal_finish() {
-    return m_signal_finish;
+void cancel_state::add_finish_callback(finish_fn fn, bool after) {
+    finish_fn prev_fn = m_finish;
+
+    if (!prev_fn) {
+        m_finish = fn;
+    }
+    else if (after) {
+        m_finish = [=] (bool cancelled) {
+            prev_fn(cancelled);
+            fn(cancelled);
+        };
+    }
+    else {
+        m_finish = [=] (bool cancelled) {
+            fn(cancelled);
+            prev_fn(cancelled);
+        };
+    }
 }

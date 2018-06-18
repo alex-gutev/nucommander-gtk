@@ -108,7 +108,15 @@ namespace nuc {
         }
         
         /**
-         * Sets the tree's subdirectory.
+         * Sets the tree's subdirectory, without checking whether it
+         * exists.
+         *
+         * @param path The new subpath.
+         */
+        virtual void subpath(path_str path) {}
+
+        /**
+         * Returns the contents of a subdirectory, if it exists.
          *
          * @param path The subpath of the directory.
          *
@@ -117,7 +125,7 @@ namespace nuc {
          *    returned, otherwise nullptr is returned, if there is no
          *    such subdirectory.
          */
-        virtual dir_map const * subpath(const path_str &path) {
+        virtual dir_map const * subpath_dir(const path_str &path) const {
             return nullptr;
         }
 

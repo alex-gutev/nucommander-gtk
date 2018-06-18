@@ -26,15 +26,23 @@ dir_monitor::event_signal_type dir_monitor::signal_event() {
 }
 
 
-bool dir_monitor::monitor_dir(const path_str &path, bool pause) {
+bool dir_monitor::monitor_dir(const path_str &path, bool pause, bool is_dir) {
     cancel();
 
     paused = pause;
+    dir_events = is_dir;
     
     changing = false;
     
     dir_file = Gio::File::create_for_path(path);
-    monitor = dir_file->monitor_directory(Gio::FILE_MONITOR_WATCH_MOVES | Gio::FILE_MONITOR_WATCH_MOUNTS);
+
+    if (is_dir) {
+        monitor = dir_file->monitor_directory(Gio::FILE_MONITOR_WATCH_MOVES | Gio::FILE_MONITOR_WATCH_MOUNTS);
+    }
+    else {
+        monitor = dir_file->monitor(Gio::FILE_MONITOR_WATCH_MOVES);
+    }
+    
     
     if (monitor) {
         monitor->signal_changed().connect(sigc::mem_fun(this, &dir_monitor::on_file_changed));
@@ -75,13 +83,15 @@ void dir_monitor::resume() {
 
 
 void dir_monitor::on_file_changed(const Glib::RefPtr<Gio::File> &file, const Glib::RefPtr<Gio::File> &other_file, Gio::FileMonitorEvent type) {
-    create_timer();
-    
-    if (!changing) {
-        emit_event(EVENTS_BEGIN);
-        changing = true;
+    if (dir_events) {
+        create_timer();
+        
+        if (!changing) {
+            emit_event(EVENTS_BEGIN);
+            changing = true;
+        }
     }
-    
+
     switch (type) {
         case Gio::FILE_MONITOR_EVENT_CREATED:
         case Gio::FILE_MONITOR_EVENT_MOVED_IN:
@@ -99,7 +109,7 @@ void dir_monitor::on_file_changed(const Glib::RefPtr<Gio::File> &file, const Gli
             
         case Gio::FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
         case Gio::FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-            emit_event(FILE_MODIFIED, file->get_path());
+            emit_event(is_dir_event(file) ? DIR_MODIFIED : FILE_MODIFIED, file->get_path());
             break;
     }
 }

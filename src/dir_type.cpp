@@ -26,35 +26,45 @@
 
 #include "archive_plugin_loader.h"
 
-static std::pair<nuc::lister*, nuc::dir_tree*> make_dir_lister() {
-    return std::make_pair(new nuc::dir_lister(), new nuc::dir_tree());
+static nuc::lister * make_dir_lister() {
+    return new nuc::dir_lister();
 }
 
-static std::pair<nuc::lister*, nuc::dir_tree*> make_archive_lister(nuc::archive_plugin *plugin) {
-    return std::make_pair(new nuc::archive_lister(plugin), new nuc::archive_tree());
+static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin) {
+    return new nuc::archive_lister(plugin);
+}
+
+static nuc::dir_tree * make_dir_tree(nuc::path_str subpath) {
+    return new nuc::dir_tree();
+}
+
+static nuc::dir_tree * make_archive_tree(nuc::path_str subpath) {
+    return new nuc::archive_tree(subpath);
 }
 
 
-std::pair<nuc::lister*, nuc::dir_tree*> nuc::get_lister(const path_str& path) {
+nuc::dir_type nuc::dir_type::get(path_str path) {
     if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(path)) {
-        return make_archive_lister(plugin);
+        return dir_type(std::move(path), std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
     }
 
-    return make_dir_lister();
+    return dir_type(std::move(path), make_dir_lister, make_dir_tree, true, "");
 }
 
-nuc::create_lister_fn nuc::get_lister_fn(const dir_entry& ent) {
+nuc::dir_type nuc::dir_type::get(path_str path, const dir_entry& ent) {
     switch (ent.type()) {
     case DT_DIR:
-        return make_dir_lister;
+        append_component(path, ent.file_name());
+        return dir_type(path, make_dir_lister, make_dir_tree, true, "");
 
     case DT_REG:
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
-            return std::bind(make_archive_lister, plugin);
+            append_component(path, ent.file_name());
+            return dir_type(path, std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
         }
     }
     
-    return nullptr;
+    return dir_type();
 }
 
 // Local Variables:

@@ -248,7 +248,7 @@ namespace nuc {
         /**
          * Directory deleted signal handler.
          */
-        void vfs_dir_deleted();
+        void vfs_dir_deleted(path_str new_path);
 
         
         /* Reading new directories */

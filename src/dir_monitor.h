@@ -43,6 +43,15 @@ namespace nuc {
          * received, the callback is called with EVENTS_END.
          */
         unsigned int interval = 2000;
+
+        /**
+         * Flag indicating whether a directory is being monitored
+         * (true) with detailed events describing the changes to each
+         * file in the directory, or a regular file is being monitored
+         * (false) with events describing changes to the file as a
+         * whole.
+         */
+        bool dir_events = false;
         
     public:
         /**
@@ -175,9 +184,12 @@ namespace nuc {
          *               resume has to be called in order to begin
          *               emitting the event signal.
          *
+         * @param is_dir True if @a path is a regular directory or
+         *               file.
+         *
          * @return Returns true if the monitoring began successfully.
          */
-        bool monitor_dir(const path_str &path, bool paused = true);
+        bool monitor_dir(const path_str &path, bool paused = true, bool is_dir = true);
 
         /**
          * Cancels the monitor, if the monitor is paused all queued

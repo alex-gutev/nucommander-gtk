@@ -98,6 +98,20 @@ namespace nuc {
         
 	public:
 
+        /**
+         * Constructs an archive directory tree with the subpath set
+         * to the base directory.
+         */
+        archive_tree() = default;
+
+        /**
+         * Constructs an archive directory tree with a particular
+         * subpath.
+         *
+         * @param subpath The subpath
+         */
+        archive_tree(path_str subpath) : m_subpath(std::move(subpath)) {}
+        
         /* Method overrides */
         
         virtual dir_entry* add_entry(dir_entry ent);
@@ -105,8 +119,12 @@ namespace nuc {
         virtual path_str subpath() const {
             return m_subpath;
         }
-        virtual dir_map const * subpath(const path_str &path);
+        virtual void subpath(path_str path) {
+            m_subpath = std::move(path);
+        }
 
+        virtual dir_map const * subpath_dir(const path_str &path) const;
+        
         virtual bool is_subdir(const dir_entry &ent) const;
 
         virtual bool at_basedir() const {

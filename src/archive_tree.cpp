@@ -103,12 +103,10 @@ dir_entry &archive_tree::make_dir_ent(const path_str &path) {
     return ent;
 }
 
-dir_tree::dir_map const * archive_tree::subpath(const path_str &path) {
+dir_tree::dir_map const * archive_tree::subpath_dir(const path_str &path) const {
     auto it = dirs.find(path);
 
     if (it != dirs.end()) {
-        m_subpath = path;
-        
         return &(it->second);
     }
 

@@ -78,8 +78,8 @@ std::shared_ptr<cancel_state> task_queue::get_cancel_state() {
         state = std::make_shared<cancel_state>();
 
         std::weak_ptr<task_queue> ptr(shared_from_this());
-        
-        state->signal_finish().connect([=] (bool cancelled) {
+
+        state->add_finish_callback([=] (bool cancelled) {
             if (auto this_ptr = ptr.lock()) {
                 this_ptr->cancelled(cancelled);
             }
@@ -88,7 +88,6 @@ std::shared_ptr<cancel_state> task_queue::get_cancel_state() {
     
     return state;
 }
-
 
 
 void task_queue::cancel() {
@@ -102,10 +101,9 @@ void task_queue::cancel() {
     }
 }
 
-
 void task_queue::cancelled(bool cancelled) {
     auto ptr = shared_from_this();
-    
+
     dispatch_async([=] {
         ptr->resume_loop();
     });
@@ -113,17 +111,17 @@ void task_queue::cancelled(bool cancelled) {
 
 void task_queue::resume_loop() {
     std::shared_ptr<cancel_state> cstate;
-        
+    
     {
         std::lock_guard<mutex_type> lock(mutex);
-            
+        
         state = nullptr;
         cstate = get_cancel_state();
         
         running.test_and_set();
     }
-        
-    run_tasks(cstate);    
+    
+    run_tasks(cstate);
 }
 
 void task_queue::pause() {

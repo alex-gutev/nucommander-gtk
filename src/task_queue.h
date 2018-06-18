@@ -147,7 +147,11 @@ namespace nuc {
         std::shared_ptr<cancel_state> get_cancel_state();
         
         /**
-         * Cancelled signal handler.
+         * Resumes the background task loop. This method is added as a
+         * finish callback to the cancellation state of each task, and
+         * is called when the task is cancelled.
+         *
+         * @param cancelled True if the task was cancelled.
          */
         void cancelled(bool cancelled);
 
@@ -174,11 +178,13 @@ namespace nuc {
         void add(task_type task);
 
         /**
-         * Adds a new task to the queue and connects a callback to the
-         * finish/cancel signal of the task's cancellation state.
+         * Adds a new task to the queue and adds a finish callback to
+         * the task's cancellation state.
          *
          * This callback is called after the task finishes or when the
-         * task is cancelled, guaranteed to be called only once.
+         * task is cancelled, and is guaranteed to be called only
+         * once. No new tasks will be executed until the finish
+         * callback returns.
          *
          * The callback might not be called if the task is cancelled
          * before it has run.
@@ -194,9 +200,8 @@ namespace nuc {
          * the queue.
          *
          * Tasks can still be added to the queue, after calling this
-         * function. The tasks will be executed as soon as the
-         * finished/cancelled signal is emitted on the current
-         * cancellation state (when signal_cancel is emitted).
+         * function. The tasks will be executed as soon as all
+         * cancellation handlers finish executing.
          */
         void cancel();
 
@@ -224,13 +229,15 @@ template <typename T, typename F>
 void nuc::task_queue::add(T task, F finish) {
     add([=] (cancel_state &state) {
         state.no_cancel([&state, &finish] {
-            state.signal_finish().connect(finish);
+            state.add_finish_callback(finish, false);
         });
         
         task(state);
         
         state.call_finish(false);
-        cancel();
+
+        // Terminate current task loop
+        throw cancel_state::cancelled();
     });
 }
 

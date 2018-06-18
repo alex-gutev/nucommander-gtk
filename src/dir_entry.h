@@ -42,10 +42,6 @@ namespace nuc {
      * Stores information about entries in a directory tree, such as
      * the file name, the subpath (within the tree), and stat
      * attributes.
-     * 
-     * When the directory tree is set to parse the directory structure
-     * from a flat list of file paths, a map of the child entries of
-     * the directory, if the entry is of type directory, is stored.
      */
     class dir_entry {
         /**
@@ -75,13 +71,6 @@ namespace nuc {
          * Stat attributes of the underlying file.
          */
         struct stat m_attr;
-        
-        /**
-         * Map of child entries, used when the directory tree stores
-         * the directory structure, and the entry is of type
-         * directory.
-         */
-        file_map<dir_entry *> child_map;
         
     public:
         /**
@@ -178,16 +167,6 @@ namespace nuc {
          */
         void attr(const struct stat &st) {
             m_attr = st;
-        }
-        
-        /**
-         * Returns a reference to the child map.
-         */
-        file_map<dir_entry *> & child_ents() {
-            return child_map;
-        }
-        const file_map<dir_entry *> &child_ents() const {
-            return child_map;
         }
     };
 }

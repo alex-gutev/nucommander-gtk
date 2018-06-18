@@ -42,21 +42,46 @@ namespace nuc {
      */
     class vfs : public std::enable_shared_from_this<vfs> {        
         /**
-         * The current path.
+         * The dir_type object, responsible for creating the lister
+         * and dir_tree objects, of the current directory.
+         *
+         * Should only be modified from the main thread.
          */
-        std::string cur_path;
+        dir_type cur_type;
+
+        /**
+         * The dir_type object, responsible for creating the lister
+         * and dir_tree objects, of the directory currently being
+         * read.
+         *
+         * Should only be accessed and modified from the background
+         * thread running the task queue, with the exception of the
+         * commit_read method, which is guaranteed to run when there
+         * are no background tasks running.
+         */
+        dir_type new_type;
 
         
         /* Directory Tree */
         
         /**
-         * The directory tree containing the current entries.
+         * The directory tree containing the entries of the current
+         * directory.
+         *
+         * Both the pointer and pointed to object should only be
+         * accessed and modified from the main thread.
          */
         std::unique_ptr<dir_tree> cur_tree = nullptr;
 
         /**
-         * The directory tree into which the entries read in the
-         * currently running operation are placed.
+         * The directory tree into which the entries of the directory
+         * currently being read, are placed into.
+         *
+         * Both the pointer and pointed to object should only be
+         * accessed and modified from the background thread running
+         * the task queue, with the exception of the commit_read
+         * method, which is guaranteed to run when there are no
+         * background tasks running.
          */
         std::unique_ptr<dir_tree> new_tree = nullptr;
 
@@ -166,16 +191,19 @@ namespace nuc {
         /**
          * Adds a read task to the task queue.
          *
-         * @param path The path of the directory to read
-         *
-         * @param fn A function which is called when the operation is
-         *   run to create the lister and dir_tree object for the
-         *   directory.
+         * @param type The dir_type object of the directory to be
+         *   read.
          *
          * @param refresh True if the current directory is being
          *   reread, false if a new directory is being read.
          */
-        void add_read_task(const std::string &path, create_lister_fn fn, bool refresh);
+        void add_read_task(dir_type type, bool refresh);
+
+        /**
+         * Adds a directory refresh task, for the current directory,
+         * to the background task queue.
+         */
+        void add_refresh_task();
         
         /**
          * Reads the directory at @a path.
@@ -186,30 +214,25 @@ namespace nuc {
          *
          * @param refresh True if the directory is being reread.
          */
-        void read_dir(cancel_state &state, const std::string &path, bool refresh);
+        void read_path(cancel_state &state, const std::string &path, bool refresh);
 
         /**
-         * Reads the directory at @a path using the lister object @a
-         * listr, and sets new_tree to @a tree.
+         * Reads the directory using the lister and dir_tree objects
+         * created by the dir_type object @a type.
          *
          * @param state The cancellation state.
          *
-         * @param listr The lister object with which to read the
-         *   directory.
-         *
-         * @param tree  The directory tree into which to read the
-         *   entries. new_tree is set to this object.
-         *
-         * @param path  The path to read.
+         * @param type  The dir_type object for the directory to be
+         *   read.
          *
          * @param refresh True if the directory is being reread.
          */
-        void list_dir(cancel_state &state, lister* listr, dir_tree* tree, const std::string &path, bool refresh);
+        void list_dir(cancel_state &state, dir_type type, bool refresh);
         
         /**
          * Read task finish callback. Calls the finish callback.
          */
-        void finish_read(bool cancelled, const path_str &path, bool refresh);
+        void finish_read(bool cancelled, bool refresh);
 
         
         /**
@@ -226,24 +249,54 @@ namespace nuc {
          */
         void cancel_update();
 
+
+        /* Reading subdirectories */
+
         /**
-         * Reads a subdirectory of the directory tree if it exists.
+         * Adds a read task for the subdirectory @a subpath, of the
+         * current directory tree, to the background task queue.
          *
-         * The subdirectory is obtained and the callback functions are
-         * called as though a read operation is being carried out.
+         * @param subpath The subpath to read.
+         */
+        void add_read_subdir(const path_str &subpath);
+        
+        /**
+         * Read subdirectory task. 
          *
+         * Reads the subdirectory of the directory tree if it
+         * exists. The subdirectory is obtained and the callback
+         * functions are called as though a read operation is being
+         * carried out.
+         *
+         * @param state  The cancellation state.
          * @param subdir The subdirectory to read.
          */
-        void read_subdir(const path_str &subdir);
+        void read_subdir(cancel_state &state, const path_str &subdir);
 
+        /**
+         * Read subdirectory task finish callback.
+         *
+         * Queues a task on the main thread, which sets the subpath of
+         * the directory tree and calls the finish callback.
+         */
+        void finish_read_subdir(bool cancelled, const path_str &subdir);
+
+        /**
+         * Checks whether the current subdirectory of the directory
+         * tree still exists. If not the first parent directory of the
+         * subdirectory is read.
+         */
+        void refresh_subdir();
+        
+        
         /* Directory Monitoring */
 
         dir_monitor monitor;
 
         /**
-         * Begins monitoring the directory at path.
+         * Begins monitoring the current directory.
          */
-        void monitor_dir(const path_str &path, bool paused = false);
+        void monitor_dir(bool paused = false);
 
         /**
          * Resumes the directory monitor.
@@ -342,7 +395,7 @@ namespace nuc {
          * Signal type, of the signal sent when the directory has been
          * deleted.
          */
-        typedef sigc::signal<void> deleted_signal;
+        typedef sigc::signal<void, path_str> deleted_signal;
 
         
         /* Constructor */

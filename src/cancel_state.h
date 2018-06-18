@@ -22,8 +22,7 @@
 
 #include <atomic>
 #include <exception>
-
-#include <sigc++/sigc++.h>
+#include <functional>
 
 namespace nuc {
     /**
@@ -34,13 +33,13 @@ namespace nuc {
     class cancel_state {
     public:
         /**
-         * Finished signal type.
+         * Finish callback function type.
          *
          * Prototype: void(bool cancelled)
          *
          * @param cancelled  true if the operation was cancelled.
          */
-        typedef sigc::signal<void, bool> signal_finish_type;
+        typedef std::function<void(bool)> finish_fn;
         
         /**
          * Operation cancelled exception.
@@ -99,27 +98,37 @@ namespace nuc {
         void cancel();
 
         /**
-         * Emits the finish signal, if it has not been emitted
-         * already, and atomically sets finished to true.
+         * Calls the finish callback functions, if they have not been
+         * called already, and atomically sets finished to true.
+         *
+         * @param cancelled True if the operation was cancelled.
          */
-        void call_finish(bool cancelled);        
+        void call_finish(bool cancelled);
 
         /**
-         * Finished signal, emitted once the operation finishes
-         * (call_finish() is called) or is cancelled.
+         * Adds a finish callback function, which is called once the
+         * operation finishes (call_finish() is called) or is
+         * cancelled.
          *
-         * The signal is guaranteed to be emitted only once as the
-         * operation finishes, or is cancelled. If the operation is
-         * cancelled while in the "no cancel" state, the signal is
-         * emitted as soon as the operation attempts to return to the
-         * "can cancel" state (exit_no_cancel() is called).
+         * The callback function is guaranteed to be called only once,
+         * after the operation finishes or is cancelled. If the
+         * operation is cancelled while in the "no cancel" state, the
+         * function is called as soon as the operation attempts to
+         * return to the "can cancel" state (exit_no_cancel() is
+         * called).
          *
-         * Connecting and disconnecting of signal handlers is not
-         * atomic, therefore should only be done before the operation
-         * is run.
+         * This function is not atomic, thus should only be called
+         * when in the no cancel state or before the operation is run.
+         *
+         * @param fn    The finish callback function.
+         *
+         * @param after If true the callback is called after the
+         *    previous callbacks, otherwise it is called before the
+         *    previous callbacks.
+         *
          */
-        signal_finish_type signal_finish();
-
+        void add_finish_callback(finish_fn fn, bool after = true);
+        
     private:
         /**
          * Cancellation state constants.
@@ -142,8 +151,10 @@ namespace nuc {
          */
         std::atomic_flag finished = ATOMIC_FLAG_INIT;
 
-        /** Finished signal. */
-        signal_finish_type m_signal_finish;
+        /**
+         * Finish callback function.
+         */
+        finish_fn m_finish;
     };
 }
 

@@ -152,8 +152,9 @@ void file_list_controller::vfs_finish_move_up(bool cancelled, int error, bool re
 }
 
 
-void file_list_controller::vfs_dir_deleted() {
-    read_parent_dir();
+void file_list_controller::vfs_dir_deleted(path_str new_path) {
+    if (new_path.empty())
+        read_parent_dir();
 }
 
 
@@ -167,7 +168,9 @@ void file_list_controller::read_parent_dir() {
         prepare_read(false);
 
         set_finish_callback(&file_list_controller::vfs_finish_move_up);
-        vfs->read(cur_path);
+
+        if (!vfs->ascend())
+            vfs->read(cur_path);
     }
     else {
         set_finish_callback(&file_list_controller::vfs_finish);
