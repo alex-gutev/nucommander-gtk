@@ -25,6 +25,8 @@
 
 #include <stdint.h>
 
+#include <gtkmm/liststore.h>
+
 /**
  * Contains type alias used throughout the project.
  */
@@ -45,6 +47,13 @@ namespace nuc {
      */
     template <typename T>
     using file_map = std::unordered_multimap<path_str, T>;
+
+    /**
+     * Context data type for the dir_entry class.
+     */
+    struct dir_entry_context {
+        Gtk::TreeRow row;
+    };
 }
 
 #endif // TYPES_H

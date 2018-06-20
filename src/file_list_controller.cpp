@@ -113,11 +113,6 @@ void file_list_controller::vfs_begin(bool refresh) {
 void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
     Gtk::TreeRow row = *new_list->append();
     create_row(row, ent);
-
-    if (refresh && marked_set.count(ent.file_name())) {
-        row[columns.marked] = true;
-        mark_row(new_list, new_marked_set, row, true);
-    }
 }
 
 void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
@@ -126,11 +121,7 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
             set_updated_list();
         }
         else {
-            set_new_list();
-            restore_selection();
-        
-            // Clear previous path
-            old_path.clear();
+            finish_read();
         }
     }
     else {
@@ -139,9 +130,15 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
 }
 
 void file_list_controller::vfs_finish_move_up(bool cancelled, int error, bool refresh) {
-    if (!error) {
-        set_new_list();
-        restore_selection();
+    if (cancelled) {
+        // Give up trying to move up the directory tree and simply
+        // redisplay old directory
+
+        // Issue: the old path displayed is not the original path.
+        reset_list(false);
+    }
+    else if (!error) {
+        finish_read();
 
         // Restore finish callback to vfs_finish
         set_finish_callback(&file_list_controller::vfs_finish);
@@ -153,8 +150,10 @@ void file_list_controller::vfs_finish_move_up(bool cancelled, int error, bool re
 
 
 void file_list_controller::vfs_dir_deleted(path_str new_path) {
-    if (new_path.empty())
-        read_parent_dir();
+    if (!new_path.empty())
+        cur_path = std::move(new_path);
+    
+    read_parent_dir();
 }
 
 
@@ -179,23 +178,22 @@ void file_list_controller::read_parent_dir() {
 
 
 void file_list_controller::reset_list(bool refresh) {
-    m_signal_path.emit(old_path);
-
-    std::swap(old_path, cur_path);
-
     // Clear new list
     new_list->clear();
 
     if (!refresh) {
+        m_signal_path.emit(old_path);
+        std::swap(old_path, cur_path);
+        
         // Reset to old list
         view->set_model(cur_list);
 
         // Select previously selected row
-        select_row(selected_row);        
-    }
+        select_row(selected_row);
         
-    // Reset move to old flag
-    move_to_old = false;
+        // Reset move to old flag
+        move_to_old = false;
+    }
 }
 
 void file_list_controller::set_updated_list() {
@@ -204,28 +202,59 @@ void file_list_controller::set_updated_list() {
     bool selection = false;
     path_str name;
     index_type index;
-    
+
     if (row) {
+        // Get name of selected row's entry
         dir_entry *ent = row[columns.ent];
         name = ent->file_name();
+
+        // Get index of selected row
         index = view->get_model()->get_path(row)[0];
         
         selection = true;
     }
 
-    set_new_list();
+    set_new_list(false);
 
-    std::swap(marked_set, new_marked_set);
+    update_marked_set();
 
     if (selection)
-        select_named(name, index);    
+        select_named(name, index);
 }
 
-void file_list_controller::set_new_list() {
+void file_list_controller::update_marked_set() {
+    auto it = marked_set.begin(), end = marked_set.end();
+
+    while (it != end) {
+        auto entries = vfs->get_entries(it->first);
+
+        if (std::distance(entries.first, entries.second) != 1) {
+            it = marked_set.erase(it);
+            continue;
+        }
+        else {
+            mark_row(it->second = entries.first->second.context.row, true);
+        }
+
+        ++it;
+    }
+}
+
+
+void file_list_controller::finish_read() {
+    set_new_list(true);
+    restore_selection();
+
+    // Clear previous path
+    old_path.clear();
+}
+
+void file_list_controller::set_new_list(bool clear_marked) {
     vfs->commit_read();
 
     // Clear marked set
-    marked_set.clear();
+    if (clear_marked)
+        marked_set.clear();
 
     // Sort new_list using cur_list's sort order
     set_sort_column();
@@ -252,6 +281,8 @@ void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
     row[columns.marked] = false;
+
+    ent.context.row = row;
 }
 
 
@@ -262,24 +293,24 @@ void file_list_controller::mark_row(Gtk::TreeRow row) {
     dir_entry *ent = row[columns.ent];
     
     if (ent->type() != DT_PARENT) {
-        bool marked = row[columns.marked] = !row[columns.marked];
+        bool mark = !row[columns.marked];
+        dir_entry *ent = row[columns.ent];
 
-        mark_row(cur_list, marked_set, row, marked);
+        if (mark) {
+            marked_set.emplace(ent->file_name(), row);
+        }
+        else {
+            marked_set.erase(ent->file_name());
+        }
+        
+        mark_row(row, mark);        
     }
 }
 
 
-void file_list_controller::mark_row(Glib::RefPtr<Gtk::ListStore> model, entry_set& set, Gtk::TreeRow row, bool marked) {
-    dir_entry *ent = row[columns.ent];
-    
+void file_list_controller::mark_row(Gtk::TreeRow row, bool marked) {
+    row[columns.marked] = marked;
     row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
-
-    if (marked) {
-        set.emplace(ent->file_name(), Gtk::TreeRowReference(model, model->get_path(row)));
-    }
-    else {
-        set.erase(ent->file_name());
-    }
 }
 
 
@@ -312,7 +343,7 @@ void file_list_controller::restore_selection() {
     }
     else {
         select_row(0);
-    }    
+    }
 }
 
 void file_list_controller::select_old() {
@@ -394,7 +425,6 @@ bool file_list_controller::on_keypress(const GdkEventKey *e) {
 }
 
 
-
 bool file_list_controller::keypress_return() {
     auto row = *view->get_selection()->get_selected();
 
@@ -446,6 +476,9 @@ void file_list_controller::prepare_read(bool move_to_old) {
     // Set model to empty list to display an empty tree view without
     // discarding the old list
     view->set_model(empty_list);
+
+    // Todo: Text widget should be disabled to prevent multiple read
+    // operations from being initiated, resulting in a race condition.
 }
 
 void file_list_controller::path(const std::string &path, bool move_to_old) {

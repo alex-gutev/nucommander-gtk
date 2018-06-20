@@ -58,16 +58,19 @@ namespace nuc {
         /**
          * Marked entries set type.
          *
-         * TODO: use a multi_map as archives may have duplicate files.
+         * Maps file names to row iterators (Gtk::TreeRow). Row
+         * iterators are used, instead of row references, as
+         * Gtk::ListStore supports persistent iterators.
          */
-        typedef std::unordered_map<std::string, Gtk::TreeRowReference> entry_set;
+        typedef std::unordered_multimap<std::string, Gtk::TreeRow> entry_set;
 
         /**
          * Pointer to method type with the same signature as the
          * finish callback.
          */
         typedef void(file_list_controller::*finish_method)(bool, int, bool);
-        
+
+
         /* Paths */
         
         /**
@@ -174,14 +177,6 @@ namespace nuc {
          *
          */
         entry_set marked_set;
-
-        /**
-         * Set of marked entries after a directory refresh.
-         *
-         * This set is updated while the directory is being refreshed,
-         * after which it is swapped with marked_set.
-         */
-        entry_set new_marked_set;
         
 
         /* Private Methods */
@@ -291,17 +286,33 @@ namespace nuc {
         /**
          * Switches the tree view's model to 'new_list' and restores
          * the previous selection if an entry with the same name, as
-         * the previously selected entry, still exits.
-         *
-         * TODO: Update marked set.
+         * the previously selected entry, still exits. Updates the
+         * marked set.
          */
         void set_updated_list();
+
+        /**
+         * Updates the marked set, after a directory refresh.
+         *
+         * Removes entries which no longer exists and updates the row
+         * iterators of those entries which do exist to their new row
+         * positions.
+         */
+        void update_marked_set();
+
+        /**
+         * Sets the tree view's model to the new list, sets the
+         * selection and clears the old path.
+         */
+        void finish_read();
         
         /**
          * Switches the tree view's model to 'new_list', clears
          * 'cur_list' and swaps the two models.
+         *
+         * @param clear_marked If true the marked set is cleared.
          */
-        void set_new_list();
+        void set_new_list(bool clear_marked);
 
         /**
          * Fills in the tree view row's columns with the details of
@@ -351,21 +362,29 @@ namespace nuc {
         /* Marking */
 
         /**
-         * Marks the row at index 'row'.
+         * Toggles the marked state of a row, and updates the marked
+         * set.
+         *
+         * If the row is not marked, it is marked and added to the
+         * marked set. If the row is marked it is unmarked and removed
+         * from the marked set.
+         *
+         * @param row Iterator to the row to toggle mark.
          */
         void mark_row(Gtk::TreeRow row);
 
         /**
-         * Sets the row's marked attributes and adds/removes a tree
-         * row reference to it to/from the marked set.
+         * Marks/Unmarks a row. 
          *
-         * @param model  The model containing the entry row.
-         * @param set    Reference to the marked set to update.
-         * @param row    The entry's row.
-         * @param marked True if the entry is marked, false otherwise.
+         * The marked attributes (marked flag, colour, etc) of the row
+         * are changed however the marked set is not modified.
+         *
+         * @param row    Iterator to the row to mark/unmark.
+         * @param marked True if the row should be marked.
          */
-        void mark_row(Glib::RefPtr<Gtk::ListStore> model, entry_set &set, Gtk::TreeRow row, bool marked);
+        void mark_row(Gtk::TreeRow row, bool marked);
 
+        
         /** Signal Handlers */
 
         /**

@@ -180,6 +180,26 @@ void vfs::finish_read_subdir(bool cancelled, const path_str &subpath) {
     });
 }
 
+void vfs::refresh_subdir() {
+    if (!cur_tree->at_basedir() && !cur_tree->subpath_dir(cur_tree->subpath())) {
+        path_str subpath = cur_tree->subpath();
+
+        cur_tree->subpath(removed_last_component(cur_tree->subpath()));
+
+        // While the subpath is not at the base directory and the
+        // subdirectory does not exist
+        while (!cur_tree->at_basedir() && !cur_tree->subpath_dir(cur_tree->subpath())) {
+            cur_tree->subpath(removed_last_component(cur_tree->subpath()));
+            remove_last_component(subpath);
+        }
+
+        cur_tree->subpath(subpath);
+        sig_deleted.emit(appended_component(cur_type.path(), subpath));
+    }
+}
+
+
+
 /// Cancellation
 
 void vfs::cancel_update() {
@@ -349,6 +369,10 @@ void vfs::file_event(dir_monitor::event e) {
         // Directory events
         case dir_monitor::DIR_DELETED:
             monitor.cancel();
+
+            // Reset to base directory so that attempts to ascend up
+            // the tree fail.
+            cur_tree->subpath("");
             sig_deleted.emit(cur_type.path());
             break;
             
@@ -487,7 +511,8 @@ void vfs::call_finish(bool cancelled, int error, bool refresh) {
         if (cancelled || error) queue->resume();
 
         if (refresh && !cancelled && !error) {
-            // Check that subpath still exists
+            // Check that the current tree's subpath still exists.
+            self->refresh_subdir();
         }
     });
 }

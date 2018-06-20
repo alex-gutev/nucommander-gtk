@@ -130,6 +130,9 @@ namespace nuc {
         virtual bool at_basedir() const {
             return m_subpath.empty();
         }
+
+        virtual dir_entry *get_entry(const path_str &name);
+        virtual entry_range get_entries(const path_str &name);
 	};
 }
 

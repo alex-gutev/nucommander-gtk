@@ -73,6 +73,14 @@ namespace nuc {
         struct stat m_attr;
         
     public:
+
+        /**
+         * Stores context data. This field is not used by the vfs
+         * class.
+         */
+        dir_entry_context context;
+
+
         /**
          * Constructs a 'dir_entry' object with a given name and type,
          * which is stored in the entry type and 'mode' stat

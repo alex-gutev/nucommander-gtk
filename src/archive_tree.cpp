@@ -117,6 +117,15 @@ bool archive_tree::is_subdir(const dir_entry& ent) const {
     return ent.type() == DT_DIR && dirs.count(ent.subpath());
 }
 
+dir_entry *archive_tree::get_entry(const path_str &name) {
+    return dir_tree::get_entry(canonicalized_path(appended_component(m_subpath, name)));
+}
+
+dir_tree::entry_range archive_tree::get_entries(const path_str &name) {
+    return dir_tree::get_entries(canonicalized_path(appended_component(m_subpath, name)));
+}
+
+
 // Local Variables:
 // indent-tabs-mode: nil
 // End:

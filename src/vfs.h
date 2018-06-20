@@ -491,6 +491,34 @@ namespace nuc {
         void for_each(F f);
 
         /**
+         * Returns the first entry with name @a name in the current
+         * subdirectory.
+         *
+         * @param name The name of the entry.
+         *
+         * @return Pointer to the entry, 'nullptr' if no entry with
+         *    name @a name found.
+         */
+        dir_entry *get_entry(const path_str &name) {
+            return cur_tree->get_entry(name);
+        }
+
+        /**
+         * Returns all entries with name @a name in the current
+         * subdirectory.
+         *
+         * @param name The name of the entry/entries to return.
+         *
+         * @return A pair of iterators, the first iterator points to
+         *    the first entry, the second iterator is the past the
+         *    end iterator.
+         */
+        dir_tree::entry_range get_entries(const path_str &path) {
+            return cur_tree->get_entries(path);
+        }
+        
+        
+        /**
          * Asynchronous cleanup method.
          *
          * Calls the cleanup method once all background tasks have

@@ -53,6 +53,13 @@ namespace nuc {
     public:
 
         /**
+         * Iterator range type. A pair of iterators is returned by
+         * get_entries, which corresponds to all entries with a
+         * particular name.
+         */
+        typedef std::pair<file_map<dir_entry>::iterator, file_map<dir_entry>::iterator> entry_range;
+        
+        /**
          * Directory map type.
          *
          * A directory map is an unordered multi-map map of the
@@ -146,16 +153,16 @@ namespace nuc {
         }
         
         /**
-         * Retrieves the first entry from the tree, at a particular
-         * subpath.
+         * Retrieves the first entry with name @name in the current
+         * subdirectory.
          *
-         * @param subpath The subpath to the entry
+         * @param name The name to the entry.
          *
-         * @return The pointer to the first entry with subpath @a subpath',
-         * 'nullptr' if the entry was not found in the tree.
+         * @return Pointer to the entry, 'nullptr' if the entry was
+         *    not found.
          */
-        dir_entry *get_entry(const path_str &subpath) {
-            auto it = map.find(subpath);
+        virtual dir_entry *get_entry(const path_str &name) {
+            auto it = map.find(name);
 
             if (it != map.end()) {
                 return &it->second;
@@ -165,14 +172,17 @@ namespace nuc {
         }
 
         /**
-         * Returns all entries with a given subpath, as a pair where
-         * the first element is the iterator to the first entry, and
-         * the second element is the past-the-end iterator.
+         * Returns all entries with name @name in the current
+         * subdirectory.
          *
-         * @param subpath:  The subpath to the entry/entries.
+         * @param name The name of the entries.
+         *
+         * @return A pair of iterators where the first iterator is the
+         *   iterator to the first entry and the second iterator is
+         *   the past the end iterator.
          */
-        auto get_entries(const path_str &subpath) -> decltype(map.equal_range(subpath)) {
-            return map.equal_range(subpath);
+        virtual entry_range get_entries(const path_str &name) {
+            return map.equal_range(name);
         }
 
         /**
