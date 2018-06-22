@@ -84,65 +84,68 @@ void vfs::finalize() {
 }
 
 
-void vfs::read(const path_str& path) {
+void vfs::read(const path_str& path, finish_fn finish) {
     cancel_update();
 
-    add_read_task(path, false);
+    add_read_task(path, false, finish);
 }
 
-void vfs::add_read_task(const std::string &path, bool refresh) {
+void vfs::add_read_task(const std::string &path, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
     
     queue_task(std::bind(&vfs::read_path, _1, _2, path, refresh),
-               std::bind(&vfs::finish_read, _1, _2, refresh));
+               std::bind(&vfs::finish_read, _1, _2, refresh, finish));
 }
 
-void vfs::add_read_task(dir_type type, bool refresh) {
+void vfs::add_read_task(dir_type type, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
 
     queue_task(std::bind(&vfs::list_dir, _1, _2, std::move(type), refresh),
-               std::bind(&vfs::finish_read, _1, _2, refresh));
+               std::bind(&vfs::finish_read, _1, _2, refresh, finish));
 }
 
 void vfs::add_refresh_task() {
     using namespace std::placeholders;
 
-    add_read_task(cur_type, true);
+    if (finish_fn fn = cb_changed())
+        add_read_task(cur_type, true, fn);
 }
 
 
 /// Changing directory tree subdirectories
 
-bool vfs::descend(const dir_entry &ent) {
+bool vfs::descend(const dir_entry &ent, finish_fn finish) {
     if (cur_tree->is_subdir(ent)) {
-        add_read_subdir(ent.subpath());
+        add_read_subdir(ent.subpath(), finish);
         return true;
     }
     else {
         if (dir_type type = dir_type::get(cur_type.path(), ent)) {
             cancel_update();
-            add_read_task(type, false);
+            add_read_task(type, false, finish);
             return true;
         }
 
-        return false;     
+        return false;
     }
 }
 
-bool vfs::ascend() {
+bool vfs::ascend(finish_fn finish) {
     if (!cur_tree->at_basedir()) {
-        add_read_subdir(removed_last_component(cur_tree->subpath()));
+        add_read_subdir(removed_last_component(cur_tree->subpath()), finish);
         return true;
     }
 
     return false;
 }
 
-void vfs::add_read_subdir(const path_str &subpath) {
+void vfs::add_read_subdir(const path_str &subpath, finish_fn finish) {
     using namespace std::placeholders;
 
+    monitor.pause();
+    
     queue_task(std::bind(&vfs::read_subdir, _1, _2, subpath),
-               std::bind(&vfs::finish_read_subdir, _1, _2, subpath));
+               std::bind(&vfs::finish_read_subdir, _1, _2, subpath, finish));
 }
 
 void vfs::read_subdir(cancel_state &state, const path_str &subpath) {
@@ -164,7 +167,7 @@ void vfs::read_subdir(cancel_state &state, const path_str &subpath) {
     }
 }
 
-void vfs::finish_read_subdir(bool cancelled, const path_str &subpath) {
+void vfs::finish_read_subdir(bool cancelled, const path_str &subpath, finish_fn finish) {
     queue->pause();
     
     queue_main([=] (vfs *self) {
@@ -172,10 +175,11 @@ void vfs::finish_read_subdir(bool cancelled, const path_str &subpath) {
             self->cur_tree->subpath(subpath);
         }
 
-        self->cb_finish(cancelled, op_error, false);
+        finish(cancelled, !cancelled ? op_error : 0, false);
 
         if (cancelled || self->op_error) {
             self->queue->resume();
+            self->resume_monitor();
         }
     });
 }
@@ -211,11 +215,16 @@ void vfs::cancel_update() {
         queue->cancel();    
 }
 
-void vfs::cancel() {
+bool vfs::cancel() {
     // If reading is true the directory monitor is paused. Thus if
     // reading is true there are no queued update tasks.
     
-    if (reading) queue->cancel();
+    if (reading) {
+        queue->cancel();
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -228,7 +237,7 @@ void vfs::commit_read() {
     }
 
     if (reading) {
-        std::swap(cur_type, new_type);
+        cur_type = std::move(new_type);
         new_type = dir_type();
         
         monitor_dir();
@@ -289,7 +298,7 @@ void vfs::add_entry(cancel_state &state, bool refresh, const lister::entry &ent,
 }
 
 
-void vfs::finish_read(bool cancelled, bool refresh) {
+void vfs::finish_read(bool cancelled, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
 
     if (cancelled || op_error) {
@@ -298,6 +307,7 @@ void vfs::finish_read(bool cancelled, bool refresh) {
 
         reading = false;
 
+        // If not a cancelled update operation
         if (!cancelled || !refresh) {
             if (refresh || !updating) {
                 updating = false;
@@ -307,8 +317,8 @@ void vfs::finish_read(bool cancelled, bool refresh) {
                 // resumes the old directory monitor
                 queue_main(std::bind(&vfs::resume_monitor, _1));
             }
-            else {
-                // Reread directory as update tasks were cancelled
+            else { // Update tasks were cancelled when read task initiated
+                // Reread directory
                 add_refresh_task();
                 
                 // Start new monitor for current directory.  Should be
@@ -319,7 +329,7 @@ void vfs::finish_read(bool cancelled, bool refresh) {
         }
     }
 
-    call_finish(cancelled, !cancelled ? op_error : 0, refresh);
+    call_finish(finish, cancelled, !cancelled ? op_error : 0, refresh);
 }
 
 void vfs::resume_monitor() {
@@ -346,7 +356,8 @@ void vfs::file_event(dir_monitor::event e) {
             break;
             
         case dir_monitor::EVENTS_END:
-            queue_task(std::bind(&vfs::end_changes, _1, _2));
+            if (finish_fn finish = cb_changed())
+                queue_task(std::bind(&vfs::end_changes, _1, _2, finish));
             break;
         
         // File events
@@ -394,15 +405,15 @@ void vfs::begin_changes(cancel_state &state) {
     });
 }
 
-void vfs::end_changes(cancel_state &state) {
-    state.no_cancel([=] {
+void vfs::end_changes(cancel_state &state, finish_fn finish) {
+    state.no_cancel([&] {
         cb_begin(true);
 
         for (auto &ent : *new_tree) {
             call_new_entry(ent.second, true);
         }
 
-        call_finish(false, 0, true);
+        call_finish(finish, false, 0, true);
     });
 }
 
@@ -500,15 +511,15 @@ void vfs::call_new_entry(dir_entry &ent, bool refresh) {
     cb_new_entry(ent, refresh);
 }
 
-void vfs::call_finish(bool cancelled, int error, bool refresh) {
+void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool refresh) {
     // Pause queue to prevent update tasks from being run before
     // commit_read is called.
     
     queue->pause();
     
     queue_main([=] (vfs *self) {
-        self->cb_finish(cancelled, error, refresh);
-        if (cancelled || error) queue->resume();
+        finish(cancelled, error, refresh);
+        if (cancelled || error) self->queue->resume();
 
         if (refresh && !cancelled && !error) {
             // Check that the current tree's subpath still exists.

@@ -74,13 +74,6 @@ namespace nuc {
         /* Paths */
         
         /**
-         * The path prior to initiating a read operation for the new
-         * path.
-         *
-         * Used to reset the path if the operation fails or is cancelled.
-         */
-        std::string old_path;
-        /**
          * The current path.
          */
         std::string cur_path;
@@ -204,12 +197,6 @@ namespace nuc {
          */
         void init_vfs();
 
-        /**
-         * Sets a method of this class as the finish callback
-         * function.
-         */
-        void set_finish_callback(finish_method method);
-
 
         /* Callbacks */
 
@@ -224,7 +211,7 @@ namespace nuc {
         /**
          * VFS finish callback.
          */
-        void vfs_finish(bool cancelled, int error, bool refresh);
+        void vfs_finish(path_str new_path, bool cancelled, int error, bool refresh);
 
         /**
          * VFS finish callback for moving up the directory tree when
@@ -238,7 +225,17 @@ namespace nuc {
          * root directory, an attempt is made to read its parent
          * directory.
          */
-        void vfs_finish_move_up(bool cancelled, int error, bool refresh);
+        void vfs_finish_move_up(path_str new_path, bool cancelled, int error, bool refresh);
+
+        /**
+         * Directory changed callback.
+         *
+         * Called when the directory has changed, prior to initiating
+         * an update operation.
+         *
+         * @return The finish callback for the update operation.
+         */
+        vfs::finish_fn vfs_dir_changed();
         
         /**
          * Directory deleted signal handler.
@@ -249,14 +246,6 @@ namespace nuc {
         /* Reading new directories */
 
         /**
-         * Sets the current path (cur_path) to @a path and sets the
-         * old path (old_path) to the previous value of cur_path.
-         *
-         * @param path The new path.
-         */
-        void set_path(path_str path);
-
-        /**
          * Records the current selected row in selected_row, sets the
          * value of move_to_old and sets the view's model to the empty
          * list.
@@ -264,16 +253,35 @@ namespace nuc {
          * @param move_to_old The value of move_to_old to set.
          */
         void prepare_read(bool move_to_old);
+
+        /**
+         * Clears the tree view's contents by setting its model to the
+         * empty list.
+         */
+        void clear_view();
+
+        /**
+         * Creates the finish callback. Binds the vfs_finish method's
+         * this pointer and new_path parameter to @a path.
+         *
+         * @param path The path being read.
+         *
+         * @return The finish callback function.
+         */
+        vfs::finish_fn read_finish_callback(path_str path);
+
         
         /**
          * Initiates a read operation for the parent directory of the
-         * current directory, if it is not the root directory. The
-         * finish callback is set to vfs_finish_move_up.
+         * current directory, if it is not the root directory.
          *
          * This function should be used only to move to the parent
          * directory when the current directory has been deleted.
+         *
+         * @param path The path of the directory whose parent
+         *    directory to read.
          */
-        void read_parent_dir();
+        void read_parent_dir(path_str path);
         
 
         /* Resetting/Setting the treeview model */
@@ -301,10 +309,20 @@ namespace nuc {
         void update_marked_set();
 
         /**
-         * Sets the tree view's model to the new list, sets the
-         * selection and clears the old path.
+         * Adds the parent ".." pseudo-entry to the new list if the
+         * path (@a new_path) is not the root directory.
+         *
+         * @param new_path The path of the directory being read.
          */
-        void finish_read();
+        void add_parent_entry(const path_str &new_path);
+        
+        /**
+         * Sets the tree view's model to the new list, sets the
+         * selection and sets cur_path to @a new_path.
+         *
+         * @param new_path The path of the directory just read.
+         */
+        void finish_read(path_str new_path);
         
         /**
          * Switches the tree view's model to 'new_list', clears

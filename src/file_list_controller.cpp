@@ -89,25 +89,16 @@ void file_list_controller::init_vfs() {
     
     vfs->callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
     vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1, _2));
-    set_finish_callback(&file_list_controller::vfs_finish);
+
+    vfs->callback_changed(std::bind(&file_list_controller::vfs_dir_changed, this));
 
     vfs->signal_deleted().connect(sigc::mem_fun(this, &file_list_controller::vfs_dir_deleted));
 }
-
-void file_list_controller::set_finish_callback(finish_method method) {
-    using namespace std::placeholders;
-    
-    vfs->callback_finish(std::bind(method, this, _1, _2, _3));    
-}
-
 
 
 void file_list_controller::vfs_begin(bool refresh) {
     // Disable sorting while adding new entries to improve performance.
     new_list->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_ASCENDING);
-    
-    if (!is_root_path(cur_path))
-        create_row(*new_list->append(), parent_entry);
 }
 
 void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
@@ -115,13 +106,15 @@ void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
     create_row(row, ent);
 }
 
-void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
+void file_list_controller::vfs_finish(path_str new_path, bool cancelled, int error, bool refresh) {
     if (!error && !cancelled) {
+        add_parent_entry(new_path);
+        
         if (refresh) {
             set_updated_list();
         }
         else {
-            finish_read();
+            finish_read(std::move(new_path));
         }
     }
     else {
@@ -129,50 +122,37 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
     }
 }
 
-void file_list_controller::vfs_finish_move_up(bool cancelled, int error, bool refresh) {
-    if (cancelled) {
-        // Give up trying to move up the directory tree and simply
-        // redisplay old directory
-
-        // Issue: the old path displayed is not the original path.
-        reset_list(false);
-    }
-    else if (!error) {
-        finish_read();
-
-        // Restore finish callback to vfs_finish
-        set_finish_callback(&file_list_controller::vfs_finish);
+void file_list_controller::vfs_finish_move_up(path_str path, bool cancelled, int error, bool refresh) {
+    if (!cancelled && !error) {
+        m_signal_path.emit(path);
+        
+        add_parent_entry(path);
+        finish_read(std::move(path));
     }
     else {
-        read_parent_dir();
+        read_parent_dir(std::move(path));
     }
 }
 
+vfs::finish_fn file_list_controller::vfs_dir_changed() {
+    return read_finish_callback(cur_path);
+}
 
 void file_list_controller::vfs_dir_deleted(path_str new_path) {
-    if (!new_path.empty())
-        cur_path = std::move(new_path);
-    
-    read_parent_dir();
+    read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
 
 
-void file_list_controller::read_parent_dir() {
+void file_list_controller::read_parent_dir(path_str path) {
     using namespace std::placeholders;
 
-    if (!is_root_path(cur_path)) {
-        set_path(removed_last_component(cur_path));
-        m_signal_path.emit(cur_path);
+    if (!is_root_path(path)) {
+        remove_last_component(path);
 
-        prepare_read(false);
+        vfs::finish_fn finish = std::bind(&file_list_controller::vfs_finish_move_up, this, path, _1, _2, _3);
 
-        set_finish_callback(&file_list_controller::vfs_finish_move_up);
-
-        if (!vfs->ascend())
-            vfs->read(cur_path);
-    }
-    else {
-        set_finish_callback(&file_list_controller::vfs_finish);
+        if (!vfs->ascend(finish))
+            vfs->read(path, finish);
     }
 }
 
@@ -182,8 +162,7 @@ void file_list_controller::reset_list(bool refresh) {
     new_list->clear();
 
     if (!refresh) {
-        m_signal_path.emit(old_path);
-        std::swap(old_path, cur_path);
+        m_signal_path.emit(cur_path);
         
         // Reset to old list
         view->set_model(cur_list);
@@ -241,12 +220,16 @@ void file_list_controller::update_marked_set() {
 }
 
 
-void file_list_controller::finish_read() {
+void file_list_controller::add_parent_entry(const path_str &new_path) {
+    if (!is_root_path(new_path))
+        create_row(*new_list->append(), parent_entry);    
+}
+
+void file_list_controller::finish_read(path_str new_path) {
     set_new_list(true);
     restore_selection();
 
-    // Clear previous path
-    old_path.clear();
+    cur_path = std::move(new_path);
 }
 
 void file_list_controller::set_new_list(bool clear_marked) {
@@ -347,7 +330,7 @@ void file_list_controller::restore_selection() {
 }
 
 void file_list_controller::select_old() {
-    select_named(file_name(old_path), 0);
+    select_named(file_name(cur_path), 0);
 }
 
 void file_list_controller::select_named(const path_str &name, index_type row_ind) {
@@ -440,7 +423,7 @@ bool file_list_controller::keypress_return() {
 }
 
 bool file_list_controller::keypress_escape() {
-    vfs->cancel();
+    return vfs->cancel();
 }
 
 bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
@@ -464,57 +447,55 @@ void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool 
 
 // Changing the path
 
-void file_list_controller::set_path(path_str path) {
-    std::swap(old_path, cur_path);
-    cur_path = std::move(path);
-}
-
 void file_list_controller::prepare_read(bool move_to_old) {
     selected_row = selected_row_index();
     this->move_to_old = move_to_old;
-    
+
+    clear_view();
+}
+
+void file_list_controller::clear_view() {
     // Set model to empty list to display an empty tree view without
     // discarding the old list
     view->set_model(empty_list);
+}
 
-    // Todo: Text widget should be disabled to prevent multiple read
-    // operations from being initiated, resulting in a race condition.
+vfs::finish_fn file_list_controller::read_finish_callback(path_str path) {
+    using namespace std::placeholders;
+
+    return std::bind(&file_list_controller::vfs_finish, this, std::move(path), _1, _2, _3);
 }
 
 void file_list_controller::path(const std::string &path, bool move_to_old) {
     prepare_read(move_to_old);
-    set_path(path);
-
-    vfs->read(path);
+    vfs->read(path, read_finish_callback(path));
 }
 
 bool file_list_controller::descend(const dir_entry& ent) {
     if (ent.ent_type() == DT_PARENT) {
-        set_path(removed_last_component(cur_path));
-        m_signal_path.emit(cur_path);
-
+        path_str new_path(removed_last_component(cur_path));
+        auto finish = read_finish_callback(new_path);
+        
+        m_signal_path.emit(new_path);
         prepare_read(true);
 
-        if (!vfs->ascend()) {
-            vfs->read(cur_path);
+        if (!vfs->ascend(finish)) {
+            vfs->read(new_path, finish);
         }
 
         return true;
     }
     else {
-        set_path(appended_component(cur_path, ent.file_name()));
+        path_str new_path(appended_component(cur_path, ent.file_name()));
+        auto finish = read_finish_callback(new_path);
 
-        if (vfs->descend(ent)) {
+        if (vfs->descend(ent, finish)) {
             prepare_read(false);
-            m_signal_path.emit(cur_path);
+            m_signal_path.emit(new_path);
             
             return true;
         }
-        else {
-            std::swap(cur_path, old_path);
-            old_path.clear();
-
-            return false;
-        }        
+        
+        return false;
     }
 }

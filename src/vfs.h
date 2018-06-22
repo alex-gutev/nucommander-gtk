@@ -175,185 +175,6 @@ namespace nuc {
          */
         void finalize();
 
-        
-        /* Reading Tasks */
-
-        /**
-         * Adds a read task to the task queue.
-         *
-         * @param path The path of the directory to read
-         *
-         * @param refresh True if the current directory is being
-         *   reread, false if a new directory is being read.
-         */
-        void add_read_task(const std::string &path, bool refresh);
-
-        /**
-         * Adds a read task to the task queue.
-         *
-         * @param type The dir_type object of the directory to be
-         *   read.
-         *
-         * @param refresh True if the current directory is being
-         *   reread, false if a new directory is being read.
-         */
-        void add_read_task(dir_type type, bool refresh);
-
-        /**
-         * Adds a directory refresh task, for the current directory,
-         * to the background task queue.
-         */
-        void add_refresh_task();
-        
-        /**
-         * Reads the directory at @a path.
-         *
-         * @param state The cancellation state.
-         *
-         * @param path  The path to read.
-         *
-         * @param refresh True if the directory is being reread.
-         */
-        void read_path(cancel_state &state, const std::string &path, bool refresh);
-
-        /**
-         * Reads the directory using the lister and dir_tree objects
-         * created by the dir_type object @a type.
-         *
-         * @param state The cancellation state.
-         *
-         * @param type  The dir_type object for the directory to be
-         *   read.
-         *
-         * @param refresh True if the directory is being reread.
-         */
-        void list_dir(cancel_state &state, dir_type type, bool refresh);
-        
-        /**
-         * Read task finish callback. Calls the finish callback.
-         */
-        void finish_read(bool cancelled, bool refresh);
-
-        
-        /**
-         * Adds an entry to the 'new_tree' directory tree. The adding
-         * of the entry is performed with the cancellation state set
-         * to "no cancel".
-         */
-        void add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st);
-
-        /**
-         * Cancels all tasks on the task queue and cancels the
-         * directory monitor to prevent more update tasks from being
-         * queued.
-         */
-        void cancel_update();
-
-
-        /* Reading subdirectories */
-
-        /**
-         * Adds a read task for the subdirectory @a subpath, of the
-         * current directory tree, to the background task queue.
-         *
-         * @param subpath The subpath to read.
-         */
-        void add_read_subdir(const path_str &subpath);
-        
-        /**
-         * Read subdirectory task. 
-         *
-         * Reads the subdirectory of the directory tree if it
-         * exists. The subdirectory is obtained and the callback
-         * functions are called as though a read operation is being
-         * carried out.
-         *
-         * @param state  The cancellation state.
-         * @param subdir The subdirectory to read.
-         */
-        void read_subdir(cancel_state &state, const path_str &subdir);
-
-        /**
-         * Read subdirectory task finish callback.
-         *
-         * Queues a task on the main thread, which sets the subpath of
-         * the directory tree and calls the finish callback.
-         */
-        void finish_read_subdir(bool cancelled, const path_str &subdir);
-
-        /**
-         * Checks whether the current subdirectory of the directory
-         * tree still exists. If not the first parent directory of the
-         * subdirectory is read.
-         */
-        void refresh_subdir();
-        
-        
-        /* Directory Monitoring */
-
-        dir_monitor monitor;
-
-        /**
-         * Begins monitoring the current directory.
-         */
-        void monitor_dir(bool paused = false);
-
-        /**
-         * Resumes the directory monitor.
-         *
-         * May only be called from the main thread.
-         */
-        void resume_monitor();
-        
-        /**
-         * Signal handler for the file event signal.
-         */
-        void file_event(dir_monitor::event e);
-
-        /**
-         * Event handler for the EVENTS_BEGIN event. This event is
-         * sent before the first event in a series of events.
-         */
-        void begin_changes(cancel_state &state);
-
-        /**
-         * Event handler for the EVENTS_END event. This event is sent
-         * after a time interval has elapsed after the last event.
-         */
-        void end_changes(cancel_state &state);
-
-        /**
-         * Handler functions for the create, change, delete and rename
-         * file events.
-         */
-        void file_created(cancel_state &state, const path_str &path);
-        void file_changed(cancel_state &state, const path_str &path);
-        void file_deleted(cancel_state &state, const path_str &path);
-        void file_renamed(cancel_state &state, const path_str &src, const path_str &dest);
-
-        /**
-         * Removes an entry from the new directory tree (new_tree).
-         *
-         * @param subpath The subpath of the entry
-         */
-        void remove_entry(const path_str &subpath);
-        
-        /**
-         * Obtains the stat attributes of a file. First the stat
-         * system call is attempted, if that fails the lstat system
-         * call is attempted.
-         *
-         * @param path The file path.
-         *
-         * @param st   Pointer to the stat struct where the stat
-         *             attributes will be read into
-         *
-         * @return true if successful, false if both stat and lstat
-         *         failed.
-         */
-        static bool file_stat(const path_str &path, struct stat *st);
-        
-        
     public:
         /**
          * Begin callback function type. 
@@ -392,6 +213,15 @@ namespace nuc {
         typedef std::function<void(bool, int, bool)> finish_fn;
 
         /**
+         * Directory changed callback function type.
+         *
+         * The return value is the finish callback function to call
+         * after completing the update operation. If an empty function
+         * is returned the update operation is not initiated.
+         */
+        typedef std::function<finish_fn()> changed_fn;
+        
+        /**
          * Signal type, of the signal sent when the directory has been
          * deleted.
          */
@@ -418,10 +248,19 @@ namespace nuc {
         template <typename F>
         void callback_new_entry(F&& fn);
         /**
-         * Sets the finish callback function.
+         * Sets the directory changed callback function.
+         *
+         * The callback function is called after the directory has
+         * changed and prior to initiating an update operation to
+         * refresh the vfs. The function should return the finish
+         * callback to call after completing the update operation. If
+         * an empty function is returned, the update operation is not
+         * initiated.
+         *
+         * @param fn The update callback function.
          */
         template <typename F>
-        void callback_finish(F&& fn);
+        void callback_changed(F&& fn);
 
         /**
          * Returns the deleted signal, which is emitted when the
@@ -433,22 +272,31 @@ namespace nuc {
          * Initiates a background read operation for the directory at
          * 'path'.
          *
-         * Should only be called on the main thread, and should not be
-         * called again until the finish callback is called.
+         * Should only be called on the main thread.
+         *
+         * @param path The path of the directory to read.
+         *
+         * @param finish The finish callback function to call once the
+         *    operation completes.
          */
-        void read(const path_str &path);
+        void read(const path_str &path, finish_fn finish);
 
         /**
          * Attempts to list the contents of the entry @a ent.
+         *
+         * Should only be called on the main thread.
          *
          * @param ent The entry to list, must be an entry which was
          *   passed to the add entry callback between the last
          *   invocations of the begin and end callbacks.
          *
+         * @param finish The finish callback function to call once the
+         *    operation completes.
+         *
          * @return True if the entry is a directory which can be
          *   listed, false otherwise.
          */
-        bool descend(const dir_entry &ent);
+        bool descend(const dir_entry &ent, finish_fn finish);
 
         /**
          * Attempts to list the contents of the parent directory. This
@@ -457,16 +305,25 @@ namespace nuc {
          * once. Otherwise the parent directory has to be read using
          * the read() method.
          *
+         * Should only be called on the main thread.
+         *
+         * @param finish The finish callback function to call once the
+         *    operation completes.
+         *
          * @return True if the parent directory's contents were
          *   listed, false otherwise.
          */
-        bool ascend();
+        bool ascend(finish_fn finish);
         
         /**
-         * Cancels the background operation if any. The operation is
-         * considered cancelled when the finish callback is called.
+         * Cancels the current background operation if any. The
+         * operation is considered cancelled when the finish callback
+         * is called.
+         *
+         * @return True if there was an ongoing read operation that
+         *    was cancelled.
          */
-        void cancel();
+        bool cancel();
         
         /**
          * Returns the status (error code) of the last operation.
@@ -538,18 +395,200 @@ namespace nuc {
          */
         new_entry_fn cb_new_entry;
         /**
-         * Finish callback function.
-         */
-        finish_fn cb_finish;
-        /**
          * Begin callback function.
          */
         begin_fn cb_begin;
 
         /**
+         * Directory changed callback function.
+         */
+        changed_fn cb_changed;
+        
+        /**
          * Deleted signal
          */
         deleted_signal sig_deleted;
+
+
+        /* Reading Tasks */
+
+        /**
+         * Adds a read task to the task queue.
+         *
+         * @param path The path of the directory to read
+         *
+         * @param refresh True if the current directory is being
+         *   reread, false if a new directory is being read.
+         */
+        void add_read_task(const std::string &path, bool refresh, finish_fn finish);
+
+        /**
+         * Adds a read task to the task queue.
+         *
+         * @param type The dir_type object of the directory to be
+         *   read.
+         *
+         * @param refresh True if the current directory is being
+         *   reread, false if a new directory is being read.
+         */
+        void add_read_task(dir_type type, bool refresh, finish_fn finish);
+
+        /**
+         * Adds a directory refresh task, for the current directory,
+         * to the background task queue.
+         */
+        void add_refresh_task();
+        
+        /**
+         * Reads the directory at @a path.
+         *
+         * @param state The cancellation state.
+         *
+         * @param path  The path to read.
+         *
+         * @param refresh True if the directory is being reread.
+         */
+        void read_path(cancel_state &state, const std::string &path, bool refresh);
+
+        /**
+         * Reads the directory using the lister and dir_tree objects
+         * created by the dir_type object @a type.
+         *
+         * @param state The cancellation state.
+         *
+         * @param type  The dir_type object for the directory to be
+         *   read.
+         *
+         * @param refresh True if the directory is being reread.
+         */
+        void list_dir(cancel_state &state, dir_type type, bool refresh);
+        
+        /**
+         * Read task finish callback. Calls the finish callback.
+         */
+        void finish_read(bool cancelled, bool refresh, finish_fn finish);
+
+        
+        /**
+         * Adds an entry to the 'new_tree' directory tree. The adding
+         * of the entry is performed with the cancellation state set
+         * to "no cancel".
+         */
+        void add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st);
+
+        /**
+         * Cancels all tasks on the task queue and cancels the
+         * directory monitor to prevent more update tasks from being
+         * queued.
+         */
+        void cancel_update();
+
+
+        /* Reading subdirectories */
+
+        /**
+         * Adds a read task for the subdirectory @a subpath, of the
+         * current directory tree, to the background task queue.
+         *
+         * @param subpath The subpath to read.
+         */
+        void add_read_subdir(const path_str &subpath, finish_fn finish);
+        
+        /**
+         * Read subdirectory task. 
+         *
+         * Reads the subdirectory of the directory tree if it
+         * exists. The subdirectory is obtained and the callback
+         * functions are called as though a read operation is being
+         * carried out.
+         *
+         * @param state  The cancellation state.
+         * @param subdir The subdirectory to read.
+         */
+        void read_subdir(cancel_state &state, const path_str &subdir);
+
+        /**
+         * Read subdirectory task finish callback.
+         *
+         * Queues a task on the main thread, which sets the subpath of
+         * the directory tree and calls the finish callback.
+         */
+        void finish_read_subdir(bool cancelled, const path_str &subdir, finish_fn finish);
+
+        /**
+         * Checks whether the current subdirectory of the directory
+         * tree still exists. If not the first parent directory of the
+         * subdirectory is read.
+         */
+        void refresh_subdir();
+        
+        
+        /* Directory Monitoring */
+
+        dir_monitor monitor;
+
+        /**
+         * Begins monitoring the current directory.
+         */
+        void monitor_dir(bool paused = false);
+
+        /**
+         * Resumes the directory monitor.
+         *
+         * May only be called from the main thread.
+         */
+        void resume_monitor();
+        
+        /**
+         * Signal handler for the file event signal.
+         */
+        void file_event(dir_monitor::event e);
+
+        /**
+         * Event handler for the EVENTS_BEGIN event. This event is
+         * sent before the first event in a series of events.
+         */
+        void begin_changes(cancel_state &state);
+
+        /**
+         * Event handler for the EVENTS_END event. This event is sent
+         * after a time interval has elapsed after the last event.
+         */
+        void end_changes(cancel_state &state, finish_fn finish);
+
+        /**
+         * Handler functions for the create, change, delete and rename
+         * file events.
+         */
+        void file_created(cancel_state &state, const path_str &path);
+        void file_changed(cancel_state &state, const path_str &path);
+        void file_deleted(cancel_state &state, const path_str &path);
+        void file_renamed(cancel_state &state, const path_str &src, const path_str &dest);
+
+        /**
+         * Removes an entry from the new directory tree (new_tree).
+         *
+         * @param subpath The subpath of the entry
+         */
+        void remove_entry(const path_str &subpath);
+        
+        /**
+         * Obtains the stat attributes of a file. First the stat
+         * system call is attempted, if that fails the lstat system
+         * call is attempted.
+         *
+         * @param path The file path.
+         *
+         * @param st   Pointer to the stat struct where the stat
+         *             attributes will be read into
+         *
+         * @return true if successful, false if both stat and lstat
+         *         failed.
+         */
+        static bool file_stat(const path_str &path, struct stat *st);
+
+
+        /** Callbacks */
         
         /**
          * Calls the begin callback. The cancellation is switched
@@ -563,13 +602,19 @@ namespace nuc {
          */
         void call_new_entry(dir_entry &ent, bool refresh);
         /**
-         * Calls the finish callback.
+         * Calls the finish callback, on the main thread.
          *
-         * If error is zero (task was successful), the task queue is
-         * paused in order to prevent other tasks running until
-         * commit_read() is called.
+         * The task queue is paused either until commit_read is
+         * called, if the operation was successful (error == 0 &&
+         * !cancelled), or until after the callback is called, if the
+         * operation failed or was cancelled.
+         *
+         * @param finish    The finish callback to call.
+         * @param cancelled True if the operation was cancelled.
+         * @param error     The error code of the operation.
+         * @param refresh   True if the operation was an update operation.
          */
-        void call_finish(bool cancelled, int error, bool refresh);
+        void call_finish(const finish_fn &finish, bool cancelled, int error, bool refresh);
     };
 }
 
@@ -587,8 +632,8 @@ void nuc::vfs::callback_new_entry(F&& fn) {
 }
 
 template <typename F>
-void nuc::vfs::callback_finish(F&& fn) {
-    cb_finish = std::forward<F>(fn);
+void nuc::vfs::callback_changed(F &&fn) {
+    cb_changed = std::forward<F>(fn);
 }
 
 template <typename F>

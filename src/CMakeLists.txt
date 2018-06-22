@@ -42,10 +42,6 @@ add_sources(
     cancel_state.cpp
     cleanup_n.h
     
-    operation.h
-    operation.cpp
-    fn_operation.h
-    
     task_queue.h
     task_queue.cpp
     
