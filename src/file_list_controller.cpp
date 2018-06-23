@@ -139,7 +139,9 @@ vfs::finish_fn file_list_controller::vfs_dir_changed() {
 }
 
 void file_list_controller::vfs_dir_deleted(path_str new_path) {
-    read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
+    // TODO: Check that a read task has not been initiated
+    if (!reading)
+        read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
 
 
@@ -226,6 +228,8 @@ void file_list_controller::add_parent_entry(const path_str &new_path) {
 }
 
 void file_list_controller::finish_read(path_str new_path) {
+    reading = false;
+    
     set_new_list(true);
     restore_selection();
 
@@ -451,6 +455,8 @@ void file_list_controller::prepare_read(bool move_to_old) {
     selected_row = selected_row_index();
     this->move_to_old = move_to_old;
 
+    reading = true;
+    
     clear_view();
 }
 

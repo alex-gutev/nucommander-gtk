@@ -90,6 +90,13 @@ namespace nuc {
          * VFS object - performs the actual reading of the directory.
          */
         std::shared_ptr<nuc::vfs> vfs;
+
+        /**
+         * Flag for whether there is an ongoing read task.
+         *
+         * Should only be accessed/modified on the main thread.
+         */
+        bool reading = false;
         
         /**
          * Flag: If true the selection should be moved to the entry
