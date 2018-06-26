@@ -85,6 +85,14 @@ namespace nuc {
             }
 
             /**
+             * Returns the position of the first character of the
+             * component within the path string.
+             */
+            size_t position() const {
+                return pos;
+            }
+
+            /**
              * Returns true if this component, is the last component
              * in the path.
              */
@@ -137,3 +145,8 @@ namespace nuc {
 }
 
 #endif // NUC_PATH_COMPONENTS_H
+
+// Local Variables:
+// mode: c++
+// indent-tabs-mode: nil
+// End:

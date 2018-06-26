@@ -19,6 +19,8 @@
 
 #include "dir_type.h"
 
+#include <boost/algorithm/string.hpp>
+
 #include "dir_lister.h"
 #include "archive_lister.h"
 
@@ -49,15 +51,68 @@ nuc::path_str nuc::dir_type::canonicalize(const path_str &path) {
     return canonicalized_path(expand_tilde(path));
 }
 
+nuc::path_str nuc::dir_type::find_match_comp(const path_str &dir, const path_str &comp) {
+    if (comp == "/")
+        return comp;
+
+    try {
+        dir_lister lister;
+        lister::entry ent;
+
+        lister.open(dir);
+
+        path_str match;
+
+        while (lister.read_entry(ent)) {
+            if (comp == ent.name) {
+                return comp;
+            }
+            else if (match.empty() && boost::iequals(comp, ent.name)) {
+                match = ent.name;
+            }
+        }
+
+        return match.empty() ? comp : match;
+
+    } catch(lister::error &e) {
+        return "";
+    }
+}
+
+std::pair<nuc::path_str, nuc::path_str> nuc::dir_type::canonicalize_case(const path_str &path) {
+    path_str cpath;
+    path_components comps(path);
+
+    for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
+        const path_str &comp = *it;
+
+        path_str can_comp = find_match_comp(cpath, comp);
+
+        // Directory could not be read
+        if (can_comp.empty()) {
+            return std::make_pair(cpath, path.substr(it.position()));
+        }
+
+        append_component(cpath, can_comp);
+    }
+
+    return std::make_pair(cpath, "");
+}
+
+
 
 nuc::dir_type nuc::dir_type::get(const path_str &path) {
     path_str cpath = canonicalize(path);
+    std::pair<path_str, path_str> pair = canonicalize_case(cpath);
 
-    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(cpath)) {
-        return dir_type(std::move(cpath), std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
+    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
+        return dir_type(std::move(pair.first), std::bind(make_archive_lister, plugin), make_archive_tree, false, std::move(pair.second));
     }
 
-    return dir_type(std::move(cpath), make_dir_lister, make_dir_tree, true, "");
+    if (!pair.second.empty())
+        append_component(pair.first, pair.second);
+
+    return dir_type(std::move(pair.first), make_dir_lister, make_dir_tree, true, "");
 }
 
 nuc::dir_type nuc::dir_type::get(path_str path, const dir_entry& ent) {

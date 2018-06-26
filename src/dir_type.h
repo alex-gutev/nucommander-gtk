@@ -94,6 +94,33 @@ namespace nuc {
          */
         static path_str canonicalize(const path_str &path);
 
+        /**
+         * Canonicalizes the case of a path.
+         *
+         * Each intermediate directory component is searched for an
+         * entry with a name which is either identical to the child
+         * component, in which case the the case is preserved, or the
+         * first entry with a name which matches (ignoring case) the
+         * name of the child component, in which case the child is
+         * replaced with the matching entry.
+         *
+         * @return A pair where the first value is the path with the
+         *    case canonicalized up to the last directory component
+         *    which can be read, the second value is the remainder of
+         *    the path, which has not been case-canonicalized.
+         */
+        static std::pair<path_str, path_str> canonicalize_case(const path_str &path);
+
+        /**
+         * Searches the directory, at @a dir, for an entry with a name
+         * that is equal to @a comp or the first entry with a name
+         * that matches, ignoring case, @a comp.
+         *
+         * @return The name of the matching entry or an empty string
+         *    if the directory @a dir could not be read.
+         */
+        static path_str find_match_comp(const path_str &dir, const path_str &comp);
+
     public:
         /**
          * Constructs an "empty" dir_type object with no path and no
