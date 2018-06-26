@@ -23,8 +23,10 @@
 #include "archive_lister.h"
 
 #include "archive_tree.h"
-
 #include "archive_plugin_loader.h"
+
+#include "path_utils.h"
+
 
 static nuc::lister * make_dir_lister() {
     return new nuc::dir_lister();
@@ -43,12 +45,19 @@ static nuc::dir_tree * make_archive_tree(nuc::path_str subpath) {
 }
 
 
-nuc::dir_type nuc::dir_type::get(path_str path) {
-    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(path)) {
-        return dir_type(std::move(path), std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
+nuc::path_str nuc::dir_type::canonicalize(const path_str &path) {
+    return canonicalized_path(expand_tilde(path));
+}
+
+
+nuc::dir_type nuc::dir_type::get(const path_str &path) {
+    path_str cpath = canonicalize(path);
+
+    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(cpath)) {
+        return dir_type(std::move(cpath), std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
     }
 
-    return dir_type(std::move(path), make_dir_lister, make_dir_tree, true, "");
+    return dir_type(std::move(cpath), make_dir_lister, make_dir_tree, true, "");
 }
 
 nuc::dir_type nuc::dir_type::get(path_str path, const dir_entry& ent) {

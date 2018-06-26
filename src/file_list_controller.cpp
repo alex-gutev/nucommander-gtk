@@ -106,15 +106,13 @@ void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
     create_row(row, ent);
 }
 
-void file_list_controller::vfs_finish(path_str new_path, bool cancelled, int error, bool refresh) {
+void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
     if (!error && !cancelled) {
-        add_parent_entry(new_path);
-        
         if (refresh) {
             set_updated_list();
         }
         else {
-            finish_read(std::move(new_path));
+            finish_read();
         }
     }
     else {
@@ -124,10 +122,7 @@ void file_list_controller::vfs_finish(path_str new_path, bool cancelled, int err
 
 void file_list_controller::vfs_finish_move_up(path_str path, bool cancelled, int error, bool refresh) {
     if (!cancelled && !error) {
-        m_signal_path.emit(path);
-        
-        add_parent_entry(path);
-        finish_read(std::move(path));
+        finish_read();
     }
     else {
         read_parent_dir(std::move(path));
@@ -135,7 +130,7 @@ void file_list_controller::vfs_finish_move_up(path_str path, bool cancelled, int
 }
 
 vfs::finish_fn file_list_controller::vfs_dir_changed() {
-    return read_finish_callback(cur_path);
+    return read_finish_callback();
 }
 
 void file_list_controller::vfs_dir_deleted(path_str new_path) {
@@ -227,13 +222,14 @@ void file_list_controller::add_parent_entry(const path_str &new_path) {
         create_row(*new_list->append(), parent_entry);    
 }
 
-void file_list_controller::finish_read(path_str new_path) {
+void file_list_controller::finish_read() {
     reading = false;
     
     set_new_list(true);
     restore_selection();
 
-    cur_path = std::move(new_path);
+    cur_path = vfs->path();
+    m_signal_path.emit(cur_path);
 }
 
 void file_list_controller::set_new_list(bool clear_marked) {
@@ -242,6 +238,8 @@ void file_list_controller::set_new_list(bool clear_marked) {
     // Clear marked set
     if (clear_marked)
         marked_set.clear();
+
+    add_parent_entry(vfs->path());
 
     // Sort new_list using cur_list's sort order
     set_sort_column();
@@ -460,27 +458,39 @@ void file_list_controller::prepare_read(bool move_to_old) {
     clear_view();
 }
 
+path_str file_list_controller::expand_path(path_str path) {
+    if (is_relative_path(path)) {
+        path = appended_component(cur_path, path);
+    }
+
+    return path;
+}
+
 void file_list_controller::clear_view() {
     // Set model to empty list to display an empty tree view without
     // discarding the old list
     view->set_model(empty_list);
 }
 
-vfs::finish_fn file_list_controller::read_finish_callback(path_str path) {
+vfs::finish_fn file_list_controller::read_finish_callback() {
     using namespace std::placeholders;
 
-    return std::bind(&file_list_controller::vfs_finish, this, std::move(path), _1, _2, _3);
+    return std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3);
 }
 
 void file_list_controller::path(const std::string &path, bool move_to_old) {
     prepare_read(move_to_old);
-    vfs->read(path, read_finish_callback(path));
+
+    path_str cpath(expand_path(path));
+    m_signal_path.emit(cpath);
+
+    vfs->read(cpath, read_finish_callback());
 }
 
 bool file_list_controller::descend(const dir_entry& ent) {
     if (ent.ent_type() == DT_PARENT) {
         path_str new_path(removed_last_component(cur_path));
-        auto finish = read_finish_callback(new_path);
+        auto finish = read_finish_callback();
         
         m_signal_path.emit(new_path);
         prepare_read(true);
@@ -493,9 +503,8 @@ bool file_list_controller::descend(const dir_entry& ent) {
     }
     else {
         path_str new_path(appended_component(cur_path, ent.file_name()));
-        auto finish = read_finish_callback(new_path);
 
-        if (vfs->descend(ent, finish)) {
+        if (vfs->descend(ent, read_finish_callback())) {
             prepare_read(false);
             m_signal_path.emit(new_path);
             

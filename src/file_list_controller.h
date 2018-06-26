@@ -218,7 +218,7 @@ namespace nuc {
         /**
          * VFS finish callback.
          */
-        void vfs_finish(path_str new_path, bool cancelled, int error, bool refresh);
+        void vfs_finish(bool cancelled, int error, bool refresh);
 
         /**
          * VFS finish callback for moving up the directory tree when
@@ -253,6 +253,16 @@ namespace nuc {
         /* Reading new directories */
 
         /**
+         * Expands relative paths entered by the user into absolute
+         * paths, by appending them to the current path.
+         *
+         * @param path The path to expand.
+         *
+         * @return The expanded path.
+         */
+        path_str expand_path(path_str path);
+
+        /**
          * Records the current selected row in selected_row, sets the
          * value of move_to_old and sets the view's model to the empty
          * list.
@@ -269,13 +279,11 @@ namespace nuc {
 
         /**
          * Creates the finish callback. Binds the vfs_finish method's
-         * this pointer and new_path parameter to @a path.
-         *
-         * @param path The path being read.
+         * this pointer.
          *
          * @return The finish callback function.
          */
-        vfs::finish_fn read_finish_callback(path_str path);
+        vfs::finish_fn read_finish_callback();
 
         
         /**
@@ -325,11 +333,10 @@ namespace nuc {
         
         /**
          * Sets the tree view's model to the new list, sets the
-         * selection and sets cur_path to @a new_path.
-         *
-         * @param new_path The path of the directory just read.
+         * selection, sets cur_path to the value of 'vfs->path()' and
+         * emits a path changed signal.
          */
-        void finish_read(path_str new_path);
+        void finish_read();
         
         /**
          * Switches the tree view's model to 'new_list', clears

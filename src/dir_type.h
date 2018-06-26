@@ -58,12 +58,6 @@ namespace nuc {
         typedef std::function<dir_tree*(path_str)> create_tree_fn;
 
         /**
-         * Flag indicating whether the directory is a regular
-         * directory or file.
-         */
-        bool m_is_dir = false;
-
-        /**
          * The path of the actual directory file which is read by the
          * lister.
          */
@@ -83,6 +77,23 @@ namespace nuc {
          */
         create_tree_fn m_create_tree;
 
+        /**
+         * Flag indicating whether the directory is a regular
+         * directory or file.
+         */
+        bool m_is_dir = false;
+
+
+        /**
+         * Canonicalizes a path by expanding leading tilde's and
+         * removing all '.' and '..' directory components.
+         *
+         * @param path The path to canonicalize.
+         *
+         * @return The canonicalized path.
+         */
+        static path_str canonicalize(const path_str &path);
+
     public:
         /**
          * Constructs an "empty" dir_type object with no path and no
@@ -101,8 +112,8 @@ namespace nuc {
          * @param subpath       Initial subpath of tree.
          */
         dir_type(path_str path, create_lister_fn create_lister, create_tree_fn create_tree, bool is_dir, path_str subpath)
-            : m_path(std::move(path)), m_create_lister(create_lister), m_create_tree(create_tree),
-              m_is_dir(is_dir), m_subpath(std::move(subpath)) {}
+            : m_path(std::move(path)), m_subpath(std::move(subpath)),
+              m_create_lister(create_lister), m_create_tree(create_tree), m_is_dir(is_dir) {}
 
 
         /* Creating lister and dir_tree */
@@ -168,14 +179,29 @@ namespace nuc {
         }
 
 
+        /**
+         * Returns the logical path of the directory. The logical path
+         * is the concatenated path of where the directory is located
+         * in the filesystem and the subpath within the directory.
+         *
+         * @return The logical path.
+         */
+        path_str logical_path() const {
+            return m_subpath.empty() ? m_path : appended_component(m_path, m_subpath);
+        }
+
         /* Determining the type of a directory */
 
         /**
          * Determines the directory type of the directory @a path.
          *
+         * The path @a path is canonicalized before being stored in
+         * the dir_type object created, which can later be retrieved
+         * using logical_path().
+         *
          * @param path Path to the directory.
          */
-        static dir_type get(path_str path);
+        static dir_type get(const path_str &path);
 
         /**
          * Determines the directory type of the entry @a ent within

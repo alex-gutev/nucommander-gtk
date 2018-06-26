@@ -20,6 +20,11 @@
 #include "path_utils.h"
 
 #include <algorithm>
+#include <stdlib.h>
+
+#include <sys/types.h>
+#include <pwd.h>
+
 
 nuc::path_str nuc::file_name(const path_str &path) {
     // Find last slash
@@ -80,8 +85,6 @@ nuc::path_str nuc::removed_last_component(nuc::path_str path) {
 }
 
 
-
-
 nuc::path_str nuc::path_from_components(const std::vector<path_str> &comps) {
     path_str path;
     
@@ -130,4 +133,40 @@ bool nuc::is_child_of(path_str dir, const path_str &path) {
     auto res = std::mismatch(dir.begin(), dir.end(), path.begin());
 
     return res.first == dir.end() && std::find(res.second, path.end(), '/') == path.end();
+}
+
+
+nuc::path_str nuc::expand_tilde(const path_str &path) {
+    if (!path.empty() && path.front() == '~') {
+        path_str::size_type pos = path.find_first_of('/');
+
+        const char *home = NULL;
+
+        if (path.length() == 1 || pos == 1) {
+            if (!(home = getenv("HOME"))) {
+                if (struct passwd *pw = getpwuid(getuid())) {
+                    home = pw->pw_dir;
+                }
+            }
+        }
+        else {
+            path_str user(path, 1, pos == path_str::npos ? path_str::npos : pos - 1);
+
+            if (struct passwd *pw = getpwnam(user.c_str())) {
+                return home = pw->pw_dir;
+            }
+        }
+
+        if (home) {
+            std::string full_path(home);
+
+            if (pos != path_str::npos) {
+                append_component(full_path, path.substr(pos+1));
+            }
+
+            return full_path;
+        }
+    }
+
+    return path;
 }

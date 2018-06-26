@@ -120,6 +120,37 @@ namespace nuc {
     inline bool has_dirs(const path_str &path) {
         return path.find('/') != std::string::npos;
     }
+
+    /**
+     * Checks whether a path is a relative path. Paths with a leading
+     * tilde '~' are considered absolute paths.
+     *
+     * @param path The path to check.
+     *
+     * @return True if @a path is relative.
+     */
+    inline bool is_relative_path(const path_str &path) {
+        if (!path.empty()) {
+            return path.front() != '/' && path.front() != '~';
+        }
+
+        return true;
+    }
+
+    /**
+     * Expands the leading tilde '~' in a path to the user's home
+     * directory. If the tilde cannot be expanded (the user doesn't
+     * exist) then the path is returned as is.
+     *
+     * @param path The path to expand.
+     *
+     * @return The path with the leading tilde expanded.
+     */
+    path_str expand_tilde(const path_str &path);
 }
 
 #endif // PATH_UTILS_H
+
+// Local Variables:
+// mode: c++
+// End:

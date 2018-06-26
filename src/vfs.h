@@ -267,6 +267,17 @@ namespace nuc {
          * directory is deleted.
          */
         deleted_signal signal_deleted();
+
+        /**
+         * Returns the path of the current directory in the vfs. The
+         * path returned is the concatenation of the path to the
+         * physical directory/file on disk and the subdirectory.
+         *
+         * @return The current path.
+         */
+        path_str path() {
+            return cur_type.logical_path();
+        }
         
         /**
          * Initiates a background read operation for the directory at
