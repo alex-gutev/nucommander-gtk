@@ -24,6 +24,8 @@
 #include <vector>
 #include <regex>
 #include <utility>
+#include <mutex>
+#include <memory>
 
 #include <giomm/settings.h>
 
@@ -50,10 +52,11 @@ namespace nuc {
          * ID of the plugin GSettings schema.
          */
         static constexpr const char *plugin_schema = "org.agware.NuCommander.plugin";
-        
+
+    public:
+
         /**
-         * Stores the plugin details and a pointer to the
-         * archive_plugin object.
+         * Responsible for loading and unloading the plugin.
          */
         struct plugin {
             /**
@@ -64,12 +67,14 @@ namespace nuc {
             /**
              * Pointer to the archive_plugin object.
              */
-            archive_plugin *plg;
+            archive_plugin *plg = nullptr;
 
             /**
-             * Boolean flag indicating whether the plugin is loaded.
+             * Mutex for synchronizing loading and unloading.
              */
-            bool loaded = false;
+            std::mutex mutex;
+
+        public:
 
             /**
              * Plugin constructor.
@@ -78,45 +83,26 @@ namespace nuc {
              * plugin. To load the plugin the load method has to be
              * called.
              */
-            plugin(std::string path) : path(std::move(path)), plg(new archive_plugin()) {}
-
-            /**
-             * Unloads the plugin and deletes the existing
-             * archive_plugin object if any.
-             */
-            void unload() {
-                if (plg) delete plg;
-            }
+            plugin(std::string path) : path(std::move(path)) {}
 
             /**
              * Destructor, unloads the plugin.
              */
             ~plugin() {
-                unload();
+                std::lock_guard<std::mutex> lock(mutex);
+
+                if (plg) {
+                    delete plg;
+                    plg = nullptr;
+                }
             }
 
             /**
-             * Copy constructor deleted as there should only be a
-             * single instances of an archive_plugin object, per
-             * plugin, which is managed by this object.
+             * Copy constructor and assignment operation deleted as
+             * there should only be a single instance per plugin.
              */
             plugin(const plugin&) = delete;
-            plugin(plugin &&plg_obj) {
-                plg = plg_obj.plg;
-                plg_obj.plg = nullptr;
-            }
-
-            /**
-             * Copy assignment operator deleted for the same reason as
-             * the copy constructor.
-             */
             plugin &operator=(const plugin &) = delete;
-            plugin &operator=(plugin &&plg_obj) {
-                unload();
-                
-                plg = plg_obj.plg;
-                plg_obj.plg = nullptr;
-            }
 
             /**
              * Loads the plugin and returns the pointer to the
@@ -126,15 +112,43 @@ namespace nuc {
              * @return Pointer to the archive_plugin object.
              */
             archive_plugin *load() {
-                if (!loaded) {
-                    loaded = true;
-                    plg->load(path);                 
+                std::lock_guard<std::mutex> lock(mutex);
+
+                if (!plg) {
+                    plg = new archive_plugin();
+                    plg->load(path);
+
+                    path.clear();
                 }
 
                 return plg;
             }
         };
 
+        /**
+         * Constructor: Retrieves the plugin configuration details
+         * from GSettings.
+         */
+        archive_plugin_loader();
+
+        /**
+         * Returns a reference to the singleton instance.
+         */
+        static archive_plugin_loader &instance();
+
+        /**
+         * Loads the archive plugin for the file at path @a path. If
+         * the file name component of the path matches a particular
+         * plugin's regular expression, the plugin is loaded and a
+         * pointer to the plugin object is returned. If it doesn't
+         * match any regular expression, nullptr is returned
+         * indicating there is no plugin.
+         *
+         * @param path The file path.
+         */
+        plugin *get_plugin(const std::string &path);
+
+    private:
         /**
          * GSettings object.
          */
@@ -152,44 +166,20 @@ namespace nuc {
         std::regex regex;
 
         /**
-         * Array of plugins
+         * Plugins array.
+         *
+         * The index at which each plugin object is located corresponds
+         * to the index of its capture group in the regular
+         * expression.
          */
-        std::vector<plugin> plugins;
+        std::vector<std::unique_ptr<plugin>> plugins;
        
-
-        /**
-         * Constructor is private, as the class is meant to be used as
-         * a singleton.
-         */
-        archive_plugin_loader();
-
-        archive_plugin_loader(archive_plugin_loader &) = delete;
-        archive_plugin_loader &operator=(archive_plugin_loader &) = delete;
 
         /**
          * Retrieves the plugin details from GSettings, and builds the
          * plugin regular expression.
          */
         void get_plugin_details();
-        
-    public:
-
-        /**
-         * Returns a reference to the singleton instance.
-         */
-        static archive_plugin_loader &instance();
-
-        /**
-         * Loads the archive plugin for the file at path @a path. If
-         * the file name component of the path matches a particular
-         * plugin's regular expression, the plugin is loaded and a
-         * pointer to the archive_plugin instance is returned. If it
-         * doesn't match any regular expression, nullptr is returned
-         * indicating there is no plugin.
-         *
-         * @param path The file path.
-         */
-        archive_plugin *get_plugin(const std::string &path);
     };
 }
 

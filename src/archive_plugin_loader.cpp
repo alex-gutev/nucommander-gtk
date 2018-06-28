@@ -42,12 +42,12 @@ void archive_plugin_loader::get_plugin_details() {
         child_path.append(child);
         child_path.append("/");
         
-        Glib::RefPtr<Gio::Settings> plugin = Gio::Settings::create(plugin_schema, child_path);
+        Glib::RefPtr<Gio::Settings> plg = Gio::Settings::create(plugin_schema, child_path);
         
-        std::string path = plugin->get_string("path");
-        std::string ext_reg = plugin->get_string("regex");
+        std::string path = plg->get_string("path");
+        std::string ext_reg = plg->get_string("regex");
         
-        plugins.emplace_back(path);
+        plugins.emplace_back(new plugin(path));
 
         if (!first) {
             reg.push_back('|');
@@ -63,14 +63,14 @@ void archive_plugin_loader::get_plugin_details() {
     regex.assign(reg);
 }
 
-archive_plugin *archive_plugin_loader::get_plugin(const std::string &path) {
+archive_plugin_loader::plugin *archive_plugin_loader::get_plugin(const std::string &path) {
     std::smatch results;
 
     if (std::regex_match(path, results, regex)) {
         // Find first capture group which matched
         for (size_t i = 1; i < results.size(); i++) {
             if (results.length(i)) {
-                return plugins[i - 1].load();
+                return plugins[i - 1].get();
             }
         }
     }
