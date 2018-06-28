@@ -48,20 +48,8 @@ static nuc::lister * make_dir_lister() {
  * @return The archive_lister object.
  */
 static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin) {
+    plugin->load();
     return new nuc::archive_lister(plugin);
-}
-
-/**
- * Loads an archive plugin and creates an archhive_lister object
- * initialized with that plugin.
- *
- * @param plugin The plugin to load (as returned by
- *    archive_plugin_loader::get_plugin).
- *
- * @return The archive_lister object.
- */
-static nuc::lister * load_archive_lister(nuc::archive_plugin_loader::plugin *plugin) {
-    return make_archive_lister(plugin->load());
 }
 
 /**
@@ -150,8 +138,8 @@ nuc::dir_type nuc::dir_type::get(const path_str &path) {
     path_str cpath = canonicalize(path);
     std::pair<path_str, path_str> pair = canonicalize_case(cpath);
 
-    if (archive_plugin_loader::plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
-        return dir_type(std::move(pair.first), std::bind(make_archive_lister, plugin->load()), make_archive_tree, false, std::move(pair.second));
+    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
+        return dir_type(std::move(pair.first), std::bind(make_archive_lister, plugin), make_archive_tree, false, std::move(pair.second));
     }
 
     if (!pair.second.empty())
@@ -167,9 +155,9 @@ nuc::dir_type nuc::dir_type::get(path_str path, const dir_entry& ent) {
         return dir_type(path, make_dir_lister, make_dir_tree, true, "");
 
     case DT_REG:
-        if (archive_plugin_loader::plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
+        if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
             append_component(path, ent.file_name());
-            return dir_type(path, std::bind(load_archive_lister, plugin), make_archive_tree, false, "");
+            return dir_type(path, std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
         }
     }
     

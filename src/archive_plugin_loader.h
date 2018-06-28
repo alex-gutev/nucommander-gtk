@@ -24,7 +24,6 @@
 #include <vector>
 #include <regex>
 #include <utility>
-#include <mutex>
 #include <memory>
 
 #include <giomm/settings.h>
@@ -53,102 +52,6 @@ namespace nuc {
          */
         static constexpr const char *plugin_schema = "org.agware.NuCommander.plugin";
 
-    public:
-
-        /**
-         * Responsible for loading and unloading the plugin.
-         */
-        struct plugin {
-            /**
-             * Path to the plugin shared library file.
-             */
-            std::string path;
-
-            /**
-             * Pointer to the archive_plugin object.
-             */
-            archive_plugin *plg = nullptr;
-
-            /**
-             * Mutex for synchronizing loading and unloading.
-             */
-            std::mutex mutex;
-
-        public:
-
-            /**
-             * Plugin constructor.
-             *
-             * Only intializes the fields however does not load the
-             * plugin. To load the plugin the load method has to be
-             * called.
-             */
-            plugin(std::string path) : path(std::move(path)) {}
-
-            /**
-             * Destructor, unloads the plugin.
-             */
-            ~plugin() {
-                std::lock_guard<std::mutex> lock(mutex);
-
-                if (plg) {
-                    delete plg;
-                    plg = nullptr;
-                }
-            }
-
-            /**
-             * Copy constructor and assignment operation deleted as
-             * there should only be a single instance per plugin.
-             */
-            plugin(const plugin&) = delete;
-            plugin &operator=(const plugin &) = delete;
-
-            /**
-             * Loads the plugin and returns the pointer to the
-             * archive_plugin object. If the plugin has already be
-             * loaded the pointer is simply returned.
-             *
-             * @return Pointer to the archive_plugin object.
-             */
-            archive_plugin *load() {
-                std::lock_guard<std::mutex> lock(mutex);
-
-                if (!plg) {
-                    plg = new archive_plugin();
-                    plg->load(path);
-
-                    path.clear();
-                }
-
-                return plg;
-            }
-        };
-
-        /**
-         * Constructor: Retrieves the plugin configuration details
-         * from GSettings.
-         */
-        archive_plugin_loader();
-
-        /**
-         * Returns a reference to the singleton instance.
-         */
-        static archive_plugin_loader &instance();
-
-        /**
-         * Loads the archive plugin for the file at path @a path. If
-         * the file name component of the path matches a particular
-         * plugin's regular expression, the plugin is loaded and a
-         * pointer to the plugin object is returned. If it doesn't
-         * match any regular expression, nullptr is returned
-         * indicating there is no plugin.
-         *
-         * @param path The file path.
-         */
-        plugin *get_plugin(const std::string &path);
-
-    private:
         /**
          * GSettings object.
          */
@@ -172,7 +75,7 @@ namespace nuc {
          * to the index of its capture group in the regular
          * expression.
          */
-        std::vector<std::unique_ptr<plugin>> plugins;
+        std::vector<std::unique_ptr<archive_plugin>> plugins;
        
 
         /**
@@ -180,6 +83,31 @@ namespace nuc {
          * plugin regular expression.
          */
         void get_plugin_details();
+
+    public:
+
+        /**
+         * Constructor: Retrieves the plugin configuration details
+         * from GSettings.
+         */
+        archive_plugin_loader();
+
+        /**
+         * Returns a reference to the singleton instance.
+         */
+        static archive_plugin_loader &instance();
+
+        /**
+         * Loads the archive plugin for the file at path @a path. If
+         * the file name component of the path matches a particular
+         * plugin's regular expression, the plugin is loaded and a
+         * pointer to the archive_plugin object is returned. If it
+         * doesn't match any regular expression, nullptr is returned
+         * indicating there is no plugin.
+         *
+         * @param path The file path.
+         */
+        archive_plugin *get_plugin(const std::string &path);
     };
 }
 

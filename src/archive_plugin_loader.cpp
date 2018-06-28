@@ -47,7 +47,7 @@ void archive_plugin_loader::get_plugin_details() {
         std::string path = plg->get_string("path");
         std::string ext_reg = plg->get_string("regex");
         
-        plugins.emplace_back(new plugin(path));
+        plugins.emplace_back(new archive_plugin(path));
 
         if (!first) {
             reg.push_back('|');
@@ -63,7 +63,7 @@ void archive_plugin_loader::get_plugin_details() {
     regex.assign(reg);
 }
 
-archive_plugin_loader::plugin *archive_plugin_loader::get_plugin(const std::string &path) {
+archive_plugin *archive_plugin_loader::get_plugin(const std::string &path) {
     std::smatch results;
 
     if (std::regex_match(path, results, regex)) {

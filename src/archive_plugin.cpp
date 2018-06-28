@@ -28,30 +28,36 @@ void archive_plugin::check_error(int code) {
     if (dlerror()) throw error(code);
 }
 
-void archive_plugin::load(const std::string &path) {
-    if (!(dl_handle = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL))) {
-        throw error(error::dlopen);
+void archive_plugin::load() {
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (!dl_handle) {
+        if (!(dl_handle = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL))) {
+            throw error(error::dlopen);
+        }
+
+        dlerror();
+    
+        open = (open_fn)dlsym(dl_handle, "nuc_arch_open");
+        check_error(error::api_incomplete);
+    
+        close = (close_fn)dlsym(dl_handle, "nuc_arch_close");
+        check_error(error::api_incomplete);
+    
+        read_entry = (read_entry_fn)dlsym(dl_handle, "nuc_arch_read_entry");
+        check_error(error::api_incomplete);
+    
+        unpack_entry = (unpack_entry_fn)dlsym(dl_handle, "nuc_arch_unpack_entry");
+        check_error(error::api_incomplete);
+
+        set_callback = (set_callback_fn)dlsym(dl_handle, "nuc_arch_set_callback");
+        check_error(error::api_incomplete);
     }
-
-    dlerror();
-    
-    open = (open_fn)dlsym(dl_handle, "nuc_arch_open");
-    check_error(error::api_incomplete);
-    
-    close = (close_fn)dlsym(dl_handle, "nuc_arch_close");
-    check_error(error::api_incomplete);
-    
-    read_entry = (read_entry_fn)dlsym(dl_handle, "nuc_arch_read_entry");
-    check_error(error::api_incomplete);
-    
-    unpack_entry = (unpack_entry_fn)dlsym(dl_handle, "nuc_arch_unpack_entry");
-    check_error(error::api_incomplete);
-
-    set_callback = (set_callback_fn)dlsym(dl_handle, "nuc_arch_set_callback");
-    check_error(error::api_incomplete);    
 }
 
 archive_plugin::~archive_plugin() {
+    std::lock_guard<std::mutex> lock(mutex);
+
     if (dl_handle) dlclose(dl_handle);
 }
 

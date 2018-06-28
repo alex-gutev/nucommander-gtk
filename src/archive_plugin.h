@@ -22,6 +22,7 @@
 
 #include <string>
 #include <exception>
+#include <mutex>
 
 #include "archive_plugin_types.h"
 
@@ -47,6 +48,17 @@ namespace nuc {
         typedef int(*unpack_entry_fn)(void *, int);
 
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *); 
+
+        /**
+         * Path to the plugin shared library file.
+         */
+        const std::string path;
+
+        /**
+         * Mutex for synchronizing loading and unloading.
+         */
+        std::mutex mutex;
+
 
         /**
          * Handle to the dynamically loaded shared library.
@@ -97,15 +109,40 @@ namespace nuc {
             }
         };
 
+        /**
+         * Constructs an archive_plugin object, for a plugin located
+         * at a particular path.
+         *
+         * The plugin is not loaded, call the load method before
+         * calling any of the plugin functions.
+         *
+         * @param path Path to the plugin's shared library file.
+         */
+        archive_plugin(std::string path) : path(path) {}
+
+        /**
+         * Copy constructor and assignment operator are deleted as
+         * there should only be a single instance per plugin.
+         */
+        archive_plugin(const archive_plugin &) = delete;
+        archive_plugin& operator=(const archive_plugin &) = delete;
+
+        /**
+         * Destructor: Unloads the plugin.
+         */
         ~archive_plugin();
 
         /**
-         * Loads the plugin a @a path. Throws an exception if loading
-         * fails.
+         * Loads the plugin's shared library, if not already
+         * loaded. If the shared library has already been loaded, this
+         * method does nothing. Throws an archive_plugin::error
+         * exception if loading fails.
          *
-         * @param Path to the plugin shared library
+         * Should be called prior to calling any of the plugin
+         * functions.
          */
-        void load(const std::string &path);
+        void load();
+
 
         /**
          * For a documentation of the archive plugin api visit
