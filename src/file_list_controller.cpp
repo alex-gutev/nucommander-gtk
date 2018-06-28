@@ -19,9 +19,10 @@
 
 #include "file_list_controller.h"
 
-#include "async_task.h"
-
 #include <algorithm>
+
+#include "async_task.h"
+#include "icon_loader.h"
 
 
 using namespace nuc;
@@ -57,17 +58,23 @@ void file_list_controller::init_model() {
     empty_list = create_model();
     
     view->set_model(cur_list);
-    
+
     // TODO: Move creation of columns and cells into seperate function
     
+    // Icon and Text
+
+    Gtk::TreeView::Column *column = Gtk::manage(new Gtk::TreeView::Column("Name"));
+
+    column->pack_start(columns.icon, false);
+
     auto cell = Gtk::manage(new Gtk::CellRendererText);
-    int ncols = view->append_column("Name", *cell);
-    
-    auto column = view->get_column(ncols - 1);
-    
+    column->pack_start(*cell);
+
     column->add_attribute(cell->property_text(), columns.name);
     column->add_attribute(cell->property_foreground_rgba(), columns.color);
     column->set_sort_column(columns.name);
+
+    view->append_column(*column);
 }
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
@@ -241,6 +248,8 @@ void file_list_controller::set_new_list(bool clear_marked) {
 
     add_parent_entry(vfs->path());
 
+    load_icons();
+
     // Sort new_list using cur_list's sort order
     set_sort_column();
     
@@ -260,7 +269,6 @@ void file_list_controller::set_sort_column() {
         new_list->set_sort_column(col_id, order);
     }
 }
-
 
 void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.name] = ent.file_name();
@@ -444,6 +452,23 @@ void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool 
         mark_rows = true;
         mark_end_offset = mark_sel ? 0 : 1;
     }
+}
+
+
+/// Icons
+
+void file_list_controller::load_icons() {
+    using namespace std::placeholders;
+
+    auto children = new_list->children();
+
+    std::for_each(children.begin(), children.end(), std::bind(&file_list_controller::load_icon, this, _1));
+}
+
+void file_list_controller::load_icon(Gtk::TreeRow row) {
+    dir_entry &ent = *row[columns.ent];
+
+    row[columns.icon] = icon_loader::instance().load_icon(ent);
 }
 
 

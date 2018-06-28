@@ -471,6 +471,21 @@ namespace nuc {
          */
         void keypress_change_selection(const GdkEventKey *e, bool mark_sel);
 
+        /** Icons */
+
+        /**
+         * Loads the icons for all entries in new_list.
+         */
+       void load_icons();
+
+        /**
+         * Loads the icon for the entry at row @a row, and stores the
+         * entry in the icon column of the row.
+         *
+         * @param row The row.
+         */
+        void load_icon(Gtk::TreeRow row);
+
     public:
 
         /**

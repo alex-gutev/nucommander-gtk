@@ -22,6 +22,7 @@
 
 #include <gtkmm/treemodelcolumn.h>
 #include <gdkmm/rgba.h>
+#include <gdkmm/pixbuf.h>
 
 #include "dir_entry.h"
 
@@ -50,6 +51,11 @@ namespace nuc {
          * Text colour of the row.
          */
         Gtk::TreeModelColumn<Gdk::RGBA> color;
+
+        /**
+         * File icon.
+         */
+        Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf>> icon;
         
         /** Constructor */
         file_model_columns() {
@@ -57,8 +63,13 @@ namespace nuc {
             add(ent);
             add(marked);
             add(color);
+            add(icon);
         }
     };    
 }
 
 #endif // FILEMODELCOLUMNS_H
+
+// Local Variables:
+// mode: c++
+// End:

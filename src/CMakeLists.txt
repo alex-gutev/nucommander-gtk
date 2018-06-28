@@ -66,6 +66,9 @@ add_sources(
     
     archive_tree.h
     archive_tree.cpp
+
+    icon_loader.h
+    icon_loader.cpp
 )
 
 # Add current directory to include directories
