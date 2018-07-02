@@ -22,10 +22,6 @@ add_sources(NUC_SRCS
     async_task.h
     async_task.cpp
     
-    lister.h
-    dir_lister.h
-    dir_lister.cpp
-    
     dir_tree.h
     dir_tree.cpp
     
@@ -55,9 +51,6 @@ add_sources(NUC_SRCS
     dir_type.h
     dir_type.cpp
     
-    archive_lister.h
-    archive_lister.cpp
-    
     archive_tree.h
     archive_tree.cpp
 
@@ -65,8 +58,6 @@ add_sources(NUC_SRCS
     icon_loader.cpp
 )
 
-# Add current directory to include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 add_subdirectory(paths/)
 add_subdirectory(plugins/)
+add_subdirectory(lister/)

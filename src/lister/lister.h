@@ -26,7 +26,7 @@
 #include <atomic>
 #include <exception>
 
-#include "types.h"
+#include "paths/utils.h"
 
 namespace nuc {
     /**
@@ -56,7 +56,7 @@ namespace nuc {
         class error : public std::exception {
             /** Error code */
             const int m_code;
-            
+
         public:
             /**
              * Constructs an error exception object with an error
@@ -71,20 +71,20 @@ namespace nuc {
                 return m_code;
             }
         };
-        
+
         virtual ~lister() = default;
-        
+
         /**
          * Opens the directory at 'path' for reading.
          */
         virtual void open(const paths::string &path) = 0;
-        
+
         /**
          * Reads the next entry into the entry object 'ent'.
-         * 
+         *
          * Returns true if an entry was read, false if there are no
          * more entries.
-         * 
+         *
          * Throws 'error' with a suitable error code.
          */
         virtual bool read_entry(entry &ent) = 0;
@@ -92,20 +92,20 @@ namespace nuc {
          * Retrieves the stat attributes of the last entry read, and
          * stores them into the stat struct 'st'. Must be called after
          * read_entry.
-         * 
+         *
          * Returns true if the stat attributes were retrieved, false
          * otherwise. Should not throw any exceptions as failure to
          * retrieve stat attributes is not a critical error.
          */
         virtual bool entry_stat(struct stat &st) = 0;
-        
+
         /**
          * Closes all open file handles. Should not through any
          * exceptions as close errors are not handled when reading.
          */
         virtual void close() = 0;
-        
-        
+
+
     protected:
 
         /**

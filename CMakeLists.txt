@@ -44,6 +44,7 @@ include_directories(${GTKMM_INCLUDE_DIRS})
 
 ## Add source directories
 
+include_directories(${CMAKE_SOURCE_DIR}/src/)
 add_subdirectory(src)
 
 # Convert gresource.xml files to C, output resources.c

@@ -24,7 +24,7 @@
 #include <functional>
 
 #include "types.h"
-#include "lister.h"
+#include "lister/lister.h"
 #include "dir_tree.h"
 #include "dir_entry.h"
 

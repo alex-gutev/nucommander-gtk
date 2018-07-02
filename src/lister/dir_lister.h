@@ -20,10 +20,10 @@
 #ifndef NUC_DIR_LISTER_H
 #define NUC_DIR_LISTER_H
 
-#include "lister.h"
+#include "lister/lister.h"
 
 namespace nuc {
-    
+
     /**
      * Implements the lister interface for reading regular on disk
      * directories.
@@ -31,7 +31,7 @@ namespace nuc {
     class dir_lister : public lister {
         /** Directory handle. */
         DIR *dp = nullptr;
-        
+
         /** Last entry read. */
         struct dirent *last_ent;
 
@@ -41,7 +41,7 @@ namespace nuc {
          * with the value of 'errno'.
          */
         struct dirent *next_ent();
-        
+
     public:
         /**
          * Destructor. Closes the directory handle, if open.
@@ -49,7 +49,7 @@ namespace nuc {
         virtual ~dir_lister();
 
         /** Method Overrides */
-        
+
         virtual void open(const paths::string &path);
 
         virtual void close();

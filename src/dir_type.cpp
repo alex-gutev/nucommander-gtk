@@ -21,8 +21,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "dir_lister.h"
-#include "archive_lister.h"
+#include "lister/dir_lister.h"
+#include "lister/archive_lister.h"
 
 #include "archive_tree.h"
 #include "archive_plugin_loader.h"

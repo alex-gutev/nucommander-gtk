@@ -20,7 +20,7 @@
 #ifndef NUC_ARCHIVE_LISTER_H
 #define NUC_ARCHIVE_LISTER_H
 
-#include "lister.h"
+#include "lister/lister.h"
 #include "archive_plugin.h"
 
 namespace nuc {
@@ -44,7 +44,7 @@ namespace nuc {
          * Last archive entry read.
          */
         nuc_arch_entry arch_entry;
-        
+
     public:
         /**
          * Constructs an archive lister.
@@ -56,7 +56,7 @@ namespace nuc {
         virtual ~archive_lister();
 
         /* Method Overrides */
-        
+
         virtual void open(const paths::string &path);
 
         virtual void close();

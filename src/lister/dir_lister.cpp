@@ -17,7 +17,7 @@
  *
  */
 
-#include "dir_lister.h"
+#include "lister/dir_lister.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,7 +36,7 @@ dir_lister::~dir_lister() {
 
 void dir_lister::open(const paths::string &path) {
     dp = opendir(path.c_str());
-    
+
     if (!dp) {
         raise_error(errno);
     }
@@ -50,41 +50,41 @@ void dir_lister::close() {
 
 bool dir_lister::read_entry(lister::entry &ent) {
     last_ent = next_ent();
-    
+
     if (!last_ent) {
         return false;
     }
-    
+
     ent.name = last_ent->d_name;
     ent.type = last_ent->d_type;
-    
+
     return true;
 }
 
 struct dirent* dir_lister::next_ent() {
     struct dirent *ent;
-    
+
     do {
         errno = 0;
         ent = readdir(dp);
     } while (ent && (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..")));
-    
+
     if (!ent) {
         int err = errno;
-        
+
         if (err) raise_error(err);
     }
-    
+
     return ent;
 }
 
 
 bool dir_lister::entry_stat(struct stat &st) {
     int fd = dirfd(dp);
-    
+
     if (fstatat(fd, last_ent->d_name, &st, 0)) {
         return !fstatat(fd, last_ent->d_name, &st, AT_SYMLINK_NOFOLLOW);
     }
-    
+
     return true;
 }

@@ -21,7 +21,7 @@
 #define NUC_DIR_TREE_H
 
 #include "types.h"
-#include "lister.h"
+#include "lister/lister.h"
 #include "dir_entry.h"
 
 namespace nuc {

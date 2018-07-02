@@ -21,7 +21,7 @@
 #define NUC_DIR_ENTRY_H
 
 #include "types.h"
-#include "lister.h"
+#include "lister/lister.h"
 
 #include "paths/utils.h"
 
