@@ -121,7 +121,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
     flist.descend(ent);
 }
 
-void file_view::on_path_changed(const path_str &path) {
+void file_view::on_path_changed(const paths::string &path) {
     entry_path(path);
 }
 

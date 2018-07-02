@@ -121,12 +121,12 @@ namespace nuc {
              * For rename events, this contains the original file
              * name.
              */
-            path_str file;
+            paths::string file;
             /**
              * Used only in rename events. The new file name of the
              * renamed file.
              */
-            path_str other_file;
+            paths::string other_file;
 
         public:
 
@@ -150,7 +150,7 @@ namespace nuc {
              * event. For rename events (FILE_RENAMED), this is the
              * original file name.
              */
-            const path_str &src() const {
+            const paths::string &src() const {
                 assert(m_type != EVENTS_BEGIN && m_type != EVENTS_END);
                 return file;
             }
@@ -158,7 +158,7 @@ namespace nuc {
              * Returns the new file name of the renamed file. Should
              * only be used when the event is FILE_RENAMED.
              */
-            const path_str &dest() const {
+            const paths::string &dest() const {
                 assert(m_type == FILE_RENAMED);
                 return other_file;
             }
@@ -189,7 +189,7 @@ namespace nuc {
          *
          * @return Returns true if the monitoring began successfully.
          */
-        bool monitor_dir(const path_str &path, bool paused = true, bool is_dir = true);
+        bool monitor_dir(const paths::string &path, bool paused = true, bool is_dir = true);
 
         /**
          * Cancels the monitor, if the monitor is paused all queued
@@ -290,7 +290,7 @@ namespace nuc {
         /**
          * Calls the event signal handler.
          */
-        void emit_event(event_type type, path_str file = path_str(), path_str other_file = path_str());
+        void emit_event(event_type type, paths::string file = paths::string(), paths::string other_file = paths::string());
     };
 }
 

@@ -77,7 +77,7 @@ namespace nuc {
         /**
          * Opens the directory at 'path' for reading.
          */
-        virtual void open(const path_str &path) = 0;
+        virtual void open(const paths::string &path) = 0;
         
         /**
          * Reads the next entry into the entry object 'ent'.

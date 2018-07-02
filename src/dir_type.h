@@ -55,18 +55,18 @@ namespace nuc {
          * newly created dir_tree object with the subpath set to the
          * subpath passed as an argument.
          */
-        typedef std::function<dir_tree*(path_str)> create_tree_fn;
+        typedef std::function<dir_tree*(paths::string)> create_tree_fn;
 
         /**
          * The path of the actual directory file which is read by the
          * lister.
          */
-        path_str m_path;
+        paths::string m_path;
         
         /**
          * The initial subpath of the directory tree which is created.
          */
-        path_str m_subpath;
+        paths::string m_subpath;
 
         /**
          * Create lister function.
@@ -92,7 +92,7 @@ namespace nuc {
          *
          * @return The canonicalized path.
          */
-        static path_str canonicalize(const path_str &path);
+        static paths::string canonicalize(const paths::string &path);
 
         /**
          * Canonicalizes the case of a path.
@@ -109,7 +109,7 @@ namespace nuc {
          *    which can be read, the second value is the remainder of
          *    the path, which has not been case-canonicalized.
          */
-        static std::pair<path_str, path_str> canonicalize_case(const path_str &path);
+        static std::pair<paths::string, paths::string> canonicalize_case(const paths::string &path);
 
         /**
          * Searches the directory, at @a dir, for an entry with a name
@@ -119,7 +119,7 @@ namespace nuc {
          * @return The name of the matching entry or an empty string
          *    if the directory @a dir could not be read.
          */
-        static path_str find_match_comp(const path_str &dir, const path_str &comp);
+        static paths::string find_match_comp(const paths::string &dir, const paths::string &comp);
 
     public:
         /**
@@ -138,7 +138,7 @@ namespace nuc {
          * @param is_dir        True if directory is a regular directory.
          * @param subpath       Initial subpath of tree.
          */
-        dir_type(path_str path, create_lister_fn create_lister, create_tree_fn create_tree, bool is_dir, path_str subpath)
+        dir_type(paths::string path, create_lister_fn create_lister, create_tree_fn create_tree, bool is_dir, paths::string subpath)
             : m_path(std::move(path)), m_subpath(std::move(subpath)),
               m_create_lister(create_lister), m_create_tree(create_tree), m_is_dir(is_dir) {}
 
@@ -184,14 +184,14 @@ namespace nuc {
         /**
          * @return The path to the directory file.
          */
-        const path_str & path() const {
+        const paths::string & path() const {
             return m_path;
         }
 
         /**
          * @return The initial subpath of the directory tree.
          */
-        const path_str & subpath() const {
+        const paths::string & subpath() const {
             return m_subpath;
         }
 
@@ -201,7 +201,7 @@ namespace nuc {
          *
          * @param subpath The subpath
          */
-        void subpath(const path_str subpath) {
+        void subpath(const paths::string subpath) {
             m_subpath = subpath;
         }
 
@@ -213,8 +213,8 @@ namespace nuc {
          *
          * @return The logical path.
          */
-        path_str logical_path() const {
-            return m_subpath.empty() ? m_path : appended_component(m_path, m_subpath);
+        paths::string logical_path() const {
+            return m_subpath.empty() ? m_path : paths::appended_component(m_path, m_subpath);
         }
 
         /* Determining the type of a directory */
@@ -228,7 +228,7 @@ namespace nuc {
          *
          * @param path Path to the directory.
          */
-        static dir_type get(const path_str &path);
+        static dir_type get(const paths::string &path);
 
         /**
          * Determines the directory type of the entry @a ent within
@@ -239,7 +239,7 @@ namespace nuc {
          * @param path Path to the directory containing the entry.
          * @param ent  The entry within the directory @a path.
          */
-        static dir_type get(path_str path, const dir_entry &ent);
+        static dir_type get(paths::string path, const dir_entry &ent);
     };
 }
 

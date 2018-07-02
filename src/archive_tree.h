@@ -39,13 +39,13 @@ namespace nuc {
          * corresponding value being an unordered multimap of the
          * child entries of the subdirectory.
          */
-        std::unordered_map<path_str, file_map<dir_entry *>> dirs;
+        std::unordered_map<paths::string, file_map<dir_entry *>> dirs;
 
         /**
          * Current subpath within the tree. The empty string indicates
          * the base directory.
          */
-        path_str m_subpath;
+        paths::string m_subpath;
         
         /**
          * Extracts and creates the intermediate directory components
@@ -60,7 +60,7 @@ namespace nuc {
          *     or that entry has already been returned once, nullptr
          *     is returned.
          */
-        dir_entry *add_components(const path_str &path, dir_entry &ent);
+        dir_entry *add_components(const paths::string &path, dir_entry &ent);
         
         /**
          * Creates a new directory entry with subpath @a path, if the
@@ -72,7 +72,7 @@ namespace nuc {
          * @return Returns a reference to the newly created directory
          * entry or the existing directory entry.
          */
-        dir_entry &make_dir_ent(const path_str &path);
+        dir_entry &make_dir_ent(const paths::string &path);
 
         /**
          * Checks whether a path is a child of the current subpath.
@@ -81,7 +81,7 @@ namespace nuc {
          *
          * @return true if @a path is a child of the current subpath.
          */
-        bool in_subpath(const path_str &path);
+        bool in_subpath(const paths::string &path);
         
         /**
          * Adds an entry to a multi-map if the map does not already
@@ -94,7 +94,7 @@ namespace nuc {
          * @return True if the entry was added to the map, false if
          *    the map already contained the entry.
          */
-        static bool add_to_map(file_map<dir_entry *> &map, const path_str &name, dir_entry *ent);        
+        static bool add_to_map(file_map<dir_entry *> &map, const paths::string &name, dir_entry *ent);
         
 	public:
 
@@ -110,20 +110,20 @@ namespace nuc {
          *
          * @param subpath The subpath
          */
-        archive_tree(path_str subpath) : m_subpath(std::move(subpath)) {}
+        archive_tree(paths::string subpath) : m_subpath(std::move(subpath)) {}
         
         /* Method overrides */
         
         virtual dir_entry* add_entry(dir_entry ent);
 
-        virtual path_str subpath() const {
+        virtual paths::string subpath() const {
             return m_subpath;
         }
-        virtual void subpath(path_str path) {
+        virtual void subpath(paths::string path) {
             m_subpath = std::move(path);
         }
 
-        virtual dir_map const * subpath_dir(const path_str &path) const;
+        virtual dir_map const * subpath_dir(const paths::string &path) const;
         
         virtual bool is_subdir(const dir_entry &ent) const;
 
@@ -131,8 +131,8 @@ namespace nuc {
             return m_subpath.empty();
         }
 
-        virtual dir_entry *get_entry(const path_str &name);
-        virtual entry_range get_entries(const path_str &name);
+        virtual dir_entry *get_entry(const paths::string &name);
+        virtual entry_range get_entries(const paths::string &name);
 	};
 }
 

@@ -50,7 +50,7 @@ namespace nuc {
 
         /** Method Overrides */
         
-        virtual void open(const path_str &path);
+        virtual void open(const paths::string &path);
 
         virtual void close();
 

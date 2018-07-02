@@ -19,16 +19,16 @@
 
 #include "dir_entry.h"
 
-#include "path_utils.h"
+#include "paths/utils.h"
 
 using namespace nuc;
 
 // The default constructor call m_attr() is required to value
 // initialize all members of the stat struct to zero
 
-dir_entry::dir_entry(const path_str orig_name, uint8_t type)
-    : m_orig_subpath(orig_name), m_subpath(canonicalized_path(orig_name)),
-      m_file_name(nuc::file_name(m_subpath)), m_type(type), m_attr() {}
+dir_entry::dir_entry(const paths::string orig_name, uint8_t type)
+    : m_orig_subpath(orig_name), m_subpath(paths::canonicalized_path(orig_name)),
+      m_file_name(paths::file_name(m_subpath)), m_type(type), m_attr() {}
 
 dir_entry::dir_entry(const lister::entry &ent) : dir_entry(ent.name, ent.type) {}
 
@@ -36,7 +36,7 @@ dir_entry::dir_entry(const lister::entry &ent, const struct stat &st) : dir_entr
     m_attr = st;
 }
 
-dir_entry::dir_entry(path_str path, const struct stat &st) : dir_entry(std::move(path), IFTODT(st.st_mode & S_IFMT)) {
+dir_entry::dir_entry(paths::string path, const struct stat &st) : dir_entry(std::move(path), IFTODT(st.st_mode & S_IFMT)) {
     m_attr = st;
 }
 

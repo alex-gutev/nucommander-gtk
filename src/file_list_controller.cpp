@@ -127,7 +127,7 @@ void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
     }
 }
 
-void file_list_controller::vfs_finish_move_up(path_str path, bool cancelled, int error, bool refresh) {
+void file_list_controller::vfs_finish_move_up(paths::string path, bool cancelled, int error, bool refresh) {
     if (!cancelled && !error) {
         finish_read();
     }
@@ -140,18 +140,18 @@ vfs::finish_fn file_list_controller::vfs_dir_changed() {
     return read_finish_callback();
 }
 
-void file_list_controller::vfs_dir_deleted(path_str new_path) {
+void file_list_controller::vfs_dir_deleted(paths::string new_path) {
     // TODO: Check that a read task has not been initiated
     if (!reading)
         read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
 
 
-void file_list_controller::read_parent_dir(path_str path) {
+void file_list_controller::read_parent_dir(paths::string path) {
     using namespace std::placeholders;
 
-    if (!is_root_path(path)) {
-        remove_last_component(path);
+    if (!paths::is_root(path)) {
+        paths::remove_last_component(path);
 
         vfs::finish_fn finish = std::bind(&file_list_controller::vfs_finish_move_up, this, path, _1, _2, _3);
 
@@ -183,7 +183,7 @@ void file_list_controller::set_updated_list() {
     auto row = *view->get_selection()->get_selected();
 
     bool selection = false;
-    path_str name;
+    paths::string name;
     index_type index;
 
     if (row) {
@@ -224,8 +224,8 @@ void file_list_controller::update_marked_set() {
 }
 
 
-void file_list_controller::add_parent_entry(const path_str &new_path) {
-    if (!is_root_path(new_path))
+void file_list_controller::add_parent_entry(const paths::string &new_path) {
+    if (!paths::is_root(new_path))
         create_row(*new_list->append(), parent_entry);    
 }
 
@@ -340,10 +340,10 @@ void file_list_controller::restore_selection() {
 }
 
 void file_list_controller::select_old() {
-    select_named(file_name(cur_path), 0);
+    select_named(paths::file_name(cur_path), 0);
 }
 
-void file_list_controller::select_named(const path_str &name, index_type row_ind) {
+void file_list_controller::select_named(const paths::string &name, index_type row_ind) {
     index_type selection = 0;
 
     if (view->get_model()->children().size()) {
@@ -483,9 +483,9 @@ void file_list_controller::prepare_read(bool move_to_old) {
     clear_view();
 }
 
-path_str file_list_controller::expand_path(path_str path) {
-    if (is_relative_path(path)) {
-        path = appended_component(cur_path, path);
+paths::string file_list_controller::expand_path(paths::string path) {
+    if (paths::is_relative(path)) {
+        path = paths::appended_component(cur_path, path);
     }
 
     return path;
@@ -506,7 +506,7 @@ vfs::finish_fn file_list_controller::read_finish_callback() {
 void file_list_controller::path(const std::string &path, bool move_to_old) {
     prepare_read(move_to_old);
 
-    path_str cpath(expand_path(path));
+    paths::string cpath(expand_path(path));
     m_signal_path.emit(cpath);
 
     vfs->read(cpath, read_finish_callback());
@@ -514,7 +514,7 @@ void file_list_controller::path(const std::string &path, bool move_to_old) {
 
 bool file_list_controller::descend(const dir_entry& ent) {
     if (ent.ent_type() == DT_PARENT) {
-        path_str new_path(removed_last_component(cur_path));
+        paths::string new_path(paths::removed_last_component(cur_path));
         auto finish = read_finish_callback();
         
         m_signal_path.emit(new_path);
@@ -527,7 +527,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
         return true;
     }
     else {
-        path_str new_path(appended_component(cur_path, ent.file_name()));
+        paths::string new_path(paths::appended_component(cur_path, ent.file_name()));
 
         if (vfs->descend(ent, read_finish_callback())) {
             prepare_read(false);

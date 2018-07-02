@@ -27,16 +27,13 @@
 
 #include <gtkmm/liststore.h>
 
+#include "paths/utils.h"
+
 /**
  * Contains type alias used throughout the project.
  */
 
 namespace nuc {
-    /**
-     * Path string type.
-     */
-    typedef std::string path_str;
-
     /**
      * Integer type used to store 'dirent' file type constants.
      */
@@ -46,7 +43,7 @@ namespace nuc {
      * File map type.
      */
     template <typename T>
-    using file_map = std::unordered_multimap<path_str, T>;
+    using file_map = std::unordered_multimap<paths::string, T>;
 
     /**
      * Context data type for the dir_entry class.
@@ -57,3 +54,7 @@ namespace nuc {
 }
 
 #endif // TYPES_H
+
+// Local Variables:
+// mode: c++
+// End:

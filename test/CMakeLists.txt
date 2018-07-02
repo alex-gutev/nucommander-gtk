@@ -6,13 +6,10 @@ include_directories(${nucommander_SOURCE_DIR}/src
                     
 add_definitions(-DBOOST_TEST_DYN_LINK)
 
-set(NUC_PATH_UTILS ../src/path_utils.h
-                   ../src/path_utils.cpp
-                   ../src/path_components.h
-                   ../src/path_components.cpp)
+## Get source files of "paths" component
 
-add_definitions (-DBOOST_TEST_DYN_LINK)
-add_executable(Test path_utils_test.cpp ${NUC_PATH_UTILS})
+get_property(NUC_PATHS GLOBAL PROPERTY PATHS_SRCS)
+add_executable(Test path_utils_test.cpp ${NUC_PATHS})
 
 target_link_libraries(Test
                       ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})

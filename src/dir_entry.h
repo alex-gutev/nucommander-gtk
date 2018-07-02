@@ -23,7 +23,7 @@
 #include "types.h"
 #include "lister.h"
 
-#include "path_utils.h"
+#include "paths/utils.h"
 
 namespace nuc {
     enum {
@@ -47,16 +47,16 @@ namespace nuc {
         /**
          * Original non-canonicalized subpath of the entry.
          */
-        path_str m_orig_subpath;
+        paths::string m_orig_subpath;
         /**
          * Canonicalized subpath.
          */
-        path_str m_subpath;
+        paths::string m_subpath;
         /**
          * The file name of the entry, i.e. the basename of the
          * canonicalized subpath of the entry.
          */
-        path_str m_file_name;
+        paths::string m_file_name;
         
         /**
          * The type of the entry itself, not the underlying file, as a
@@ -89,7 +89,7 @@ namespace nuc {
          * orig_subpath: The non-canonicalized subpath.
          * type:         The type of the entry, as a dirent constant.
          */
-        dir_entry(const path_str orig_subpath, uint8_t type);
+        dir_entry(const paths::string orig_subpath, uint8_t type);
         
         /**
          * Constructs a 'dir_entry' object from a 'lister' object.
@@ -102,12 +102,12 @@ namespace nuc {
          */
         dir_entry(const lister::entry &ent, const struct stat &st);
 
-        dir_entry(path_str path, const struct stat &st);
+        dir_entry(paths::string path, const struct stat &st);
         
         /**
          * Returns the original non-canonicalized subpath.
          */
-        const path_str &orig_subpath() const {
+        const paths::string &orig_subpath() const {
             return m_orig_subpath;
         }
 
@@ -115,30 +115,30 @@ namespace nuc {
          * Changes the original sub-path of the entry and updates the
          * canonicalized subpath and file name.
          */
-        void orig_subpath(path_str path) {
+        void orig_subpath(paths::string path) {
             m_orig_subpath = path;
-            subpath(canonicalized_path(std::move(path)));
+            subpath(paths::canonicalized_path(std::move(path)));
         }
 
         /**
          * Returns the canonicalized subpath.
          */
-        const path_str &subpath() const {
+        const paths::string &subpath() const {
             return m_subpath;
         }
         /**
          * Sets the canonicalized subpath, and file name.
          */
-        void subpath(const path_str &str) {
+        void subpath(const paths::string &str) {
             m_subpath = str;
-            m_file_name = nuc::file_name(str);
+            m_file_name = paths::file_name(str);
         }
         
         /**
          * Returns the file name component of the canonicalized
          * subpath.
          */
-        const path_str &file_name() const {
+        const paths::string &file_name() const {
             return m_file_name;
         }
         

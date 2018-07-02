@@ -26,7 +26,7 @@ dir_monitor::event_signal_type dir_monitor::signal_event() {
 }
 
 
-bool dir_monitor::monitor_dir(const path_str &path, bool pause, bool is_dir) {
+bool dir_monitor::monitor_dir(const paths::string &path, bool pause, bool is_dir) {
     cancel();
 
     paused = pause;
@@ -118,7 +118,7 @@ bool dir_monitor::is_dir_event(const Glib::RefPtr<Gio::File> & file) {
     return dir_file->equal(file);
 }
 
-void dir_monitor::emit_event(event_type type, path_str file, path_str other_file) {
+void dir_monitor::emit_event(event_type type, paths::string file, paths::string other_file) {
     if (!paused) {
         m_signal_event.emit(event(type, std::move(file), std::move(other_file)));
     }

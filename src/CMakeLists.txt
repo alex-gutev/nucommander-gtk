@@ -1,4 +1,4 @@
-add_sources(
+add_sources(NUC_SRCS
     main.cpp 
     
     nucommander.cpp 
@@ -25,12 +25,6 @@ add_sources(
     lister.h
     dir_lister.h
     dir_lister.cpp
-    
-    path_components.h
-    path_components.cpp
-    
-    path_utils.h
-    path_utils.cpp
     
     dir_tree.h
     dir_tree.cpp
@@ -74,4 +68,5 @@ add_sources(
 # Add current directory to include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+add_subdirectory(paths/)
 add_subdirectory(plugins/)

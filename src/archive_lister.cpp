@@ -25,7 +25,7 @@ archive_lister::~archive_lister() {
     close();
 }
 
-void archive_lister::open(const path_str &path) {
+void archive_lister::open(const paths::string &path) {
     int error = 0;
     
     if (!(handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &error))) {

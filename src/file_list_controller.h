@@ -53,7 +53,7 @@ namespace nuc {
          *
          * @param path The new path.
          */
-        typedef sigc::signal<void, const path_str &> signal_path_type;
+        typedef sigc::signal<void, const paths::string &> signal_path_type;
 
         /**
          * Marked entries set type.
@@ -232,7 +232,7 @@ namespace nuc {
          * root directory, an attempt is made to read its parent
          * directory.
          */
-        void vfs_finish_move_up(path_str new_path, bool cancelled, int error, bool refresh);
+        void vfs_finish_move_up(paths::string new_path, bool cancelled, int error, bool refresh);
 
         /**
          * Directory changed callback.
@@ -247,7 +247,7 @@ namespace nuc {
         /**
          * Directory deleted signal handler.
          */
-        void vfs_dir_deleted(path_str new_path);
+        void vfs_dir_deleted(paths::string new_path);
 
         
         /* Reading new directories */
@@ -260,7 +260,7 @@ namespace nuc {
          *
          * @return The expanded path.
          */
-        path_str expand_path(path_str path);
+        paths::string expand_path(paths::string path);
 
         /**
          * Records the current selected row in selected_row, sets the
@@ -296,7 +296,7 @@ namespace nuc {
          * @param path The path of the directory whose parent
          *    directory to read.
          */
-        void read_parent_dir(path_str path);
+        void read_parent_dir(paths::string path);
         
 
         /* Resetting/Setting the treeview model */
@@ -329,7 +329,7 @@ namespace nuc {
          *
          * @param new_path The path of the directory being read.
          */
-        void add_parent_entry(const path_str &new_path);
+        void add_parent_entry(const paths::string &new_path);
         
         /**
          * Sets the tree view's model to the new list, sets the
@@ -388,7 +388,7 @@ namespace nuc {
          * Selects the first entry named 'name'. If there is no such
          * entry, selects the row at min(row, number of rows - 1).
          */
-        void select_named(const path_str &name, index_type row = 0);
+        void select_named(const paths::string &name, index_type row = 0);
 
         
         /* Marking */

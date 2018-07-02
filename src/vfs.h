@@ -225,7 +225,7 @@ namespace nuc {
          * Signal type, of the signal sent when the directory has been
          * deleted.
          */
-        typedef sigc::signal<void, path_str> deleted_signal;
+        typedef sigc::signal<void, paths::string> deleted_signal;
 
         
         /* Constructor */
@@ -275,7 +275,7 @@ namespace nuc {
          *
          * @return The current path.
          */
-        path_str path() {
+        paths::string path() {
             return cur_type.logical_path();
         }
         
@@ -290,7 +290,7 @@ namespace nuc {
          * @param finish The finish callback function to call once the
          *    operation completes.
          */
-        void read(const path_str &path, finish_fn finish);
+        void read(const paths::string &path, finish_fn finish);
 
         /**
          * Attempts to list the contents of the entry @a ent.
@@ -367,7 +367,7 @@ namespace nuc {
          * @return Pointer to the entry, 'nullptr' if no entry with
          *    name @a name found.
          */
-        dir_entry *get_entry(const path_str &name) {
+        dir_entry *get_entry(const paths::string &name) {
             return cur_tree->get_entry(name);
         }
 
@@ -381,7 +381,7 @@ namespace nuc {
          *    the first entry, the second iterator is the past the
          *    end iterator.
          */
-        dir_tree::entry_range get_entries(const path_str &path) {
+        dir_tree::entry_range get_entries(const paths::string &path) {
             return cur_tree->get_entries(path);
         }
         
@@ -503,7 +503,7 @@ namespace nuc {
          *
          * @param subpath The subpath to read.
          */
-        void add_read_subdir(const path_str &subpath, finish_fn finish);
+        void add_read_subdir(const paths::string &subpath, finish_fn finish);
         
         /**
          * Read subdirectory task. 
@@ -516,7 +516,7 @@ namespace nuc {
          * @param state  The cancellation state.
          * @param subdir The subdirectory to read.
          */
-        void read_subdir(cancel_state &state, const path_str &subdir);
+        void read_subdir(cancel_state &state, const paths::string &subdir);
 
         /**
          * Read subdirectory task finish callback.
@@ -524,7 +524,7 @@ namespace nuc {
          * Queues a task on the main thread, which sets the subpath of
          * the directory tree and calls the finish callback.
          */
-        void finish_read_subdir(bool cancelled, const path_str &subdir, finish_fn finish);
+        void finish_read_subdir(bool cancelled, const paths::string &subdir, finish_fn finish);
 
         /**
          * Checks whether the current subdirectory of the directory
@@ -571,17 +571,17 @@ namespace nuc {
          * Handler functions for the create, change, delete and rename
          * file events.
          */
-        void file_created(cancel_state &state, const path_str &path);
-        void file_changed(cancel_state &state, const path_str &path);
-        void file_deleted(cancel_state &state, const path_str &path);
-        void file_renamed(cancel_state &state, const path_str &src, const path_str &dest);
+        void file_created(cancel_state &state, const paths::string &path);
+        void file_changed(cancel_state &state, const paths::string &path);
+        void file_deleted(cancel_state &state, const paths::string &path);
+        void file_renamed(cancel_state &state, const paths::string &src, const paths::string &dest);
 
         /**
          * Removes an entry from the new directory tree (new_tree).
          *
          * @param subpath The subpath of the entry
          */
-        void remove_entry(const path_str &subpath);
+        void remove_entry(const paths::string &subpath);
         
         /**
          * Obtains the stat attributes of a file. First the stat
@@ -596,7 +596,7 @@ namespace nuc {
          * @return true if successful, false if both stat and lstat
          *         failed.
          */
-        static bool file_stat(const path_str &path, struct stat *st);
+        static bool file_stat(const paths::string &path, struct stat *st);
 
 
         /** Callbacks */

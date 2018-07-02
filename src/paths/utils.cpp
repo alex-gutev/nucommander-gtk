@@ -17,41 +17,42 @@
  *
  */
 
-#include "path_utils.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <stdlib.h>
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 
 
-nuc::path_str nuc::file_name(const path_str &path) {
+nuc::paths::string nuc::paths::file_name(const string &path) {
     // Find last slash
     size_t slash_pos = path.rfind('/');
-    
+
     if (slash_pos != std::string::npos) {
         return path.substr(slash_pos + 1);
     }
-    
+
     return path;
 }
 
-nuc::path_str nuc::file_extension(const path_str &path) {
+nuc::paths::string nuc::paths::file_extension(const string &path) {
     // Find last '.' or '/'
     size_t pos = path.find_last_of("./");
-    
+
     // If a character was found and it is not '/', return the
     // substring beginning from next character.
     if (pos != std::string::npos && path[pos] != '/') {
         return path.substr(pos + 1);
     }
-    
+
     // No characters found, return empty string.
     return std::string();
 }
 
-void nuc::append_component(path_str &path, const path_str &comp) {
+void nuc::paths::append_component(string &path, const string &comp) {
     // If 'path' is not an empty string and does end in a slash,
     // append a slash.
     if (path.size() && path.back() != '/')
@@ -60,46 +61,46 @@ void nuc::append_component(path_str &path, const path_str &comp) {
     path.append(comp);
 }
 
-nuc::path_str nuc::appended_component(path_str path, const path_str &comp) {
+nuc::paths::string nuc::paths::appended_component(string path, const string &comp) {
     append_component(path, comp);
     return path;
 }
 
 
-void nuc::remove_last_component(nuc::path_str &path) {
+void nuc::paths::remove_last_component(nuc::paths::string &path) {
     size_t pos = path.rfind('/');
-    
-    if (pos == path_str::npos) {
+
+    if (pos == string::npos) {
         pos = 0;
     }
     else if (pos == 0) {
         pos = 1;
     }
-    
+
     path.resize(pos);
 }
 
-nuc::path_str nuc::removed_last_component(nuc::path_str path) {
+nuc::paths::string nuc::paths::removed_last_component(nuc::paths::string path) {
     remove_last_component(path);
     return path;
 }
 
 
-nuc::path_str nuc::path_from_components(const std::vector<path_str> &comps) {
-    path_str path;
-    
-    for (const path_str &comp : comps) {
+nuc::paths::string nuc::paths::path_from_components(const std::vector<string> &comps) {
+    string path;
+
+    for (const string &comp : comps) {
         append_component(path, comp);
     }
-    
+
     return path;
 }
 
-nuc::path_str nuc::canonicalized_path(const path_str &path) {
+nuc::paths::string nuc::paths::canonicalized_path(const string &path) {
     path_components comps(path);
-    std::vector<path_str> new_comps;
-    
-    for (path_str comp : comps) {
+    std::vector<string> new_comps;
+
+    for (string comp : comps) {
         if (comp == "..") {
             // If more than one component and last component is not '..'
             if (new_comps.size() && new_comps.back() != "..") {
@@ -114,31 +115,31 @@ nuc::path_str nuc::canonicalized_path(const path_str &path) {
             new_comps.push_back(std::move(comp));
         }
     }
-    
+
     return path_from_components(new_comps);
 }
 
-bool nuc::is_root_path(const path_str &path) {
+bool nuc::paths::is_root(const string &path) {
     // TODO: add more sophisticated checks for non-local file systems
     return path == "/";
 }
 
-bool nuc::is_child_of(path_str dir, const path_str &path) {
+bool nuc::paths::is_child_of(string dir, const string &path) {
     if (!dir.empty() && dir.back() != '/') {
         dir.push_back('/');
     }
 
     if (dir.size() >= path.size()) return false;
-    
+
     auto res = std::mismatch(dir.begin(), dir.end(), path.begin());
 
     return res.first == dir.end() && std::find(res.second, path.end(), '/') == path.end();
 }
 
 
-nuc::path_str nuc::expand_tilde(const path_str &path) {
+nuc::paths::string nuc::paths::expand_tilde(const string &path) {
     if (!path.empty() && path.front() == '~') {
-        path_str::size_type pos = path.find_first_of('/');
+        string::size_type pos = path.find_first_of('/');
 
         const char *home = NULL;
 
@@ -150,7 +151,7 @@ nuc::path_str nuc::expand_tilde(const path_str &path) {
             }
         }
         else {
-            path_str user(path, 1, pos == path_str::npos ? path_str::npos : pos - 1);
+            string user(path, 1, pos == string::npos ? string::npos : pos - 1);
 
             if (struct passwd *pw = getpwnam(user.c_str())) {
                 return home = pw->pw_dir;
@@ -160,7 +161,7 @@ nuc::path_str nuc::expand_tilde(const path_str &path) {
         if (home) {
             std::string full_path(home);
 
-            if (pos != path_str::npos) {
+            if (pos != string::npos) {
                 append_component(full_path, path.substr(pos+1));
             }
 

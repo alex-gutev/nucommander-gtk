@@ -34,7 +34,7 @@ dir_lister::~dir_lister() {
     close();
 }
 
-void dir_lister::open(const path_str &path) {
+void dir_lister::open(const paths::string &path) {
     dp = opendir(path.c_str());
     
     if (!dp) {

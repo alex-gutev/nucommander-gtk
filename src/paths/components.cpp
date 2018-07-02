@@ -17,28 +17,28 @@
  *
  */
 
-#include "path_components.h"
+#include "components.h"
 
 
-using namespace nuc;
+using namespace nuc::paths;
 
-path_components::iter::iter(const path_str &path, size_t pos) : path(path), pos(pos) {
-    if (pos != path_str::npos) {
+path_components::iter::iter(const string &path, size_t pos) : path(path), pos(pos) {
+    if (pos != string::npos) {
         next_pos = next_slash();
-        
+
         if (next_pos == pos)
             next_pos++;
     }
 }
 
-std::vector<path_str> path_components::all(const path_str &path) {
+std::vector<string> path_components::all(const string &path) {
     path_components comps(path);
-    std::vector<path_str> all;
-    
-    for (path_str comp : comps) {
+    std::vector<string> all;
+
+    for (string comp : comps) {
         all.push_back(comp);
     }
-    
+
     return all;
 }
 
@@ -53,13 +53,13 @@ size_t path_components::iter::next_non_slash() const{
 
 void path_components::iter::next() {
     pos = next_non_slash();
-    
-    if (pos == path_str::npos) {
+
+    if (pos == string::npos) {
         return;
     }
-    
+
     next_pos = next_slash();
-    
+
     if (next_pos == pos) {
         next();
     }
@@ -71,9 +71,9 @@ path_components::iter path_components::begin() {
 }
 
 path_components::iter path_components::end() {
-    return iter(path, path_str::npos);
+    return iter(path, string::npos);
 }
 
-path_str path_components::iter::operator*() const {
+string path_components::iter::operator*() const {
     return path.substr(pos, next_pos - pos);
 }
