@@ -25,7 +25,7 @@
 #include "lister/archive_lister.h"
 
 #include "archive_tree.h"
-#include "archive_plugin_loader.h"
+#include "plugins/archive_plugin_loader.h"
 
 #include "paths/utils.h"
 

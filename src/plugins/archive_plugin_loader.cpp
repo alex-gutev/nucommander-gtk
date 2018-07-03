@@ -41,12 +41,12 @@ void archive_plugin_loader::get_plugin_details() {
 
         child_path.append(child);
         child_path.append("/");
-        
+
         Glib::RefPtr<Gio::Settings> plg = Gio::Settings::create(plugin_schema, child_path);
-        
+
         std::string path = plg->get_string("path");
         std::string ext_reg = plg->get_string("regex");
-        
+
         plugins.emplace_back(new archive_plugin(path));
 
         if (!first) {
@@ -56,10 +56,10 @@ void archive_plugin_loader::get_plugin_details() {
         reg.push_back('(');
         reg.append(ext_reg);
         reg.push_back(')');
-        
+
         first = false;
     }
-    
+
     regex.assign(reg);
 }
 

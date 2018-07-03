@@ -41,13 +41,6 @@ add_sources(NUC_SRCS
     dir_monitor.h
     dir_monitor.cpp
     
-    archive_plugin_types.h
-    archive_plugin.h
-    archive_plugin.cpp
-    
-    archive_plugin_loader.h
-    archive_plugin_loader.cpp
-    
     dir_type.h
     dir_type.cpp
     

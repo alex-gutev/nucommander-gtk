@@ -47,7 +47,7 @@ namespace nuc {
         typedef int(*read_entry_fn)(void *, nuc_arch_entry *);
         typedef int(*unpack_entry_fn)(void *, int);
 
-        typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *); 
+        typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
 
         /**
          * Path to the plugin shared library file.
@@ -76,7 +76,7 @@ namespace nuc {
          *    an error.
          */
         void check_error(int code);
-        
+
     public:
         /**
          * Exception thrown when there is an error loading the plugin.
@@ -84,7 +84,7 @@ namespace nuc {
         class error : public std::exception {
             /** Error type code. */
             int code;
-            
+
         public:
             /**
              * Error type code constants.
@@ -148,7 +148,7 @@ namespace nuc {
          * For a documentation of the archive plugin api visit
          * archive_plugin_api.h
          */
-        
+
         open_fn open;
         close_fn close;
 

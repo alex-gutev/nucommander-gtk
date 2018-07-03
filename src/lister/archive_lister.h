@@ -21,7 +21,7 @@
 #define NUC_ARCHIVE_LISTER_H
 
 #include "lister/lister.h"
-#include "archive_plugin.h"
+#include "plugins/archive_plugin.h"
 
 namespace nuc {
     /**

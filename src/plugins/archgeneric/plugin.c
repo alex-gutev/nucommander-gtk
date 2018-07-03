@@ -24,7 +24,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include "archive_plugin_api.h"
+#include "plugins/archive_plugin_api.h"
 
 #define EXPORT __attribute__((visibility("default")))
 

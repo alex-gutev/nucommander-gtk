@@ -76,7 +76,7 @@ namespace nuc {
          * expression.
          */
         std::vector<std::unique_ptr<archive_plugin>> plugins;
-       
+
 
         /**
          * Retrieves the plugin details from GSettings, and builds the

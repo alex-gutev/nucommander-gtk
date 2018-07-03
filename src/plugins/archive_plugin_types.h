@@ -51,7 +51,7 @@ typedef enum {
     NUC_AP_WARN = -2,
     /** Last operation failed and cannot be retried */
     NUC_AP_FAILED = -3,
-    /** 
+    /**
      * Last operation failed and no more operations can be attempted
      * on the current archive handle.
      */
@@ -75,12 +75,12 @@ typedef struct nuc_arch_entry {
     /** Subpath of the entry within the archive */
     const char *path;
 
-    /** 
+    /**
      * Destination path of hardlink, NULL if the entry is not a
      * hardlink.
      */
     const char *link_dest;
-    /** 
+    /**
      * Destination path of symbolic link, NULL if the entry is not a
      * symbolic link.
      */
