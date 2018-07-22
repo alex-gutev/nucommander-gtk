@@ -39,7 +39,7 @@ namespace nuc {
          *
          * @return The name of the icon for the file type.
          */
-        std::string name_for_type(file_type type);
+        std::string name_for_type(dir_entry::entry_type type);
 
         /**
          * Returns the icon for the file, with name @a name, based on

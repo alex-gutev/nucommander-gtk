@@ -35,11 +35,6 @@
 
 namespace nuc {
     /**
-     * Integer type used to store 'dirent' file type constants.
-     */
-    typedef uint8_t file_type;
-
-    /**
      * File map type.
      */
     template <typename T>

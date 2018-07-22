@@ -26,16 +26,6 @@
 #include "paths/utils.h"
 
 namespace nuc {
-    enum {
-        /**
-         * Parent directory pseudo-entry type.
-         * 
-         * DT_WHT has the maximum value, 1 is added to it to produce
-         * a custom type constant
-         */
-        DT_PARENT = DT_WHT + 1
-    };
-    
     /**
      * Directory Entry.
      * 
@@ -59,20 +49,29 @@ namespace nuc {
         paths::string m_file_name;
         
         /**
-         * The type of the entry itself, not the underlying file, as a
-         * POSIX 'dirent' constant.
-         * 
-         * This is useful to distinguish symbolic links from regular
-         * files whilst still storing the file type of their targets.
-         */
-        file_type m_type;
-        
-        /**
          * Stat attributes of the underlying file.
          */
         struct stat m_attr;
-        
+
     public:
+        /**
+         * Entry type constants.
+         */
+        enum entry_type {
+            /* POSIX file types */
+            type_unknown = 0,
+            type_fifo,
+            type_chr,
+            type_dir,
+            type_blk,
+            type_reg,
+            type_lnk,
+            type_sock,
+            type_wht,
+
+            /* Pseudo entry types */
+            type_parent
+        };
 
         /**
          * Stores context data. This field is not used by the vfs
@@ -82,14 +81,19 @@ namespace nuc {
 
 
         /**
-         * Constructs a 'dir_entry' object with a given name and type,
-         * which is stored in the entry type and 'mode' stat
-         * attribute.
+         * Constructs a 'dir_entry' object with a given name and type.
          *
          * orig_subpath: The non-canonicalized subpath.
-         * type:         The type of the entry, as a dirent constant.
+         * type:         The type of the entry, as a dirent (DT_) constant.
          */
         dir_entry(const paths::string orig_subpath, uint8_t type);
+        /**
+         * Constructs a 'dir_entry' object with a given name and type.
+         *
+         * orig_subpath: The non-canonicalized subpath.
+         * type:         The type of the entry, as an entry_type constant.
+         */
+        dir_entry(const paths::string orig_subpath, entry_type type);
         
         /**
          * Constructs a 'dir_entry' object from a 'lister' object.
@@ -145,23 +149,20 @@ namespace nuc {
         /**
          * Returns the entry type.
          */
-        file_type ent_type() const {
-            return m_type;
-        }
+        entry_type ent_type() const;
         /**
          * Sets the entry type. The stat mode attribute is not
          * changed.
          */
-        void ent_type(uint8_t type) {
-            m_type = type;
-        }
+        void ent_type(entry_type type);
+        void ent_type(uint8_t type);
 
         /**
-         * Returns the type of the underlying file as a dirent (DT_ )
-         * constant. If the type of the underlying file is unknown
-         * (DT_UNKNOWN), the entry type is returned instead.
+         * Returns the type of the underlying file as an entry_type
+         * constant. If the type of the underlying file is unknown,
+         * the entry type is returned instead.
          */
-        file_type type() const;
+        entry_type type() const;
         
         /**
          * Returns the stat attributes.
@@ -176,6 +177,26 @@ namespace nuc {
         void attr(const struct stat &st) {
             m_attr = st;
         }
+
+    private:
+
+        /**
+         * The type of the entry itself, not the underlying file.
+         *
+         * This is useful to distinguish symbolic links from regular
+         * files whilst still storing the file type of their targets.
+         */
+        entry_type m_type;
+
+        /**
+         * Converts a POSIX dirent (DT_) type constant to an entry_type
+         * constant.
+         *
+         * @param type The dirent type constant.
+         *
+         * @return The entry_type constant.
+         */
+        static entry_type dt_to_entry_type(uint8_t type);
     };
 }
 

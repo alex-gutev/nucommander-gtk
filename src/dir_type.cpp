@@ -150,18 +150,20 @@ nuc::dir_type nuc::dir_type::get(const paths::string &path) {
 
 nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
     switch (ent.type()) {
-    case DT_DIR:
+    case dir_entry::type_dir:
         paths::append_component(path, ent.file_name());
         return dir_type(path, make_dir_lister, make_dir_tree, true, "");
 
-    case DT_REG:
+    case dir_entry::type_reg:
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
             paths::append_component(path, ent.file_name());
             return dir_type(path, std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
         }
+
+    default:
+        return dir_type();
+
     }
-    
-    return dir_type();
 }
 
 // Local Variables:

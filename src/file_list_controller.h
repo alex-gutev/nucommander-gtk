@@ -108,7 +108,7 @@ namespace nuc {
         /**
          * Parent directory pseudo entry.
          */
-        dir_entry parent_entry{"..", DT_PARENT};
+        dir_entry parent_entry{"..", dir_entry::type_parent};
 
 
         /* Widgets */

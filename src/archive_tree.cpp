@@ -60,7 +60,7 @@ dir_entry *archive_tree::add_components(const paths::string &path, dir_entry &en
         else {
             dent = add_to_map(*parent_map, comp, &ent) ? &ent : nullptr;
 
-            if (ent.type() == DT_DIR) {
+            if (ent.type() == dir_entry::type_dir) {
                 // Add to directory map, if not already present.
                 dirs[sub_path];
             }
@@ -93,12 +93,12 @@ dir_entry &archive_tree::make_dir_ent(const paths::string &path) {
     for (auto it = range.first; it != range.second; ++it) {
         dir_entry &ent = it->second;
         
-        if (ent.ent_type() == DT_DIR) {
+        if (ent.ent_type() == dir_entry::type_dir) {
             return ent;
         }
     }
     
-    dir_entry &ent = map.emplace(path, dir_entry(path, DT_DIR))->second;
+    dir_entry &ent = map.emplace(path, dir_entry(path, dir_entry::type_dir))->second;
     
     return ent;
 }
@@ -114,7 +114,7 @@ dir_tree::dir_map const * archive_tree::subpath_dir(const paths::string &path) c
 }
 
 bool archive_tree::is_subdir(const dir_entry& ent) const {
-    return ent.type() == DT_DIR && dirs.count(ent.subpath());
+    return ent.type() == dir_entry::type_dir && dirs.count(ent.subpath());
 }
 
 dir_entry *archive_tree::get_entry(const paths::string &name) {

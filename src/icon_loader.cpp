@@ -35,7 +35,7 @@ Glib::RefPtr<Gdk::Pixbuf> icon_loader::load_icon(const nuc::dir_entry &ent) {
 
     Glib::RefPtr<Gdk::Pixbuf> icon;
 
-    if (type != DT_REG) {
+    if (type != dir_entry::type_reg) {
         auto info = theme->lookup_icon(name_for_type(type), 16, Gtk::ICON_LOOKUP_FORCE_SIZE);
         if (info) icon = info.load_icon();
     }
@@ -52,24 +52,24 @@ Glib::RefPtr<Gdk::Pixbuf> icon_loader::load_icon(const nuc::dir_entry &ent) {
     return icon;
 }
 
-std::string icon_loader::name_for_type(file_type type) {
+std::string icon_loader::name_for_type(dir_entry::entry_type type) {
     switch (type) {
-    case DT_PARENT:
+    case dir_entry::type_parent:
         return "go-up";
 
-    case DT_DIR:
+    case dir_entry::type_dir:
         return "folder";
 
-    case DT_FIFO:
+    case dir_entry::type_fifo:
         return "inode-fifo";
 
-    case DT_BLK:
+    case dir_entry::type_blk:
         return "inode-blockdevice";
 
-    case DT_CHR:
+    case dir_entry::type_chr:
         return "inode-chardevice";
 
-    case DT_SOCK:
+    case dir_entry::type_sock:
         return "inode-socket";
 
     default:

@@ -285,7 +285,7 @@ void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
 void file_list_controller::mark_row(Gtk::TreeRow row) {
     dir_entry *ent = row[columns.ent];
     
-    if (ent->type() != DT_PARENT) {
+    if (ent->type() != dir_entry::type_parent) {
         bool mark = !row[columns.marked];
         dir_entry *ent = row[columns.ent];
 
@@ -513,7 +513,7 @@ void file_list_controller::path(const std::string &path, bool move_to_old) {
 }
 
 bool file_list_controller::descend(const dir_entry& ent) {
-    if (ent.ent_type() == DT_PARENT) {
+    if (ent.ent_type() == dir_entry::type_parent) {
         paths::string new_path(paths::removed_last_component(cur_path));
         auto finish = read_finish_callback();
         

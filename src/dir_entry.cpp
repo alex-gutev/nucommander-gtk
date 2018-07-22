@@ -23,12 +23,46 @@
 
 using namespace nuc;
 
+
+dir_entry::entry_type dir_entry::dt_to_entry_type(uint8_t type) {
+    switch (type) {
+    case DT_UNKNOWN:
+        return type_unknown;
+
+    case DT_FIFO:
+        return type_fifo;
+
+    case DT_CHR:
+        return type_chr;
+
+    case DT_DIR:
+        return type_dir;
+
+    case DT_BLK:
+        return type_blk;
+
+    case DT_REG:
+        return type_reg;
+
+    case DT_LNK:
+        return type_lnk;
+
+    case DT_WHT:
+        return type_wht;
+    }
+
+    return type_unknown;
+}
+
 // The default constructor call m_attr() is required to value
 // initialize all members of the stat struct to zero
 
-dir_entry::dir_entry(const paths::string orig_name, uint8_t type)
+dir_entry::dir_entry(const paths::string orig_name, uint8_t type) : dir_entry(orig_name, dt_to_entry_type(type)) {}
+
+dir_entry::dir_entry(const paths::string orig_name, entry_type type)
     : m_orig_subpath(orig_name), m_subpath(paths::canonicalized_path(orig_name)),
       m_file_name(paths::file_name(m_subpath)), m_type(type), m_attr() {}
+
 
 dir_entry::dir_entry(const lister::entry &ent) : dir_entry(ent.name, ent.type) {}
 
@@ -41,8 +75,19 @@ dir_entry::dir_entry(paths::string path, const struct stat &st) : dir_entry(std:
 }
 
 
-file_type dir_entry::type() const {
-    file_type type = IFTODT(m_attr.st_mode);
+dir_entry::entry_type dir_entry::ent_type() const {
+    return m_type;
+}
+void dir_entry::ent_type(entry_type type) {
+    m_type = type;
+}
+void dir_entry::ent_type(uint8_t type) {
+    m_type = dt_to_entry_type(type);
+}
+
+
+dir_entry::entry_type dir_entry::type() const {
+    uint8_t type = IFTODT(m_attr.st_mode);
     
-    return type != DT_UNKNOWN ? type : m_type;
+    return type != DT_UNKNOWN ? dt_to_entry_type(type) : m_type;
 }
