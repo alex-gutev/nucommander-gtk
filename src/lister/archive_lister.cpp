@@ -40,7 +40,7 @@ void archive_lister::close() {
 
 
 bool archive_lister::read_entry(lister::entry &ent) {
-    int err = plugin->read_entry(handle, &arch_entry);
+    int err = plugin->next_entry(handle, &arch_entry);
 
     if (err && err != NUC_AP_EOF) {
         // Refine error handling

@@ -103,7 +103,7 @@ void nuc_arch_set_callback(void *plg_ctx, nuc_arch_progress_fn callback, void *c
 }
 
 EXPORT
-int nuc_arch_read_entry(void *ctx, nuc_arch_entry *ent) {
+int nuc_arch_next_entry(void *ctx, nuc_arch_entry *ent) {
     int err;
     nuc_arch_handle *handle = ctx;
     
@@ -126,57 +126,10 @@ int nuc_arch_read_entry(void *ctx, nuc_arch_entry *ent) {
 }
 
 EXPORT
-int nuc_arch_unpack_entry(void *ctx, int destfd) {
-    nuc_arch_handle *handle = ctx;
-    
-    FILE *f = fdopen(destfd, "wb");
-    
-    if (!f) {
-        return NUC_AP_RETRY;
-    }
-    
-    int err = NUC_AP_OK;
-    const void *buf;
-    size_t size;
-    int64_t offset;
-    
-    call_callback(handle, NUC_AP_BEGIN, NUC_AP_OK, 0);
-    
-    for (;;) {
-        err = err_code(archive_read_data_block(handle->ar, &buf, &size, &offset));
-        // Retry may be possible
-        
-        if (err == NUC_AP_EOF) {
-            err = NUC_AP_OK;
-            break;
-        }
-        
-        if (err < NUC_AP_OK) {
-            if (call_callback(handle, NUC_AP_PROGRESS, err, size) || err <= NUC_AP_FAILED) {
-                break;
-            }
-            else {
-                continue;
-            }
-        }
-        
-        if (fwrite(buf, size, 1, f) != size) {
-            err = NUC_AP_FAILED;
-            call_callback(handle, NUC_AP_PROGRESS, err, size);
-            break;
-        }
-        
-        if (call_callback(handle->ctx, NUC_AP_PROGRESS, NUC_AP_OK, size))
-            break;
-    }
-    
-    fclose(f);
-    
-    // TODO: Check for close errors as fclose can fail
-    
-    call_callback(handle->ctx, NUC_AP_FINISH, NUC_AP_OK, 0);
-    
-    return err;
+int nuc_arch_unpack(void *ctx, const char **buf, size_t *size, off_t *offset) {
+	nuc_arch_handle *handle = ctx;
+
+	return err_code(archive_read_data_block(handle->ar, (const void **)buf, size, offset));
 }
 
 

@@ -44,10 +44,10 @@ void archive_plugin::load() {
         close = (close_fn)dlsym(dl_handle, "nuc_arch_close");
         check_error(error::api_incomplete);
 
-        read_entry = (read_entry_fn)dlsym(dl_handle, "nuc_arch_read_entry");
+        next_entry = (next_entry_fn)dlsym(dl_handle, "nuc_arch_next_entry");
         check_error(error::api_incomplete);
 
-        unpack_entry = (unpack_entry_fn)dlsym(dl_handle, "nuc_arch_unpack_entry");
+        unpack = (unpack_fn)dlsym(dl_handle, "nuc_arch_unpack");
         check_error(error::api_incomplete);
 
         set_callback = (set_callback_fn)dlsym(dl_handle, "nuc_arch_set_callback");

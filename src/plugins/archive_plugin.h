@@ -44,8 +44,8 @@ namespace nuc {
         typedef void*(*open_fn)(const char *, int, int *);
         typedef int(*close_fn)(void *);
 
-        typedef int(*read_entry_fn)(void *, nuc_arch_entry *);
-        typedef int(*unpack_entry_fn)(void *, int);
+        typedef int(*next_entry_fn)(void *, nuc_arch_entry *);
+        typedef int(*unpack_fn)(void *, const char **, size_t *, off_t *);
 
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
 
@@ -152,8 +152,8 @@ namespace nuc {
         open_fn open;
         close_fn close;
 
-        read_entry_fn read_entry;
-        unpack_entry_fn unpack_entry;
+        next_entry_fn next_entry;
+        unpack_fn unpack;
 
         set_callback_fn set_callback;
     };

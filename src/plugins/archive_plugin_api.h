@@ -78,18 +78,29 @@ int nuc_arch_close(void *handle);
  *    value if there was an error. A detailed error code is
  *    stored in errno.
  */
-int nuc_arch_read_entry(void *handle, nuc_arch_entry *ent);
+int nuc_arch_next_entry(void *handle, nuc_arch_entry *ent);
 
 /**
- * Unpacks the last entry read. Only regular file entries can be
- * unpacked.
+ * Reads a block of data from the last entry read. Data can only be
+ * read from regular files.
  *
- * @param handle The handle to the archive.
+ * @param handle Handle to the archive.
  *
- * @param destfd The file descriptor into which to write the file's
- *               contents.
+ * @param buf Pointer to a pointer to a char where the pointer to the
+ *    first byte of the block will be stored.
+ *
+ * @param len Pointer to a size_t where the size of the block will be
+ *    stored.
+ *
+ * @param offset Pointer to an off_t where the offset of the start of
+ *    the current block (in bytes) will be stored.
+ *
+ * @return NUC_AP_OK (0) if the block was read successfully,
+ *    NUC_AP_EOF if the end of the entry was reached. a NUC_AP_ error
+ *    constant value is returned if there was an error, with a more
+ *    detailed error code stored in errno.
  */
-int nuc_arch_unpack_entry(void *handle, int destfd);
+int nuc_arch_unpack(void *handle, const char **buf, size_t *len, off_t *offset);
 
 /**
  * Sets a progress callback which is called when unpacking individual
