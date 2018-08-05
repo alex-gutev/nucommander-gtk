@@ -47,7 +47,7 @@ namespace nuc {
          *
          * Returns a pointer to a newly created lister object.
          */
-        typedef std::function<lister*()> create_lister_fn;
+        typedef std::function<lister*(const paths::string &)> create_lister_fn;
         /**
          * Create directory tree function type.
          *
@@ -151,7 +151,7 @@ namespace nuc {
          * @return Pointer to a newly created lister object.
          */
         lister * create_lister() const {
-            return m_create_lister();
+            return m_create_lister(m_path);
         }
 
         /**

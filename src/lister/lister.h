@@ -27,6 +27,7 @@
 #include <exception>
 
 #include "paths/utils.h"
+#include "stream/instream.h"
 
 namespace nuc {
     /**
@@ -75,11 +76,6 @@ namespace nuc {
         virtual ~lister() = default;
 
         /**
-         * Opens the directory at 'path' for reading.
-         */
-        virtual void open(const paths::string &path) = 0;
-
-        /**
          * Reads the next entry into the entry object 'ent'.
          *
          * Returns true if an entry was read, false if there are no
@@ -98,6 +94,13 @@ namespace nuc {
          * retrieve stat attributes is not a critical error.
          */
         virtual bool entry_stat(struct stat &st) = 0;
+
+        /**
+         * Opens the last entry read for reading.
+         *
+         * @return An input stream for reading the entry's contents.
+         */
+        virtual instream *open_entry() = 0;
 
         /**
          * Closes all open file handles. Should not through any

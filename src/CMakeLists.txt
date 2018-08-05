@@ -54,3 +54,4 @@ add_sources(NUC_SRCS
 add_subdirectory(paths/)
 add_subdirectory(plugins/)
 add_subdirectory(lister/)
+add_subdirectory(stream/)

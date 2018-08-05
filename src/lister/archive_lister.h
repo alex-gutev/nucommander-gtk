@@ -50,19 +50,20 @@ namespace nuc {
          * Constructs an archive lister.
          *
          * @param plugin The plugin which reads the archive.
+         * @param path Path to the archive file.
          */
-        archive_lister(archive_plugin *plugin) : plugin(plugin) {}
+        archive_lister(archive_plugin *plugin, const paths::string &path);
 
         virtual ~archive_lister();
 
         /* Method Overrides */
 
-        virtual void open(const paths::string &path);
-
         virtual void close();
 
         virtual bool read_entry(entry &ent);
         virtual bool entry_stat(struct stat &st);
+
+        virtual instream *open_entry();
     };
 }
 

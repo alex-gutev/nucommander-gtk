@@ -44,18 +44,25 @@ namespace nuc {
 
     public:
         /**
+         * Creates a lister for the directory at @a path.
+         *
+         * @param path Path to the directory.
+         */
+        dir_lister(const paths::string &path);
+
+        /**
          * Destructor. Closes the directory handle, if open.
          */
         virtual ~dir_lister();
 
         /** Method Overrides */
 
-        virtual void open(const paths::string &path);
-
         virtual void close();
 
         virtual bool read_entry(entry &ent);
         virtual bool entry_stat(struct stat &st);
+
+        virtual instream *open_entry();
     };
 }
 

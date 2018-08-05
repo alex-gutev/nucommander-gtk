@@ -27,19 +27,19 @@
 
 #include <cstring>
 
+#include "stream/file_instream.h"
 
 using namespace nuc;
 
-dir_lister::~dir_lister() {
-    close();
-}
-
-void dir_lister::open(const paths::string &path) {
-    dp = opendir(path.c_str());
-
-    if (!dp) {
+dir_lister::dir_lister(const paths::string &path) {
+    if (!(dp = opendir(path.c_str()))) {
         raise_error(errno);
     }
+}
+
+
+dir_lister::~dir_lister() {
+    close();
 }
 
 void dir_lister::close() {
@@ -87,4 +87,9 @@ bool dir_lister::entry_stat(struct stat &st) {
     }
 
     return true;
+}
+
+
+instream * dir_lister::open_entry() {
+    return new file_instream(dirfd(dp), last_ent->d_name);
 }

@@ -19,13 +19,16 @@
 
 #include "archive_lister.h"
 
+#include "stream/archive_instream.h"
+
+
 using namespace nuc;
 
 archive_lister::~archive_lister() {
     close();
 }
 
-void archive_lister::open(const paths::string &path) {
+archive_lister::archive_lister(archive_plugin *plugin, const paths::string &path) : plugin(plugin) {
     int error = 0;
 
     if (!(handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &error))) {
@@ -56,6 +59,10 @@ bool archive_lister::read_entry(lister::entry &ent) {
 bool archive_lister::entry_stat(struct stat& st) {
     st = *arch_entry.stat;
     return true;
+}
+
+instream * archive_lister::open_entry() {
+    return new archive_instream(plugin, handle);
 }
 
 // Local Variables:

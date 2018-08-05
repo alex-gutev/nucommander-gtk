@@ -260,8 +260,6 @@ void vfs::read_path(cancel_state &state, const std::string &path, bool refresh) 
 }
 
 void vfs::list_dir(cancel_state& state, dir_type type, bool refresh) {
-    std::unique_ptr<lister> listr(type.create_lister());
-    
     state.no_cancel([=] {
         if (!refresh) reading = true;
         
@@ -273,7 +271,7 @@ void vfs::list_dir(cancel_state& state, dir_type type, bool refresh) {
     call_begin(state, refresh);
 
     try {
-        listr->open(new_type.path());
+        std::unique_ptr<lister> listr(type.create_lister());
         
         lister::entry ent;
         struct stat st;
