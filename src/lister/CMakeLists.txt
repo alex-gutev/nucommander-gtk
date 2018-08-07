@@ -8,4 +8,6 @@ add_sources(NUC_SRCS
   archive_lister.cpp
 
   tree_lister.h
+  dir_tree_lister.h
+  dir_tree_lister.cpp
 )
