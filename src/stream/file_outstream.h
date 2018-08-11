@@ -20,6 +20,9 @@
 #ifndef NUC_FILE_OUTSTREAM_H
 #define NUC_FILE_OUTSTREAM_H
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "outstream.h"
 
 namespace nuc {
@@ -48,7 +51,7 @@ namespace nuc {
          * @param path Path to the file.
          * @param flags Additional flags passed to open(2).
          */
-        file_outstream(const char *path, int flags);
+        file_outstream(const char *path, int flags, int perms = S_IRWXU);
         /**
          * Constructs a file output stream for the file at path @a
          * path relative to the directory with file descriptor @a
@@ -61,7 +64,7 @@ namespace nuc {
          *
          * @param flags Additional flags passed to openat(2).
          */
-        file_outstream(int dirfd, const char *path, int flags);
+        file_outstream(int dirfd, const char *path, int flags, int perms = S_IRWXU);
 
         /**
          * Closes the output stream.

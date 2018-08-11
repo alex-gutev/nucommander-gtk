@@ -19,8 +19,6 @@
 
 #include "file_outstream.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -28,13 +26,13 @@
 using namespace nuc;
 
 
-file_outstream::file_outstream(const char *path, int flags) {
-    if ((fd = open(path, flags | O_CLOEXEC | O_CREAT)) < 0) {
+file_outstream::file_outstream(const char *path, int flags, int perms) {
+    if ((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT, perms)) < 0) {
         throw error(errno);
     }
 }
-file_outstream::file_outstream(int dirfd, const char *path, int flags) {
-    if ((fd = open(path, flags | O_CLOEXEC | O_CREAT)) < 0) {
+file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) {
+    if ((fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT, perms)) < 0) {
         throw error(errno);
     }
 }
