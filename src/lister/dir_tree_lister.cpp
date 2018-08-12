@@ -44,37 +44,35 @@ dir_tree_lister::dir_tree_lister(const paths::string &base, const std::vector<pa
     }
 }
 
-void dir_tree_lister::close() {
-    if (handle) {
-        fts_close(handle);
-        handle = nullptr;
-    }
+dir_tree_lister::~dir_tree_lister() {
+    fts_close(handle);
 }
 
+void dir_tree_lister::list_entries(const list_callback &fn) {
+    paths::string current_dir;
+    lister::entry ent;
 
-bool dir_tree_lister::read_entry(nuc::lister::entry &ent) {
-    if ((last_ent = fts_read(handle))) {
+    while ((last_ent = fts_read(handle))) {
         if (last_ent->fts_info == FTS_ERR || last_ent->fts_info == FTS_DNR)
             raise_error(last_ent->fts_errno);
 
-        last_path = paths::appended_component(current_dir, last_ent->fts_name);
+        paths::string path = paths::appended_component(current_dir, last_ent->fts_name);
 
-        // Update current directory
-        set_dir();
+        // Update path to current directory
+        set_dir(last_ent, current_dir);
 
-        ent.type = get_type();
-        ent.name = last_path.c_str();
+        ent.type = get_type(last_ent);
+        ent.name = path.c_str();
 
-        return true;
+        fn(ent, !stat_err(last_ent) && last_ent->fts_statp ? last_ent->fts_statp : nullptr, get_visit_info(last_ent));
     }
-    else if (int error = errno) {
+
+    if (int error = errno) {
         raise_error(error);
     }
-
-    return false;
 }
 
-void dir_tree_lister::set_dir() {
+void dir_tree_lister::set_dir(FTSENT *last_ent, paths::string &current_dir) {
     switch (last_ent->fts_info) {
     case FTS_D:
         paths::append_component(current_dir, last_ent->fts_name);
@@ -86,8 +84,8 @@ void dir_tree_lister::set_dir() {
     }
 }
 
-int dir_tree_lister::get_type() const {
-    switch (last_ent->fts_info) {
+int dir_tree_lister::get_type(FTSENT *ent) {
+    switch (ent->fts_info) {
     case FTS_D:
     case FTS_DP:
     case FTS_DC:
@@ -105,21 +103,12 @@ int dir_tree_lister::get_type() const {
         return DT_LNK;
 
     default:
-        return IFTODT(last_ent->fts_statp->st_mode);
+        return IFTODT(ent->fts_statp->st_mode);
     }
 }
 
-bool dir_tree_lister::entry_stat(struct stat &st) {
-    if (last_ent && !stat_err() && last_ent->fts_statp) {
-        st = *last_ent->fts_statp;
-        return true;
-    }
-
-    return false;
-}
-
-bool dir_tree_lister::stat_err() const {
-    switch (last_ent->fts_info) {
+bool dir_tree_lister::stat_err(FTSENT *ent) {
+    switch (ent->fts_info) {
     case FTS_ERR:
     case FTS_DNR:
     case FTS_NS:
@@ -131,7 +120,7 @@ bool dir_tree_lister::stat_err() const {
 }
 
 
-dir_tree_lister::visit_info dir_tree_lister::entry_visit_info() const {
+dir_tree_lister::visit_info dir_tree_lister::get_visit_info(FTSENT *last_ent) {
     switch (last_ent->fts_info) {
     case FTS_DP:
         return visit_info::visit_postorder;

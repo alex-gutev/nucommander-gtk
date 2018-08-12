@@ -21,6 +21,7 @@
 #define NUC_TREE_LISTER_H
 
 #include <vector>
+#include <functional>
 
 #include "lister.h"
 
@@ -28,7 +29,7 @@ namespace nuc {
     /**
      * Generic interface for listing directory trees.
      */
-    class tree_lister : public lister {
+    class tree_lister {
     public:
         /**
          * Describes the traversal stage of the current entry.
@@ -54,22 +55,66 @@ namespace nuc {
             visit_cycle
         };
 
-        /** lister methods */
-
-        virtual void close() = 0;
-
-        virtual bool read_entry(entry &ent) = 0;
-        virtual bool entry_stat(struct stat &st) = 0;
-
-        virtual instream * open_entry() = 0;
+        /**
+         * Callback function type, called for each entry in the tree.
+         *
+         * Takes three arguments:
+         *
+         * - The entry's details as a lister::entry struct.
+         *
+         * - The entry's stat attributes, NULL if the stat attributes
+         *   are unavailable (sometimes unavailable for directories
+         *   visited in pre-order), or could not be obtained.
+         *
+         * - The entry's visit info
+         */
+        typedef std::function<void(const lister::entry &, const struct stat *, visit_info)> list_callback;
 
         /**
-         * Returns the traversal stage for the last entry.
-         *
-         * @return A visit_info constant describing the traversal
-         *   stage.
+         * Error exception.
          */
-        virtual visit_info entry_visit_info() const = 0;
+        class error : public std::exception {
+            const int m_code;
+
+        public:
+
+            error(int code) : m_code(code) {}
+
+            /**
+             * Returns the error code.
+             */
+            int code() const {
+                return m_code;
+            }
+        };
+
+        virtual ~tree_lister() = default;
+
+
+        /**
+         * Reads all entries in the tree and calls @a fn on each
+         * entry.
+         *
+         * @param fn A function to call on each entry.
+         */
+        virtual void list_entries(const list_callback &fn) = 0;
+
+        /**
+         * Opens the last entry read, for reading. This may only be
+         * used if the last entry is a regular file.
+         *
+         * @return An instream object for reading the entry's
+         *    contents.
+         */
+        virtual instream * open_entry() = 0;
+
+    protected:
+        /**
+         * Throws an exception with error code @a code.
+         */
+        void raise_error(int code) {
+            throw error(code);
+        }
     };
 }
 

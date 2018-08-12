@@ -42,37 +42,45 @@ namespace nuc {
         FTSENT *last_ent = nullptr;
 
         /**
-         * Current subdirectory of the tree.
-         */
-        paths::string current_dir;
-
-        /**
-         * The subpath (from the root of the tree), of the last entry.
-         */
-        paths::string last_path;
-
-        /**
-         * Converts the value of the fts_info field, of the last entry
-         * read, to a dirent file type constant.
+         * Converts the value of the fts_info field, of the entry, to
+         * a dirent file type constant.
          *
-         * @return The type of the last entry as a dirent constant.
+         * @param ent The FTS entry.
+         *
+         * @return The type of the entry as a dirent constant.
          */
-        int get_type() const;
+        static int get_type(FTSENT *ent);
 
         /**
          * Checks whether there was an error obtaining the stat
-         * attributes of the last entry.
+         * attributes of the entry.
+         *
+         * @param ent The FTS entry.
          *
          * @return True if there was an error obtaining the stat
-         *    attributes of the last entry.
+         *    attributes of the entry.
          */
-        bool stat_err() const;
+        static bool stat_err(FTSENT *ent);
 
         /**
-         * If the last entry visited is a directory, updates the
-         * current directory (current_dir).
+         * If the entry visited is a directory, appends the entry (as
+         * a component) to the path @a dir.
+         *
+         * @param ent The FTS entry.
+         *
+         * @param dir The path to the current directory, to be
+         *    updated.
          */
-        void set_dir();
+        static void set_dir(FTSENT *ent, paths::string &dir);
+
+        /**
+         * Returns the visit info for the entry @a ent. If the entry
+         * is not a regular directory visit_preorder is always
+         * returned.
+         *
+         * @param ent The FTS entry.
+         */
+        static visit_info get_visit_info(FTSENT *ent);
 
     public:
 
@@ -87,20 +95,13 @@ namespace nuc {
          */
         dir_tree_lister(const paths::string &base, const std::vector<paths::string> &paths);
 
-        virtual ~dir_tree_lister() {
-            close();
-        }
+        virtual ~dir_tree_lister();
 
         /* Method Overrides */
 
-        virtual void close();
-
-        virtual bool read_entry(entry &ent);
-        virtual bool entry_stat(struct stat &st);
+        virtual void list_entries(const list_callback &fn);
 
         virtual instream * open_entry();
-
-        virtual visit_info entry_visit_info() const;
     };
 }
 
