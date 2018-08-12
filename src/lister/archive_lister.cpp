@@ -45,7 +45,10 @@ void archive_lister::close() {
 bool archive_lister::read_entry(lister::entry &ent) {
     int err = plugin->next_entry(handle, &arch_entry);
 
-    if (err && err != NUC_AP_EOF) {
+    if (err == NUC_AP_EOF)
+        return false;
+
+    if (err != NUC_AP_OK) {
         // Refine error handling
         raise_error(errno);
     }
@@ -53,7 +56,7 @@ bool archive_lister::read_entry(lister::entry &ent) {
     ent.name = arch_entry.path;
     ent.type = IFTODT(arch_entry.stat->st_mode & S_IFMT);
 
-    return err == NUC_AP_OK;
+    return true;
 }
 
 bool archive_lister::entry_stat(struct stat& st) {
