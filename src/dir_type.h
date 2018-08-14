@@ -22,9 +22,13 @@
 
 #include <tuple>
 #include <functional>
+#include <vector>
 
 #include "types.h"
+
 #include "lister/lister.h"
+#include "lister/tree_lister.h"
+
 #include "dir_tree.h"
 #include "dir_entry.h"
 
@@ -45,9 +49,24 @@ namespace nuc {
         /**
          * Create lister function type.
          *
+         * Takes one parameter: the path to the directory.
+         *
          * Returns a pointer to a newly created lister object.
          */
         typedef std::function<lister*(const paths::string &)> create_lister_fn;
+
+        /**
+         * Create tree lister function type.
+         *
+         * Takes two parameters:
+         *
+         * - Path to the directory.
+         * - Array of the subpaths of the directory trees to list.
+         *
+         * Returns a pointer to a newly created tree_lister object.
+         */
+        typedef std::function<tree_lister*(const paths::string &, const std::vector<paths::string> &)> create_tree_lister_fn;
+
         /**
          * Create directory tree function type.
          *
@@ -72,6 +91,12 @@ namespace nuc {
          * Create lister function.
          */
         create_lister_fn m_create_lister;
+
+        /**
+         * Create tree_lister function.
+         */
+        create_tree_lister_fn m_create_tree_lister;
+
         /**
          * Create directory tree function.
          */
@@ -126,21 +151,23 @@ namespace nuc {
          * Constructs an "empty" dir_type object with no path and no
          * creation functions.
          */
-        dir_type() : dir_type("", nullptr, nullptr, false, "") {}
+        dir_type() : dir_type("", nullptr, nullptr, nullptr, false, "") {}
 
         /**
          * Constructs a dir_type object with a given path, subpath and
          * creation functions.
          *
-         * @param path          The path to the directory file.
-         * @param create_lister Lister creation function.
-         * @param create_tree   Tree creation function.
-         * @param is_dir        True if directory is a regular directory.
-         * @param subpath       Initial subpath of tree.
+         * @param path               The path to the directory file.
+         * @param create_lister      Lister creation function.
+         * @param create_tree_lister Tree lister creation function
+         * @param create_tree        Tree creation function.
+         * @param is_dir             True if directory is a regular directory.
+         * @param subpath            Initial subpath of tree.
          */
-        dir_type(paths::string path, create_lister_fn create_lister, create_tree_fn create_tree, bool is_dir, paths::string subpath)
+        dir_type(paths::string path, create_lister_fn create_lister, create_tree_lister_fn tree_lister, create_tree_fn create_tree, bool is_dir, paths::string subpath)
             : m_path(std::move(path)), m_subpath(std::move(subpath)),
-              m_create_lister(create_lister), m_create_tree(create_tree), m_is_dir(is_dir) {}
+              m_create_lister(create_lister), m_create_tree_lister(tree_lister),
+              m_create_tree(create_tree), m_is_dir(is_dir) {}
 
 
         /* Creating lister and dir_tree */
@@ -152,6 +179,17 @@ namespace nuc {
          */
         lister * create_lister() const {
             return m_create_lister(m_path);
+        }
+
+        /**
+         * Creates the tree_lister object for the directory.
+         *
+         * @param subpaths Subpaths of the directory trees to list
+         *
+         * @return Pointer to a newly created tree_lister object.
+         */
+        tree_lister * create_tree_lister(const std::vector<paths::string> &subpaths) const {
+            return m_create_tree_lister(m_path, subpaths);
         }
 
         /**

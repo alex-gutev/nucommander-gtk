@@ -24,6 +24,9 @@
 #include "lister/dir_lister.h"
 #include "lister/archive_lister.h"
 
+#include "lister/dir_tree_lister.h"
+#include "lister/archive_tree_lister.h"
+
 #include "archive_tree.h"
 #include "plugins/archive_plugin_loader.h"
 
@@ -38,6 +41,9 @@
 static nuc::lister * make_dir_lister(const nuc::paths::string &path) {
     return new nuc::dir_lister(path);
 }
+
+static nuc::tree_lister * make_dir_tree_lister(const nuc::paths::string &dir, const std::vector<nuc::paths::string> &subpaths) {
+    return new nuc::dir_tree_lister(dir, subpaths);
 }
 
 /**
@@ -52,6 +58,9 @@ static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin, const nuc:
     plugin->load();
     return new nuc::archive_lister(plugin, path);
 }
+
+static nuc::tree_lister * make_archive_tree_lister(nuc::archive_plugin *plugin, const nuc::paths::string &base, const std::vector<nuc::paths::string> &subpaths) {
+    return new nuc::archive_tree_lister(plugin, base, subpaths);
 }
 
 /**
@@ -143,6 +152,7 @@ nuc::dir_type nuc::dir_type::get(const paths::string &path) {
     if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
         return dir_type(std::move(pair.first),
                         std::bind(make_archive_lister, plugin, _1),
+                        std::bind(make_archive_tree_lister, plugin, _1, _2),
                         make_archive_tree,
                         false,
                         std::move(pair.second));
@@ -151,7 +161,12 @@ nuc::dir_type nuc::dir_type::get(const paths::string &path) {
     if (!pair.second.empty())
         paths::append_component(pair.first, pair.second);
 
-    return dir_type(std::move(pair.first), make_dir_lister, make_dir_tree, true, "");
+    return dir_type(std::move(pair.first),
+                    make_dir_lister,
+                    make_dir_tree_lister,
+                    make_dir_tree,
+                    true,
+                    "");
 }
 
 nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
@@ -160,14 +175,17 @@ nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
     switch (ent.type()) {
     case dir_entry::type_dir:
         paths::append_component(path, ent.file_name());
-        return dir_type(path, make_dir_lister, make_dir_tree, true, "");
+        return dir_type(path,
+                        make_dir_lister,
+                        make_dir_tree_lister,
+                        make_dir_tree, true, "");
 
     case dir_entry::type_reg:
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
             paths::append_component(path, ent.file_name());
-            return dir_type(path, std::bind(make_archive_lister, plugin), make_archive_tree, false, "");
             return dir_type(path,
                             std::bind(make_archive_lister, plugin, _1),
+                            std::bind(make_archive_tree_lister, plugin, _1, _2),
                             make_archive_tree,
                             false, "");
         }
