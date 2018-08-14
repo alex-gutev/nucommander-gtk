@@ -110,6 +110,18 @@ namespace nuc {
         bool is_child_of(string dir, const string &path);
 
         /**
+         * Checks whether @a str1 is a prefix of @a str2.
+         *
+         * @param str1 The prefix string.
+         *
+         * @param str2 The string to check whether @a str1 is a prefix
+         *   of.
+         *
+         * @return True if str1 is a prefix of str2.
+         */
+        bool is_prefix(const string &str1, const string &str2);
+
+        /**
          * Checks whether a path has any directory components.
          *
          * @param path The path to test

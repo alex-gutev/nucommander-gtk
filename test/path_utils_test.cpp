@@ -252,4 +252,10 @@ BOOST_AUTO_TEST_CASE(canonicalized_path_root_parent) {
     BOOST_CHECK(path == "dir/file");
 }
 
+BOOST_AUTO_TEST_CASE(prefix_path) {
+    BOOST_CHECK(nuc::paths::is_prefix("/root/foo/", "/root/foo/bar"));
+    BOOST_CHECK(!nuc::paths::is_prefix("/root/foo/", "/root/foobar"));
+    BOOST_CHECK(!nuc::paths::is_prefix("/root/foo/bar", "/root/foo"));
+}
+
 BOOST_AUTO_TEST_SUITE_END();

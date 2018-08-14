@@ -136,6 +136,14 @@ bool nuc::paths::is_child_of(string dir, const string &path) {
     return res.first == dir.end() && std::find(res.second, path.end(), '/') == path.end();
 }
 
+bool nuc::paths::is_prefix(const string &str1, const string &str2) {
+    if (str1.size() > str2.size()) return false;
+
+    auto res = std::mismatch(str1.begin(), str1.end(), str2.begin());
+
+    return res.first == str1.end();
+}
+
 
 nuc::paths::string nuc::paths::expand_tilde(const string &path) {
     if (!path.empty() && path.front() == '~') {
