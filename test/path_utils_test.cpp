@@ -135,6 +135,12 @@ BOOST_AUTO_TEST_CASE(file_name) {
     BOOST_CHECK(file == "file.txt");
 }
 
+BOOST_AUTO_TEST_CASE(file_name_ends_slash) {
+    nuc::paths::string file = nuc::paths::file_name("/path/to/dir/");
+
+    BOOST_CHECK(file == "dir");
+}
+
 BOOST_AUTO_TEST_CASE(file_name_no_path) {
     nuc::paths::string file = nuc::paths::file_name("file.txt");
     

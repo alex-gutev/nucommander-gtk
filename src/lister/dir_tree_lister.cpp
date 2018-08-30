@@ -56,15 +56,16 @@ void dir_tree_lister::list_entries(const list_callback &fn) {
         if (last_ent->fts_info == FTS_ERR || last_ent->fts_info == FTS_DNR)
             raise_error(last_ent->fts_errno);
 
-        paths::string path = paths::appended_component(current_dir, last_ent->fts_name);
-
-        // Update path to current directory
-        set_dir(last_ent, current_dir);
+        paths::string name = last_ent->fts_namelen ? last_ent->fts_name : paths::file_name(last_ent->fts_path);
+        paths::string path = last_ent->fts_info == FTS_DP ? current_dir : paths::appended_component(current_dir, name);
 
         ent.type = get_type(last_ent);
         ent.name = path.c_str();
 
         fn(ent, !stat_err(last_ent) && last_ent->fts_statp ? last_ent->fts_statp : nullptr, get_visit_info(last_ent));
+
+        // Update path to current directory
+        set_dir(last_ent, name, current_dir);
     }
 
     if (int error = errno) {
@@ -72,10 +73,10 @@ void dir_tree_lister::list_entries(const list_callback &fn) {
     }
 }
 
-void dir_tree_lister::set_dir(FTSENT *last_ent, paths::string &current_dir) {
+void dir_tree_lister::set_dir(FTSENT *last_ent, const paths::string &name, paths::string &current_dir) {
     switch (last_ent->fts_info) {
     case FTS_D:
-        paths::append_component(current_dir, last_ent->fts_name);
+        paths::append_component(current_dir, name);
         break;
 
     case FTS_DP:

@@ -28,11 +28,16 @@
 
 
 nuc::paths::string nuc::paths::file_name(const string &path) {
-    // Find last slash
-    size_t slash_pos = path.rfind('/');
+    if (path.length()) {
+        // If path ends in slash search from previous character
+        size_t end = path.back() == '/' ? path.length() - 2 : path.length();
 
-    if (slash_pos != std::string::npos) {
-        return path.substr(slash_pos + 1);
+        // Find last slash
+        size_t slash_pos = path.rfind('/', end);
+
+        if (slash_pos != std::string::npos) {
+            return path.substr(slash_pos + 1, end - slash_pos);
+        }
     }
 
     return path;

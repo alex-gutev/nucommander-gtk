@@ -68,10 +68,12 @@ namespace nuc {
          *
          * @param ent The FTS entry.
          *
-         * @param dir The path to the current directory, to be
-         *    updated.
+         * @param name The name of the entry.
+         *
+         * @param dir Reference to the path to the current directory,
+         *    to be updated.
          */
-        static void set_dir(FTSENT *ent, paths::string &dir);
+        static void set_dir(FTSENT *ent, const paths::string &name, paths::string &dir);
 
         /**
          * Returns the visit info for the entry @a ent. If the entry
