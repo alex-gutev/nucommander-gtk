@@ -82,6 +82,17 @@ namespace nuc {
          * @return true if @a path is a child of the current subpath.
          */
         bool in_subpath(const paths::string &path);
+
+        /**
+         * Adds a directory entry to the tree. If the tree already
+         * contains a directory entry with the same subpath, it is
+         * replaced with @a ent.
+         *
+         * @param ent The directory entry to add.
+         *
+         * @return Pointer to the entry within the tree.
+         */
+        dir_entry * add_dir_entry(dir_entry ent);
         
         /**
          * Adds an entry to a multi-map if the map does not already

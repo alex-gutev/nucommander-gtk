@@ -25,7 +25,8 @@
 using namespace nuc;
 
 dir_entry *archive_tree::add_entry(dir_entry ent) {
-    dir_entry *dir_ent = dir_tree::add_entry(std::move(ent));
+    dir_entry * dir_ent = ent.type() == dir_entry::type_dir ?
+        add_dir_entry(std::move(ent)) : dir_tree::add_entry(std::move(ent));
 
     return add_components(dir_ent->subpath(), *dir_ent);
 }
@@ -72,6 +73,20 @@ dir_entry *archive_tree::add_components(const paths::string &path, dir_entry &en
     }
 
     return child_ent;
+}
+
+
+dir_entry * archive_tree::add_dir_entry(nuc::dir_entry ent) {
+    auto range = map.equal_range(ent.subpath());
+
+    for (auto it = range.first; it != range.second; ++it) {
+        if (it->second.type() == dir_entry::type_dir) {
+            it->second = std::move(ent);
+            return &it->second;
+        }
+    }
+
+    return dir_tree::add_entry(std::move(ent));
 }
 
 bool archive_tree::add_to_map(file_map<dir_entry *> &map, const paths::string &name, dir_entry *ent) {
