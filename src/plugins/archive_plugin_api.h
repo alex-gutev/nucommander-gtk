@@ -112,6 +112,80 @@ int nuc_arch_unpack(void *handle, const char **buf, size_t *len, off_t *offset);
  */
 void nuc_arch_set_callback(void *handle, nuc_arch_progress_fn callback, void *ctx);
 
+
+/**
+ * Packing API
+ */
+
+/**
+ * Copies the archive type of the open, for unpacking, archive @a
+ * src_handle to the destination archive, open for packing, @a
+ * dest_handle.
+ *
+ * In order for the type of the source archive to be known reliably,
+ * at least a single entry must have been read.
+ *
+ * @param dest_handle The handle of the destination archive, of which
+ *    to set the type.
+ *
+ * @param src_handle The handle of the source archive, the type of
+ *    which will be set as the type of the destination handle.
+ *
+ * @return NUC_AP_OK (0) if the archive's type was set successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_copy_archive_type(void *dest_handle, const void *src_handle);
+
+/**
+ * Copies the last entry read from the archive @a src_handle to the
+ * archive @a dest_handle.
+ *
+ * @param src_handle The handle of the source archive, from which to
+ *   copy the entry
+ *
+ * @param dest_handle The handle of the destination archive, to which
+ *   to copy the entry.
+ *
+ * @return NUC_AP_OK (0) if the last entry was copied successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle);
+
+/**
+ * Creates an entry in the archive. This only creates the entry's
+ * metadata, the actual contents of the entry should be written using
+ * nuc_arch_pack (in the case of a regular file).
+ *
+ * @param handle Handle of the archive into which to create the entry.
+ * @param ent The entry to create.
+ *
+ * @return NUC_AP_OK (0) if the entry was created successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_create_entry(void *handle, const nuc_arch_entry *ent);
+
+/**
+ * Writes data to the last entry created in the archive. This function
+ * may only be used if the last entry created was a regular file.
+ *
+ * @param handle Handle of the archive into which to create the entry.
+ *
+ * @param buf Pointer to the block of data to write.
+ *
+ * @param len Size (number of bytes) of the block.
+ *
+ * @param offset Number of zero bytes to write between the last byte
+ *    written and the first byte of the block.
+ *
+ * @return NUC_AP_OK (0) if the data was written successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_pack(void *handle, const char *buf, size_t len, off_t offset);
+
 #endif
 
 // Local Variables:

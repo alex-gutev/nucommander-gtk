@@ -22,6 +22,9 @@
 #include <dlfcn.h>
 
 
+#define LOAD_CHECK_FN(name) name = (name ## _fn)dlsym(dl_handle, "nuc_arch_"#name); check_error(error::api_incomplete);
+
+
 using namespace nuc;
 
 void archive_plugin::check_error(int code) {
@@ -38,20 +41,15 @@ void archive_plugin::load() {
 
         dlerror();
 
-        open = (open_fn)dlsym(dl_handle, "nuc_arch_open");
-        check_error(error::api_incomplete);
-
-        close = (close_fn)dlsym(dl_handle, "nuc_arch_close");
-        check_error(error::api_incomplete);
-
-        next_entry = (next_entry_fn)dlsym(dl_handle, "nuc_arch_next_entry");
-        check_error(error::api_incomplete);
-
-        unpack = (unpack_fn)dlsym(dl_handle, "nuc_arch_unpack");
-        check_error(error::api_incomplete);
-
-        set_callback = (set_callback_fn)dlsym(dl_handle, "nuc_arch_set_callback");
-        check_error(error::api_incomplete);
+        LOAD_CHECK_FN(open);
+        LOAD_CHECK_FN(close);
+        LOAD_CHECK_FN(next_entry);
+        LOAD_CHECK_FN(unpack);
+        LOAD_CHECK_FN(copy_archive_type);
+        LOAD_CHECK_FN(copy_last_entry);
+        LOAD_CHECK_FN(create_entry);
+        LOAD_CHECK_FN(pack);
+        LOAD_CHECK_FN(set_callback);
     }
 }
 

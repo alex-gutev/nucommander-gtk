@@ -47,6 +47,12 @@ namespace nuc {
         typedef int(*next_entry_fn)(void *, nuc_arch_entry *);
         typedef int(*unpack_fn)(void *, const char **, size_t *, off_t *);
 
+        typedef int(*copy_archive_type_fn)(void *, const void *);
+        typedef int(*copy_last_entry_fn)(void *, const void *);
+
+        typedef int(*create_entry_fn)(void *, const nuc_arch_entry *);
+        typedef int(*pack_fn)(void *, const char *, size_t, off_t);
+
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
 
         /**
@@ -154,6 +160,12 @@ namespace nuc {
 
         next_entry_fn next_entry;
         unpack_fn unpack;
+
+        copy_archive_type_fn copy_archive_type;
+        copy_last_entry_fn copy_last_entry;
+
+        create_entry_fn create_entry;
+        pack_fn pack;
 
         set_callback_fn set_callback;
     };
