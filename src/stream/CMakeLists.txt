@@ -11,5 +11,10 @@ add_sources(NUC_SRCS
 
   file_outstream.h
   file_outstream.cpp
+
+  dir_writer.h
+
+  reg_dir_writer.h
+  reg_dir_writer.cpp
 )
 

@@ -78,6 +78,15 @@ namespace nuc {
         virtual bool close();
 
         virtual void write(const byte *buf, size_t n, off_t offset = -1);
+
+        /**
+         * Returns the file descriptor of the file.
+         *
+         * @return The file descriptor.
+         */
+        int get_fd() const {
+            return fd;
+        }
     };
 }
 
