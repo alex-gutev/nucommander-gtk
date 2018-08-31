@@ -104,7 +104,7 @@ void dir_monitor::on_file_changed(const Glib::RefPtr<Gio::File> &file, const Gli
             break;
             
         case Gio::FILE_MONITOR_EVENT_RENAMED:
-            emit_event(FILE_RENAMED, file->get_path(), other_file->get_path());
+            emit_event((other_file && is_dir_event(other_file)) ? DIR_MODIFIED : FILE_RENAMED, file->get_path(), other_file->get_path());
             break;
             
         case Gio::FILE_MONITOR_EVENT_ATTRIBUTE_CHANGED:
