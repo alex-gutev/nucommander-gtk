@@ -44,7 +44,12 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
                     st.st_mode = S_IFDIR | S_IRWXU;
                 }
 
-                visited_dirs.emplace(std::make_pair(paths::string(ent.name), st));
+                paths::string name(ent.name);
+
+                int count = visited_dirs.count(name);
+                visited_dirs.emplace(std::make_pair(name, st));
+
+                if (count) continue;
             }
 
             fn(ent, got_stat ? &st : nullptr, visit_preorder);
