@@ -19,6 +19,8 @@
 
 #include "dir_type.h"
 
+#include <unistd.h>
+
 #include <boost/algorithm/string.hpp>
 
 #include "lister/dir_lister.h"
@@ -29,6 +31,9 @@
 
 #include "archive_tree.h"
 #include "plugins/archive_plugin_loader.h"
+
+#include "stream/reg_dir_writer.h"
+#include "stream/archive_dir_writer.h"
 
 #include "paths/utils.h"
 
@@ -141,6 +146,24 @@ std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::canonicalize_ca
 }
 
 
+std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::find_dir(const paths::string &path) {
+    paths::string sub_path = path;
+    size_t sep_index = paths::string::npos;
+
+    while (!sub_path.empty() && access(sub_path.c_str(), F_OK)) {
+        sep_index = sub_path.rfind('/', sep_index);
+
+        if (sep_index != paths::string::npos) {
+            sub_path = path.substr(0, sep_index);
+        }
+    }
+
+    return std::make_pair(
+        !sub_path.empty() ? sub_path : "/",
+        sep_index != paths::string::npos ? path.substr(sep_index + 1, path.length() - sep_index) : paths::string()
+    );
+}
+
 /// Public static methods
 
 nuc::dir_type nuc::dir_type::get(const paths::string &path) {
@@ -194,6 +217,16 @@ nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
         return dir_type();
 
     }
+}
+
+nuc::dir_writer * nuc::dir_type::get_writer(paths::string path) {
+    paths::string cpath = paths::expand_tilde(path);
+    std::pair<paths::string, paths::string> parts = find_dir(cpath);
+
+    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(parts.first))
+        return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
+
+    return new reg_dir_writer(path.c_str());
 }
 
 // Local Variables:

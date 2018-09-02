@@ -32,6 +32,8 @@
 #include "dir_tree.h"
 #include "dir_entry.h"
 
+#include "stream/dir_writer.h"
+
 /**
  * Functions for determining the lister and directory tree (dir_tree)
  * objects for a directory.
@@ -81,7 +83,7 @@ namespace nuc {
          * lister.
          */
         paths::string m_path;
-        
+
         /**
          * The initial subpath of the directory tree which is created.
          */
@@ -146,6 +148,19 @@ namespace nuc {
          */
         static paths::string find_match_comp(const paths::string &dir, const paths::string &comp);
 
+
+        /**
+         * Determines which initial components of a path refer to an
+         * existing file.
+         *
+         * @param path The path to check.
+         *
+         * @return A pair where the first value is the initial portion
+         *   of path which refers to an existing file and the second
+         *   value is the remaining non-existent portion.
+         */
+        static std::pair<paths::string, paths::string> find_dir(const paths::string &path);
+
     public:
         /**
          * Constructs an "empty" dir_type object with no path and no
@@ -171,7 +186,7 @@ namespace nuc {
 
 
         /* Creating lister and dir_tree */
-        
+
         /**
          * Creates the lister object.
          *
@@ -278,11 +293,21 @@ namespace nuc {
          * @param ent  The entry within the directory @a path.
          */
         static dir_type get(paths::string path, const dir_entry &ent);
+
+        /**
+         * Returns a directory writer object for creating files in the
+         * directory at @a path.
+         *
+         * @param path Path to the directory.
+         *
+         * @return The directory writer object.
+         */
+        static dir_writer *get_writer(paths::string path);
     };
 }
 
 
-#endif // NUC_DIR_TYPE_H 
+#endif // NUC_DIR_TYPE_H
 
 
 /* Local Variables: */
