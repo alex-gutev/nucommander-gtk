@@ -19,5 +19,7 @@ add_sources(NUC_SRCS
 
   reg_dir_writer.h
   reg_dir_writer.cpp
-)
 
+  archive_dir_writer.h
+  archive_dir_writer.cpp
+)
