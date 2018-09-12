@@ -26,13 +26,17 @@ const instream::byte *archive_instream::read_block(size_t &size, off_t &offset) 
     const instream::byte * buf;
 
     off_t new_offset = 0;
+    int err = NUC_AP_OK;
 
-    int err = plugin->unpack(handle, (const char **)&buf, &size, &new_offset);
+    try_op([&] {
+        err = plugin->unpack(handle, (const char **)&buf, &size, &new_offset);
+
+        if (err < NUC_AP_OK)
+            raise_error(errno, err == NUC_AP_RETRY);
+    });
 
     offset = new_offset - last_offset;
     last_offset = new_offset + size;
-
-    if (err < NUC_AP_OK) raise_error(errno);
 
     return err == NUC_AP_OK ? buf : nullptr;
 }

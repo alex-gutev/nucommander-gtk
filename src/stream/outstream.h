@@ -23,32 +23,22 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include <exception>
+#include "error.h"
 
 namespace nuc {
     /**
      * Abstract Output Stream Interface.
      */
-    class outstream {
+    class outstream : public restartable {
     public:
         typedef uint8_t byte;
 
         /**
          * Error exception.
          */
-        class error : public std::exception {
-            /**
-             * Error Code.
-             */
-            int m_code;
-
+        class error : public nuc::error {
         public:
-
-            error(int code) : m_code(code) {}
-
-            int code() const {
-                return m_code;
-            }
+            using nuc::error::error;
         };
 
         virtual ~outstream() = default;
@@ -60,7 +50,7 @@ namespace nuc {
          *    indicating that the data was successfully written to the
          *    storage medium
          */
-        virtual bool close() = 0;
+        virtual void close() = 0;
 
         /**
          * Writes a block of data to the stream.
@@ -80,9 +70,12 @@ namespace nuc {
          * Throws an error exception.
          *
          * @param code Error code.
+         *
+         * @param can_retry True if the operation can be retried,
+         *    false otherwise.
          */
-        void raise_error(int code) {
-            throw error(code);
+        void raise_error(int code, bool can_retry = true) {
+            throw error(code, can_retry);
         };
     };
 }

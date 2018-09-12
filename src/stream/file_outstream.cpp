@@ -23,36 +23,57 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "error_macros.h"
+
 using namespace nuc;
 
 
 file_outstream::file_outstream(const char *path, int flags, int perms) {
-    if ((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT, perms)) < 0) {
-        throw error(errno);
-    }
+    int excl = O_EXCL;
+
+    global_restart overwrite(restart("overwrite", [&excl] (const nuc::error &e, boost::any) {
+        excl = 0;
+    }));
+
+    TRY_OP((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
 }
 file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) {
-    if ((fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT, perms)) < 0) {
-        throw error(errno);
-    }
+    int excl = O_EXCL;
+
+    global_restart overwrite(restart("overwrite", [&excl] (const nuc::error &e, boost::any) {
+        excl = 0;
+    }));
+
+    TRY_OP((fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
 }
 
-bool file_outstream::close() {
-    if (fd >= 0) return !::close(fd);
+void file_outstream::close() {
+    if (close_fd())
+        raise_error(errno, false);
+}
 
-    return true;
+int file_outstream::close_fd() {
+    if (fd >= 0) {
+        int err = ::close(fd);
+        fd = -1;
+        return err;
+    }
+
+    return 0;
 }
 
 void file_outstream::write(const byte *buf, size_t n, off_t offset) {
     seek(offset);
 
     while(n) {
-        ssize_t bytes_written = ::write(fd, (const char *)buf, n);
+        try_op([&] {
+            ssize_t bytes_written = ::write(fd, (const char *)buf, n);
 
-        if (bytes_written < 0) throw error(errno);
+            if (bytes_written < 0) raise_error(errno);
 
-        n -= bytes_written;
-        buf += bytes_written;
+            n -= bytes_written;
+            buf += bytes_written;
+        });
     };
 }
 
@@ -63,7 +84,6 @@ void file_outstream::seek(off_t offset) {
     // the size of the block is non-zero.
 
     if (offset) {
-        if (lseek(fd, offset, SEEK_CUR))
-            throw error(errno);
+        TRY_OP(lseek(fd, offset, SEEK_CUR))
     }
 }

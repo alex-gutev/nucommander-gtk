@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
+#include "error.h"
 #include "outstream.h"
 
 namespace nuc {
@@ -34,23 +34,14 @@ namespace nuc {
      * Provides an interface for creating files/directories, deleting
      * files/directories and changing file attributes.
      */
-    class dir_writer {
+    class dir_writer : public restartable {
     public:
         /**
          * Error exception.
          */
-        class error : public std::exception {
-            int m_code;
-
+        class error : public nuc::error {
         public:
-            error(int code) : m_code(code) {}
-
-            /**
-             * Returns the error code.
-             */
-            int code() const {
-                return m_code;
-            }
+            using nuc::error::error;
         };
 
         virtual ~dir_writer() = default;
@@ -104,6 +95,19 @@ namespace nuc {
          * @param st   The stat attributes to set.
          */
         virtual void set_attributes(const char *path, const struct stat *st) = 0;
+
+    protected:
+        /**
+         * Throws an error exception.
+         *
+         * @param code Error code.
+         *
+         * @param can_retry True if the operation can be retried,
+         *    false otherwise.
+         */
+        void raise_error(int code, bool can_retry = true) {
+            throw error(code, can_retry);
+        }
     };
 }
 

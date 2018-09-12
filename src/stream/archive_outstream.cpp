@@ -23,7 +23,9 @@
 using namespace nuc;
 
 void archive_outstream::write(const byte *buf, size_t n, off_t off) {
-    if (plugin->pack(handle, (const char *)buf, n, off)) {
-        raise_error(errno);
-    }
+    try_op([=] {
+        if (int err = plugin->pack(handle, (const char *)buf, n, off)) {
+            raise_error(errno, err == NUC_AP_RETRY);
+        }
+    });
 }

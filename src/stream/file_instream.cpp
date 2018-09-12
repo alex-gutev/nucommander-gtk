@@ -24,20 +24,20 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "error_macros.h"
+
 using namespace nuc;
 
 file_instream::file_instream(const char *path, size_t buf_size) : buf_size(buf_size) {
     alloc_buf();
 
-    if ((fd = ::open(path, O_CLOEXEC | O_RDONLY)) < 0)
-        raise_error(errno);
+    TRY_OP((fd = ::open(path, O_CLOEXEC | O_RDONLY)) < 0)
 }
 
 file_instream::file_instream(int dirfd, const char *file, size_t buf_size) : buf_size(buf_size) {
     alloc_buf();
 
-    if ((fd = openat(dirfd, file, O_CLOEXEC | O_RDONLY)) < 0)
-        raise_error(errno);
+    TRY_OP((fd = openat(dirfd, file, O_CLOEXEC | O_RDONLY)) < 0)
 }
 
 void file_instream::alloc_buf() {
@@ -64,15 +64,17 @@ size_t file_instream::read(byte *buf, size_t n) {
     ssize_t n_read = 0;
 
     do {
-        n_read = ::read(fd, buf, n);
+        try_op([&] {
+            n_read = ::read(fd, buf, n);
 
-        if (n_read < 0)
-            raise_error(errno);
+            if (n_read < 0)
+                raise_error(errno);
 
-        n -= n_read;
-        buf += n_read;
+            n -= n_read;
+            buf += n_read;
 
-        total_read += n_read;
+            total_read += n_read;
+        });
 
     } while (n_read && n);
 

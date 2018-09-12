@@ -24,31 +24,24 @@
 #include <stdlib.h>
 
 #include <vector>
-#include <exception>
 #include <tuple>
+
+#include "error.h"
 
 namespace nuc {
     /**
      * Abstract interface for an input stream.
      */
-    class instream {
+    class instream : public restartable {
+        error_handler_fn err_handler;
+
     public:
         /**
          * Error exception
          */
-        class error : public std::exception {
-            /**
-             * Error code
-             */
-            int m_code;
-
+        class error : public nuc::error {
         public:
-
-            error(int code) : m_code(code) {}
-
-            int code() const {
-                return m_code;
-            }
+            using nuc::error::error;
         };
 
         typedef uint8_t byte;
@@ -81,9 +74,12 @@ namespace nuc {
          * Throws an error exception.
          *
          * @param code Error code.
+         *
+         * @param can_retry True if the operation can be retried,
+         *    false otherwise.
          */
-        void raise_error(int code) {
-            throw error(code);
+        void raise_error(int code, bool can_retry = true) {
+            throw error(code, can_retry);
         };
     };
 }

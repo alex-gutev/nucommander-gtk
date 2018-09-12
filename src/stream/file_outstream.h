@@ -44,6 +44,13 @@ namespace nuc {
          */
         void seek(off_t offset);
 
+        /**
+         * Closes the file descriptor.
+         *
+         * @return 0 if successful, non-zero on error.
+         */
+        int close_fd();
+
     public:
         /**
          * Constructs a file output stream for the file at @a path.
@@ -70,12 +77,12 @@ namespace nuc {
          * Closes the output stream.
          */
         ~file_outstream() {
-            close();
+            close_fd();
         }
 
         /* Method overrides */
 
-        virtual bool close();
+        virtual void close();
 
         virtual void write(const byte *buf, size_t n, off_t offset = -1);
 
