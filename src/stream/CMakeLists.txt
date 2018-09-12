@@ -1,4 +1,6 @@
 add_sources(NUC_SRCS
+  error_macros.h
+
   instream.h
 
   file_instream.h

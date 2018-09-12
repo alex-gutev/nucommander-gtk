@@ -18,6 +18,9 @@ add_sources(NUC_SRCS
     
     types.h
     
+    error.h
+    error.cpp
+
     async_queue.h
     async_task.h
     async_task.cpp
