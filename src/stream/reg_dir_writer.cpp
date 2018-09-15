@@ -27,12 +27,12 @@
 
 #include "file_outstream.h"
 
+#include "error_macros.h"
 
 using namespace nuc;
 
 reg_dir_writer::reg_dir_writer(const char *path) {
-    if ((fd = open(path, O_DIRECTORY)) < 0)
-        throw error(errno);
+    TRY_OP((fd = open(path, O_DIRECTORY)) < 0)
 }
 
 void reg_dir_writer::close() {
@@ -48,13 +48,11 @@ outstream * reg_dir_writer::create(const char *path, const struct stat *st, int 
 }
 
 void reg_dir_writer::mkdir(const char *path) {
-    if (mkdirat(fd, path, S_IRWXU))
-        throw error(errno);
+    TRY_OP(mkdirat(fd, path, S_IRWXU))
 }
 
 void reg_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
-    if (symlinkat(path, fd, target))
-        throw error(errno);
+    TRY_OP(symlinkat(path, fd, target))
 
     set_attributes(path, st);
 }
@@ -63,27 +61,25 @@ void reg_dir_writer::symlink(const char *path, const char *target, const struct 
 /// Setting Attributes
 
 void reg_dir_writer::set_file_attributes(int fd, const struct stat *st) {
-    // Issue: No error reporting yet
-
     if (st) {
-        fchmod(fd, st->st_mode & ~S_IFMT);
-        fchown(fd, st->st_uid, st->st_gid);
+        TRY_OP(fchmod(fd, st->st_mode & ~S_IFMT))
+        TRY_OP(fchown(fd, st->st_uid, st->st_gid))
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
-        futimens(fd, times);
+
+        TRY_OP(futimens(fd, times))
     }
 }
 
 void reg_dir_writer::set_attributes(const char *path, const struct stat *st) {
-    // Issue: No error reporting yet
-
     if (st) {
         if (!S_ISLNK(st->st_mode))
-            fchmodat(fd, path, st->st_mode & ~S_IFMT, 0);
+            TRY_OP(fchmodat(fd, path, st->st_mode & ~S_IFMT, 0))
 
-        fchownat(fd, path, st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW);
+        TRY_OP(fchownat(fd, path, st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW))
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
-        utimensat(fd, path, times, AT_SYMLINK_NOFOLLOW);
+
+        TRY_OP(utimensat(fd, path, times, AT_SYMLINK_NOFOLLOW))
     }
 }
