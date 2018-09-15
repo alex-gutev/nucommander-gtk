@@ -21,6 +21,7 @@
 
 #include "stream/archive_outstream.h"
 
+#include "error_macros.h"
 
 using namespace nuc;
 
@@ -28,8 +29,10 @@ archive_dir_writer::archive_dir_writer(paths::string arch_path, archive_plugin *
     : path(std::move(arch_path)), subpath(subpath), plugin(plugin) {
     int err;
 
-    if (!(in_handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &err)))
-        throw error(errno);
+    try_op([&] {
+        if (!(in_handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &err)))
+            raise_error(errno, err);
+    });
 
     try {
         open_temp();
@@ -47,27 +50,37 @@ void archive_dir_writer::open_temp() {
     tmp_path.resize(tmp_path.length() + 6, 'X');
     tmp_path.push_back(0);
 
+
     // Create temporary file
 
-    int outfd;
-    if ((outfd = mkstemp(&tmp_path[0])) < 0)
-        throw error(errno);
+    try_op([=] {
+        int outfd;
+        if ((outfd = mkstemp(&tmp_path[0])) < 0)
+            raise_error(errno);
 
-    tmp_exists = true;
+        tmp_exists = true;
 
-    ::close(outfd);
+        ::close(outfd);
+    });
+
 
     // Create output archive at the temporary file
 
-    int err;
-    out_handle = plugin->open(tmp_path.c_str(), NUC_AP_MODE_PACK, &err);
+    try_op([=] {
+        int err;
+
+        if (!(out_handle = plugin->open(tmp_path.c_str(), NUC_AP_MODE_PACK, &err)))
+            raise_error(errno, err);
+    });
 
 
     // Copy type of existing archive
 
-    nuc_arch_entry ent;
-    if (plugin->next_entry(in_handle, &ent) || plugin->copy_archive_type(out_handle, in_handle))
-        throw error(errno);
+    try_op([=] {
+        nuc_arch_entry ent;
+        if (int err = plugin->next_entry(in_handle, &ent) || plugin->copy_archive_type(out_handle, in_handle))
+            raise_error(errno, err);
+    });
 }
 
 archive_dir_writer::~archive_dir_writer() {
@@ -103,13 +116,12 @@ void archive_dir_writer::close() {
         out_handle = nullptr;
 
         if (err)
-            throw error(errno);
+            raise_error(errno, false);
     }
 
     // TODO: copy attributes of old archive file.
 
-    if (rename(tmp_path.c_str(), path.c_str()))
-        throw error(errno);
+    TRY_OP(rename(tmp_path.c_str(), path.c_str()));
 
     tmp_exists = false;
 }
@@ -119,12 +131,22 @@ void archive_dir_writer::copy_old_entries() {
     int err = 0;
 
     do {
-        if (plugin->copy_last_entry(out_handle, in_handle))
-            throw error(errno);
-    } while (!(err = plugin->next_entry(in_handle, &ent)));
+        try_op([=] {
+            if (plugin->copy_last_entry(out_handle, in_handle))
+                raise_error(errno, err);
+        });
+    } while (next_entry(&ent));
+}
 
-    if (err != NUC_AP_EOF)
-        throw error(errno);
+bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
+    int err;
+    try_op([&] {
+        err = plugin->next_entry(in_handle, ent);
+        if (err < 0)
+            raise_error(errno, err);
+    });
+
+    return err == NUC_AP_OK;
 }
 
 outstream * archive_dir_writer::create(const char *path, const struct stat *st, int flags) {
@@ -135,8 +157,7 @@ outstream * archive_dir_writer::create(const char *path, const struct stat *st, 
     ent.path = ent_path.c_str();
     ent.stat = st;
 
-    if (plugin->create_entry(out_handle, &ent))
-        throw error(errno);
+    create_entry(&ent);
 
     return new archive_outstream(plugin, out_handle);
 }
@@ -150,8 +171,7 @@ void archive_dir_writer::symlink(const char *path, const char *target, const str
     ent.symlink_dest = target;
     ent.stat = st;
 
-    if (plugin->create_entry(out_handle, &ent))
-        throw error(errno);
+    create_entry(&ent);
 }
 
 void archive_dir_writer::set_attributes(const char *path, const struct stat *st) {
@@ -164,7 +184,13 @@ void archive_dir_writer::set_attributes(const char *path, const struct stat *st)
         ent.path = ent_path.c_str();
         ent.stat = st;
 
-        if (plugin->create_entry(out_handle, &ent))
-            throw error(errno);
+        create_entry(&ent);
     }
+}
+
+void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
+    try_op([&] {
+        if (int err = plugin->create_entry(out_handle, ent))
+            raise_error(errno, err);
+    });
 }

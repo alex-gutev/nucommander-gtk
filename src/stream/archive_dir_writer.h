@@ -83,6 +83,15 @@ namespace nuc {
          */
         void copy_old_entries();
 
+        bool next_entry(nuc_arch_entry *ent);
+
+        /**
+         * Adds an entry header to the archive.
+         *
+         * @param ent The entry to add.
+         */
+        void create_entry(nuc_arch_entry *ent);
+
         /**
          * Closes the two archive handles and deletes the new archive
          * file created, if it was not renamed over the old archive
@@ -137,6 +146,23 @@ namespace nuc {
         virtual void symlink(const char *path, const char *target, const struct stat *st);
 
         virtual void set_attributes(const char *path, const struct stat *st);
+
+    private:
+
+        using dir_writer::raise_error;
+
+        /**
+         * Throws an error exception for the error with code @a
+         * code. If @a type is NUC_AP_RETRY, the retry restart is
+         * enabled.
+         *
+         * @param code The error code.
+         * @param type Error type constant returned by the plugin.
+         */
+        void raise_error(int code, int type) {
+            dir_writer::raise_error(code, type == NUC_AP_RETRY);
+        }
+
     };
 }
 
