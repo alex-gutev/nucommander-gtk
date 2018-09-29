@@ -43,6 +43,7 @@ namespace nuc {
      * is cancelled.
      */
     class task_queue : public std::enable_shared_from_this<task_queue> {
+    public:
         /**
          * Task functor type.
          *
@@ -53,6 +54,63 @@ namespace nuc {
         typedef std::function<void(cancel_state &)> task_type;
 
         /**
+         * Creates a new task queue and returns an std::shared pointer
+         * to it.
+         */
+        static std::shared_ptr<task_queue> create();
+
+        /**
+         * Adds a new task to the queue. If there is no currently
+         * executing background task, a new task loop is initiated on
+         * a background thread.
+         */
+        void add(task_type task);
+
+        /**
+         * Adds a new task to the queue and adds a finish callback to
+         * the task's cancellation state.
+         *
+         * This callback is called after the task finishes or when the
+         * task is cancelled, and is guaranteed to be called only
+         * once. No new tasks will be executed until the finish
+         * callback returns.
+         *
+         * The callback might not be called if the task is cancelled
+         * before it has run.
+         *
+         * @param task    The task function.
+         * @param finish  The finish callback function.
+         */
+        template <typename T, typename F>
+        void add(T task, F finish);
+
+        /**
+         * Cancels the running task and removes all queued tasks from
+         * the queue.
+         *
+         * Tasks can still be added to the queue, after calling this
+         * function. The tasks will be executed as soon as all
+         * cancellation handlers finish executing.
+         */
+        void cancel();
+
+        /**
+         * Pauses the task queue.
+         *
+         * The current task is not cancelled and is allowed to run to
+         * completion, however once it completes no further tasks will
+         * be dequeued (assuming the queue is still paused) and the
+         * background loop exits.
+         */
+        void pause();
+
+        /**
+         * Resumes a paused task queue.
+         */
+        void resume();
+
+    private:
+        /**
          * Mutex type.
          *
          * A recursive mutex is used as callbacks may be called while
@@ -60,7 +118,7 @@ namespace nuc {
          * public methods which acquire the lock.
          */
         typedef std::recursive_mutex mutex_type;
-        
+
         /**
          * Pointer to the current cancellation state object.
          */
@@ -99,7 +157,7 @@ namespace nuc {
          * true).
          */
         void begin_loop();
-        
+
         /**
          * Runs the task loop.
          *
@@ -145,7 +203,7 @@ namespace nuc {
          * called after locking the mutex.
          */
         std::shared_ptr<cancel_state> get_cancel_state();
-        
+
         /**
          * Resumes the background task loop. This method is added as a
          * finish callback to the cancellation state of each task, and
@@ -162,63 +220,6 @@ namespace nuc {
          * enqueued task.
          */
         void resume_loop();
-        
-    public:
-        /**
-         * Creates a new task queue and returns an std::shared pointer
-         * to it.
-         */
-        static std::shared_ptr<task_queue> create();
-        
-        /**
-         * Adds a new task to the queue. If there is no currently
-         * executing background task, a new task loop is initiated on
-         * a background thread.
-         */
-        void add(task_type task);
-
-        /**
-         * Adds a new task to the queue and adds a finish callback to
-         * the task's cancellation state.
-         *
-         * This callback is called after the task finishes or when the
-         * task is cancelled, and is guaranteed to be called only
-         * once. No new tasks will be executed until the finish
-         * callback returns.
-         *
-         * The callback might not be called if the task is cancelled
-         * before it has run.
-         *
-         * @param task    The task function.
-         * @param finish  The finish callback function.
-         */
-        template <typename T, typename F>
-        void add(T task, F finish);
-        
-        /**
-         * Cancels the running task and removes all queued tasks from
-         * the queue.
-         *
-         * Tasks can still be added to the queue, after calling this
-         * function. The tasks will be executed as soon as all
-         * cancellation handlers finish executing.
-         */
-        void cancel();
-
-        /**
-         * Pauses the task queue.
-         *
-         * The current task is not cancelled and is allowed to run to
-         * completion, however once it completes no further tasks will
-         * be dequeued (assuming the queue is still paused) and the
-         * background loop exits.
-         */
-        void pause();
-
-        /**
-         * Resumes a paused task queue.
-         */
-        void resume();
     };
 }
 
@@ -231,9 +232,9 @@ void nuc::task_queue::add(T task, F finish) {
         state.no_cancel([&state, &finish] {
             state.add_finish_callback(finish, false);
         });
-        
+
         task(state);
-        
+
         state.call_finish(false);
 
         // Terminate current task loop
