@@ -34,7 +34,7 @@ namespace nuc {
      * Provides an interface for creating files/directories, deleting
      * files/directories and changing file attributes.
      */
-    class dir_writer : public restartable {
+    class dir_writer {
     public:
         /**
          * Error exception.

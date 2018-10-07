@@ -29,7 +29,7 @@ namespace nuc {
     /**
      * Abstract Output Stream Interface.
      */
-    class outstream : public restartable {
+    class outstream {
     public:
         typedef uint8_t byte;
 

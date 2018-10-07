@@ -56,6 +56,7 @@ add_sources(NUC_SRCS
 
 add_subdirectory(paths/)
 add_subdirectory(plugins/)
+add_subdirectory(errors/)
 add_subdirectory(lister/)
 add_subdirectory(stream/)
 add_subdirectory(copy/)

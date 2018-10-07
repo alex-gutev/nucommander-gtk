@@ -28,6 +28,8 @@
 
 #include <boost/any.hpp>
 
+#include "task_queue.h"
+
 /**
  * Error handling functions.
  */
@@ -131,18 +133,23 @@ namespace nuc {
     };
 
     /**
-     * Map of established restarts (error handler functions)
-     * where the keys are the restart identifiers and the
-     * corresponding values are the restarts.
+     * Restart map type.
+     *
+     * Holds a map of restarts where each key is unique string
+     * identifying a restart and the corresponding value is the
+     * "restart" object.
      */
-    extern thread_local std::unordered_map<std::string, restart> restarts;
-
+    typedef std::unordered_map<std::string, restart> restart_map;
 
     /**
-     * Establishes a global restart and adds it to the map stored in
-     * the global thread local variable restarts. The restart is
-     * automatically removed from the map when the destructor is
-     * called.
+     * Returns a reference to the global thread-local restart map.
+     */
+    restart_map &restarts();
+
+    /**
+     * Establishes a global restart and adds it to the global
+     * thread-local restart map. The restart is automatically removed
+     * from the map when the destructor is called.
      */
     class global_restart {
         /**
@@ -157,7 +164,7 @@ namespace nuc {
 
         /**
          * Creates a global_restart object which establishes the
-         * restart @a r. The restart is added to the restarts map.
+         * restart @a r. The restart is added to the restart map.
          *
          * The restart should not have an identifier which is equal to
          * an identifier of an already established restart.
@@ -167,12 +174,16 @@ namespace nuc {
         global_restart(restart r);
 
         /**
-         * Removes the established restart from the restarts map.
+         * Removes the established restart from the restart map.
          */
         ~global_restart();
     };
 
-
+    /**
+     * Retry restart.
+     *
+     * Does nothing resulting in the failed operation being retried.
+     */
     const restart restart_retry("retry", [] (const error &, boost::any) {});
 
     /**
@@ -192,6 +203,35 @@ namespace nuc {
      */
     typedef std::function<void(const error &)> error_handler_fn;
 
+    /**
+     * Global thread local error handler function. This function is
+     * called when an operation fails.
+     */
+    extern thread_local error_handler_fn global_error_handler;
+
+    /**
+     * Creates a new task which runs the task @a task with the error
+     * handler function @a handler as the global error handler.
+     */
+    template<typename F>
+    task_queue::task_type with_error_handler(F task, error_handler_fn handler) {
+        return [=] (cancel_state &state) {
+            global_error_handler = handler;
+            task(state);
+        };
+    }
+
+    /**
+     * Repeatedly attempts an operation @a op, until it is
+     * successful. The global error handler function is called when an
+     * exception is thrown from @a op.
+     *
+     * @param op The operation function to attempt.
+     */
+    template<typename F>
+    void try_op(F op) {
+        try_op(op, global_error_handler);
+    }
 
     /**
      * Repeatedly attempts an operation @a op, until either it is
@@ -211,49 +251,6 @@ namespace nuc {
      */
     template<typename F>
     void try_op(F op, error_handler_fn handler);
-
-    /**
-     * Provides error handling functionality for operations performed
-     * by the object.
-     */
-    class restartable {
-    protected:
-        /**
-         * Error handler function
-         */
-        error_handler_fn err_handler;
-
-        /**
-         * Repeatedly calls a function (@a op) until it is successful,
-         * that is it does not throw an exception.
-         *
-         * If @a op throws err_handler is called, after which
-         * (provided err_handler does not throw) @a op is called
-         * again.
-         *
-         * @param op The function to call, performing some operation.
-         */
-        template <typename F>
-        void try_op(F op) {
-            nuc::try_op(op, err_handler);
-        }
-
-    public:
-
-        /**
-         * Returns the object's error handler function.
-         */
-        error_handler_fn error_handler() const {
-            return err_handler;
-        }
-
-        /**
-         * Sets the object's error handler function.
-         */
-        void error_handler(error_handler_fn fn) {
-            err_handler = std::move(fn);
-        }
-    };
 }
 
 /* Template Implementation */

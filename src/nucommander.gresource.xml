@@ -3,5 +3,6 @@
     <gresource prefix="/org/agware/nucommander">
         <file preprocess="xml-stripblanks">window.glade</file>
         <file preprocess="xml-stripblanks">fileview.glade</file>
+        <file preprocess="xml-stripblanks">error_dialog.glade</file>
     </gresource>
 </gresources>

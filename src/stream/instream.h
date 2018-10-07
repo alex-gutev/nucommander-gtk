@@ -32,9 +32,7 @@ namespace nuc {
     /**
      * Abstract interface for an input stream.
      */
-    class instream : public restartable {
-        error_handler_fn err_handler;
-
+    class instream {
     public:
         /**
          * Error exception

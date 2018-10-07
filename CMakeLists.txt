@@ -51,7 +51,7 @@ add_subdirectory(src)
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c
     COMMAND glib-compile-resources --target=resources.c --generate-source nucommander.gresource.xml
-    DEPENDS src/window.glade src/fileview.glade src/nucommander.gresource.xml
+    DEPENDS src/window.glade src/fileview.glade src/error_dialog.glade src/nucommander.gresource.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_sources(NUC_SRCS src/resources.c)

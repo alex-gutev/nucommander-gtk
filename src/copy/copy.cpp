@@ -37,6 +37,33 @@ using namespace nuc;
  */
 static void copy_file(cancel_state &state, instream *in, outstream *out);
 
+/**
+ * Skip exception.
+ *
+ * This exception is thrown when the "skip" restart is invoked, and is
+ * caught in the directory traversal function, in order to skip
+ * copying that file.
+ */
+struct skip_exception {
+    /**
+     * Skip restart function. Throws a "skip_exception".
+     */
+    static void skip(const error &, boost::any) {
+        throw skip_exception();
+    }
+
+    /**
+     * The skip restart.
+     */
+    static const nuc::restart restart;
+};
+
+// Initialize skip restart
+const nuc::restart skip_exception::restart = nuc::restart("skip", skip_exception::skip);
+
+
+//// Implementation
+
 nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vector<dir_entry *> &entries, const paths::string &dest) {
     std::vector<paths::string> paths;
 
@@ -51,25 +78,37 @@ nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vec
         std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
-        copy(state, lister.get(), writer.get());
+        try {
+            copy(state, lister.get(), writer.get());
+        }
+        catch (const error &e) {
+            // Catch error to abort operation.
+        }
     };
 }
 
 void nuc::copy(cancel_state &state, nuc::tree_lister *in, nuc::dir_writer *out) {
     in->list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+        global_restart skip(skip_exception::restart);
+
         state.test_cancel();
 
-        switch (ent.type) {
-        case DT_DIR:
-            if (info == nuc::tree_lister::visit_preorder)
-                out->mkdir(ent.name);
-            else if (info == nuc::tree_lister::visit_postorder)
-                out->set_attributes(ent.name, st);
-            break;
+        try {
+            switch (ent.type) {
+            case DT_DIR:
+                if (info == nuc::tree_lister::visit_preorder)
+                    out->mkdir(ent.name);
+                else if (info == nuc::tree_lister::visit_postorder)
+                    out->set_attributes(ent.name, st);
+                break;
 
-        case DT_REG:
-            copy_file(state, in->open_entry(), out->create(ent.name, st));
-            break;
+            case DT_REG:
+                copy_file(state, in->open_entry(), out->create(ent.name, st));
+                break;
+            }
+        }
+        catch (const skip_exception &) {
+            // Do nothing in order to skip the current file.
         }
 
     });

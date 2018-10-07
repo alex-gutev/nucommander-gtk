@@ -21,16 +21,27 @@
 
 #include <cassert>
 
+/**
+ * Map of established restarts (error handler functions)
+ * where the keys are the restart identifiers and the
+ * corresponding values are the restarts.
+ */
+static thread_local nuc::restart_map global_restart_map = nuc::restart_map({ std::make_pair("abort", nuc::restart_abort) });
 
-thread_local std::unordered_map<std::string, nuc::restart> nuc::restarts;
+thread_local nuc::error_handler_fn nuc::global_error_handler = nuc::error_handler_fn();
+
+
+nuc::restart_map &nuc::restarts() {
+    return global_restart_map;
+}
 
 nuc::global_restart::global_restart(restart r) : name(r.name) {
     bool inserted;
 
-    std::tie(std::ignore, inserted) = restarts.emplace(name, r);
+    std::tie(std::ignore, inserted) = restarts().emplace(name, r);
     assert(inserted);
 }
 
 nuc::global_restart::~global_restart() {
-    restarts.erase(name);
+    restarts().erase(name);
 }

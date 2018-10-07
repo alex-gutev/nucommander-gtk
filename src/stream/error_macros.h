@@ -25,7 +25,7 @@
  * if the expression op returns non-zero, raise_error is called with
  * the value of errno.
  */
-#define TRY_OP(op) try_op([=] { \
+#define TRY_OP(op) try_op([&] { \
         if ((op)) raise_error(errno); \
     });
 
