@@ -111,6 +111,14 @@ namespace nuc {
         typedef std::function<void(const error &, boost::any)> action_fn;
 
         /**
+         * Applicable function. Tests whether the restart is
+         * applicable to a given error.
+         *
+         * Takes the error exception as an argument.
+         */
+        typedef std::function<bool(const error &)> applicable_fn;
+
+        /**
          * A string identifying the restart.
          */
         const std::string name;
@@ -120,13 +128,25 @@ namespace nuc {
         const action_fn action;
 
         /**
+         * Checks whether the restart is applicable to a given error.
+         *
+         * @param e The error exception.
+         *
+         * @return True if the restart is applicable to the given
+         *   error, false otherwise.
+         */
+        const applicable_fn applicable;
+
+        /**
          * Creates a restart with an identifier and error handling
          * action function.
          *
          * @param name String identifier of the restart.
          * @param action Action function.
+         * @param applicable Applicable function.
          */
-        restart(std::string name, action_fn action) : name(name), action(action) {}
+        restart(std::string name, action_fn action, applicable_fn applicable = [] (const error &) { return true; })
+                : name(name), action(action), applicable(applicable) {}
 
         /**
          * Invokes the restart error handling action function.

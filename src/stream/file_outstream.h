@@ -56,6 +56,15 @@ namespace nuc {
          */
         int close_fd();
 
+        /**
+         * Creates the "overwrite" restart.
+         *
+         * @param excl Reference to a variable which is initially
+         *   holds the value O_EXCL. When the restart is invoked it is
+         *   set to 0.
+         */
+        static restart overwrite_restart(int &excl);
+
     public:
         /**
          * Constructs a file output stream for the file at @a path.

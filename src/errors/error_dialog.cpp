@@ -70,10 +70,12 @@ void error_dialog::show(std::promise<const restart *> &promise, const error &e, 
     actions->clear();
 
     for (auto &restart : restarts) {
-        Gtk::TreeRow row = *actions->append();
+        if (restart.second.applicable(e)) {
+            Gtk::TreeRow row = *actions->append();
 
-        row[columns.name] = restart.first;
-        row[columns.action] = &restart.second;
+            row[columns.name] = restart.first;
+            row[columns.action] = &restart.second;
+        }
     }
 
     action_chosen = [this, &promise] (const restart *r) {
