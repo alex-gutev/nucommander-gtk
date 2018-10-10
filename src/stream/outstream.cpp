@@ -21,10 +21,10 @@
 
 #include <error.h>
 
-std::string nuc::outstream::error::explanation() const noexcept {
+Glib::ustring nuc::outstream::error::explanation() const noexcept {
     switch (code()) {
     case EEXIST:
-        return "Destination file '" + file + "' exists";
+        return Glib::ustring::compose("Destination file '%1' exists.", file);
         break;
 
     default:

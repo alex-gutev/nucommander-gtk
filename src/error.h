@@ -28,6 +28,8 @@
 
 #include <boost/any.hpp>
 
+#include <glibmm/ustring.h>
+
 #include "task_queue.h"
 
 /**
@@ -89,7 +91,7 @@ namespace nuc {
          *
          * @return A string explaining the error.
          */
-        virtual std::string explanation() const noexcept;
+        virtual Glib::ustring explanation() const noexcept;
     };
 
 

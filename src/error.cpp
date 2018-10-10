@@ -46,9 +46,6 @@ nuc::global_restart::~global_restart() {
     restarts().erase(name);
 }
 
-std::string nuc::error::explanation() const noexcept {
-    std::string msg("Error with code: ");
-    msg += std::to_string(m_code);
-
-    return msg;
+Glib::ustring nuc::error::explanation() const noexcept {
+    return Glib::ustring::compose("Error with code: %1.", m_code);
 }

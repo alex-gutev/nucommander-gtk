@@ -50,7 +50,7 @@ namespace nuc {
             error(int code, bool can_retry, T&& file) :
                 nuc::error(code, can_retry), file(std::forward<T>(file)) {}
 
-            virtual std::string explanation() const noexcept;
+            virtual Glib::ustring explanation() const noexcept;
         };
 
         virtual ~outstream() = default;
