@@ -80,6 +80,16 @@ namespace nuc {
         bool can_retry() const {
             return m_can_retry;
         }
+
+        /**
+         * Returns a string explaining the error.
+         *
+         * The default implementation simply returns a generic string
+         * containing the error code.
+         *
+         * @return A string explaining the error.
+         */
+        virtual std::string explanation() const noexcept;
     };
 
 

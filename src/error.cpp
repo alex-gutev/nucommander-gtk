@@ -45,3 +45,10 @@ nuc::global_restart::global_restart(restart r) : name(r.name) {
 nuc::global_restart::~global_restart() {
     restarts().erase(name);
 }
+
+std::string nuc::error::explanation() const noexcept {
+    std::string msg("Error with code: ");
+    msg += std::to_string(m_code);
+
+    return msg;
+}

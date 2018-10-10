@@ -29,6 +29,7 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/treemodelcolumn.h>
 #include <gtkmm/button.h>
+#include <gtkmm/label.h>
 
 #include "error.h"
 
@@ -60,6 +61,11 @@ namespace nuc {
                 add(action);
             }
         };
+
+        /**
+         * The label in which the error message is displayed.
+         */
+        Gtk::Label *error_label;
 
         /**
          * The execute action button.

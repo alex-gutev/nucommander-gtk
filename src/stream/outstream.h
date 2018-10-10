@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "error.h"
+#include "paths/utils.h"
 
 namespace nuc {
     /**
@@ -37,8 +38,19 @@ namespace nuc {
          * Error exception.
          */
         class error : public nuc::error {
+            /**
+             * The name of the file which triggered the error.
+             */
+            paths::string file;
+
         public:
             using nuc::error::error;
+
+            template <typename T>
+            error(int code, bool can_retry, T&& file) :
+                nuc::error(code, can_retry), file(std::forward<T>(file)) {}
+
+            virtual std::string explanation() const noexcept;
         };
 
         virtual ~outstream() = default;

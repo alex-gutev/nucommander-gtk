@@ -31,6 +31,11 @@ namespace nuc {
      */
     class file_outstream : public outstream {
         /**
+         * Path to the file being written to.
+         */
+        std::string path;
+
+        /**
          * File descriptor.
          */
         int fd;
@@ -93,6 +98,11 @@ namespace nuc {
          */
         int get_fd() const {
             return fd;
+        }
+
+    protected:
+        void raise_error(int code, bool can_retry = true) {
+            throw error(code, can_retry, path);
         }
     };
 }

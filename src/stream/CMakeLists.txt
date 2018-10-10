@@ -10,6 +10,7 @@ add_sources(NUC_SRCS
   archive_instream.cpp
 
   outstream.h
+  outstream.cpp
 
   file_outstream.h
   file_outstream.cpp

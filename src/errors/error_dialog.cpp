@@ -42,6 +42,7 @@ error_dialog *error_dialog::create() {
 error_dialog::error_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) : Gtk::Dialog(cobject) {
     builder->get_widget("actions", actions_view);
     builder->get_widget("exec_button", exec_button);
+    builder->get_widget("error-message", error_label);
 
     exec_button->signal_clicked().connect(sigc::mem_fun(this, &error_dialog::exec_clicked));
     actions_view->signal_row_activated().connect(sigc::mem_fun(this, &error_dialog::row_clicked));
@@ -78,6 +79,8 @@ void error_dialog::show(std::promise<const restart *> &promise, const error &e, 
     action_chosen = [this, &promise] (const restart *r) {
         promise.set_value(r);
     };
+
+    error_label->set_label(e.explanation());
 
     Gtk::Dialog::show();
     present();

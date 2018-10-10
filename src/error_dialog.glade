@@ -39,6 +39,18 @@
           </packing>
         </child>
         <child>
+          <object class="GtkLabel" id="error-message">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">label</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkTreeView" id="actions">
             <property name="visible">True</property>
             <property name="can_focus">True</property>

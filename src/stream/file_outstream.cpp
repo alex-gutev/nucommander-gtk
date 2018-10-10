@@ -28,7 +28,7 @@
 using namespace nuc;
 
 
-file_outstream::file_outstream(const char *path, int flags, int perms) {
+file_outstream::file_outstream(const char *path, int flags, int perms) :path(path) {
     int excl = O_EXCL;
 
     global_restart overwrite(restart("overwrite", [&excl] (const nuc::error &e, boost::any) {
@@ -37,7 +37,7 @@ file_outstream::file_outstream(const char *path, int flags, int perms) {
 
     TRY_OP((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
 }
-file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) {
+file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) : path(path) {
     int excl = O_EXCL;
 
     global_restart overwrite(restart("overwrite", [&excl] (const nuc::error &e, boost::any) {
