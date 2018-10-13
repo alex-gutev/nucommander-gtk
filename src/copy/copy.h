@@ -23,8 +23,8 @@
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"
 
-#include "task_queue.h"
-#include "dir_type.h"
+#include "tasks/task_queue.h"
+#include "directory/dir_type.h"
 
 /**
  * File copying functions.

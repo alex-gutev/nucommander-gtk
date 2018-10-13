@@ -18,45 +18,15 @@ add_sources(NUC_SRCS
     
     types.h
     
-    error.h
-    error.cpp
-
-    async_queue.h
-    async_task.h
-    async_task.cpp
-    
-    dir_tree.h
-    dir_tree.cpp
-    
-    dir_entry.h
-    dir_entry.cpp
-    
-    cancel_state.h
-    cancel_state.cpp
     cleanup_n.h
-    
-    task_queue.h
-    task_queue.cpp
-    
-    vfs.h
-    vfs.cpp
-    
-    dir_monitor.h
-    dir_monitor.cpp
-    
-    dir_type.h
-    dir_type.cpp
-    
-    archive_tree.h
-    archive_tree.cpp
-
-    icon_loader.h
-    icon_loader.cpp
 )
 
 add_subdirectory(paths/)
 add_subdirectory(plugins/)
 add_subdirectory(errors/)
+add_subdirectory(tasks/)
 add_subdirectory(lister/)
+add_subdirectory(directory/)
 add_subdirectory(stream/)
 add_subdirectory(copy/)
+

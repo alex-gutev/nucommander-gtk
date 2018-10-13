@@ -19,7 +19,7 @@
 
 #include "file_view.h"
 
-#include "async_task.h"
+#include "tasks/async_task.h"
 
 #include <gdk/gdkkeysyms.h>
 

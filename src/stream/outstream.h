@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "error.h"
+#include "errors/error.h"
 #include "paths/utils.h"
 
 namespace nuc {

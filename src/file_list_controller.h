@@ -29,7 +29,7 @@
 #include <unordered_map>
 
 #include "file_model_columns.h"
-#include "vfs.h"
+#include "directory/vfs.h"
 
 namespace nuc {
     /**

@@ -22,6 +22,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <functional>
 
 #include <stdint.h>
 
@@ -30,7 +31,7 @@
 #include "paths/utils.h"
 
 /**
- * Contains type alias used throughout the project.
+ * Contains type aliases used throughout the project.
  */
 
 namespace nuc {

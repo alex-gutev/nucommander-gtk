@@ -19,7 +19,7 @@
 
 #include "vfs.h"
 
-#include "async_task.h"
+#include "tasks/async_task.h"
 
 
 using namespace nuc;
@@ -92,7 +92,7 @@ void vfs::read(const paths::string& path, finish_fn finish) {
 
 void vfs::add_read_task(const std::string &path, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
-    
+
     queue_task(std::bind(&vfs::read_path, _1, _2, path, refresh),
                std::bind(&vfs::finish_read, _1, _2, refresh, finish));
 }
@@ -143,7 +143,7 @@ void vfs::add_read_subdir(const paths::string &subpath, finish_fn finish) {
     using namespace std::placeholders;
 
     monitor.pause();
-    
+
     queue_task(std::bind(&vfs::read_subdir, _1, _2, subpath),
                std::bind(&vfs::finish_read_subdir, _1, _2, subpath, finish));
 }
@@ -153,13 +153,13 @@ void vfs::read_subdir(cancel_state &state, const paths::string &subpath) {
 
     if (const dir_tree::dir_map *dir = cur_tree->subpath_dir(subpath)) {
         cur_type.subpath(subpath);
-        
+
         for (auto ent : *dir) {
             state.no_cancel([=] {
                 call_new_entry(*ent.second, false);
             });
         }
-        
+
         op_error = 0;
     }
     else {
@@ -169,7 +169,7 @@ void vfs::read_subdir(cancel_state &state, const paths::string &subpath) {
 
 void vfs::finish_read_subdir(bool cancelled, const paths::string &subpath, finish_fn finish) {
     queue->pause();
-    
+
     queue_main([=] (vfs *self) {
         if (!cancelled && !self->op_error) {
             self->cur_tree->subpath(subpath);
@@ -212,13 +212,13 @@ void vfs::cancel_update() {
 
     // Cancel any ongoing update tasks
     if (updating)
-        queue->cancel();    
+        queue->cancel();
 }
 
 bool vfs::cancel() {
     // If reading is true the directory monitor is paused. Thus if
     // reading is true there are no queued update tasks.
-    
+
     if (reading) {
         queue->cancel();
         return true;
@@ -239,7 +239,7 @@ void vfs::commit_read() {
     if (reading) {
         cur_type = std::move(new_type);
         new_type = dir_type();
-        
+
         monitor_dir();
     }
     else {
@@ -247,7 +247,7 @@ void vfs::commit_read() {
     }
 
     queue->resume();
-    
+
     reading = false;
     updating = false;
 }
@@ -262,17 +262,17 @@ void vfs::read_path(cancel_state &state, const std::string &path, bool refresh) 
 void vfs::list_dir(cancel_state& state, dir_type type, bool refresh) {
     state.no_cancel([=] {
         if (!refresh) reading = true;
-        
+
         new_tree.reset(type.create_tree());
         new_type = std::move(type);
     });
-    
+
     op_error = 0;
     call_begin(state, refresh);
 
     try {
         std::unique_ptr<lister> listr(type.create_lister());
-        
+
         lister::entry ent;
         struct stat st;
 
@@ -309,7 +309,7 @@ void vfs::finish_read(bool cancelled, bool refresh, finish_fn finish) {
         if (!cancelled || !refresh) {
             if (refresh || !updating) {
                 updating = false;
-                
+
                 // If refresh is true resumes directory monitor which was
                 // created when this operation was queued. Otherwise
                 // resumes the old directory monitor
@@ -318,7 +318,7 @@ void vfs::finish_read(bool cancelled, bool refresh, finish_fn finish) {
             else { // Update tasks were cancelled when read task initiated
                 // Reread directory
                 add_refresh_task();
-                
+
                 // Start new monitor for current directory.  Should be
                 // paused as the update flag is modified as soon as an
                 // event is received.
@@ -345,36 +345,36 @@ void vfs::monitor_dir(bool paused) {
 
 void vfs::file_event(dir_monitor::event e) {
     using namespace std::placeholders;
-    
+
     switch (e.type()) {
         // Event stages
         case dir_monitor::EVENTS_BEGIN:
             updating = true;
             queue_task(std::bind(&vfs::begin_changes, _1, _2));
             break;
-            
+
         case dir_monitor::EVENTS_END:
             if (finish_fn finish = cb_changed())
                 queue_task(std::bind(&vfs::end_changes, _1, _2, finish));
             break;
-        
+
         // File events
         case dir_monitor::FILE_CREATED:
             queue_task(std::bind(&vfs::file_created, _1, _2, e.src()));
             break;
-        
+
         case dir_monitor::FILE_DELETED:
             queue_task(std::bind(&vfs::file_deleted, _1, _2, e.src()));
             break;
-            
+
         case dir_monitor::FILE_MODIFIED:
             queue_task(std::bind(&vfs::file_changed, _1, _2, e.src()));
             break;
-            
+
         case dir_monitor::FILE_RENAMED:
             queue_task(std::bind(&vfs::file_renamed, _1, _2, e.src(), e.dest()));
             break;
-            
+
         // Directory events
         case dir_monitor::DIR_DELETED:
             monitor.cancel();
@@ -384,7 +384,7 @@ void vfs::file_event(dir_monitor::event e) {
             cur_tree->subpath("");
             sig_deleted.emit(cur_type.path());
             break;
-            
+
         case dir_monitor::DIR_MODIFIED:
             add_refresh_task();
             break;
@@ -397,7 +397,7 @@ void vfs::begin_changes(cancel_state &state) {
         // Create new directory tree directly since this event is only
         // called for regular directories
         new_tree.reset(new dir_tree());
-        
+
         // Copy current file index to new tree's file index
         new_tree->index() = cur_tree->index();
     });
@@ -422,11 +422,11 @@ void vfs::file_created(cancel_state &state, const paths::string &path) {
     // Issue: Thee entry type is not obtained, instead the entry and
     // target file type are the same and obtained from the same stat
     // attributes.
-    
+
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
             const paths::string name(paths::file_name(path));
-            
+
             remove_entry(name);
             new_tree->add_entry(dir_entry(name, st));
         });
@@ -438,11 +438,11 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
 
     // Same entry type issue as file_created when the file is not
     // already in the tree.
-    
+
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
             const paths::string name(paths::file_name(path));
-            
+
             dir_entry *ent = new_tree->get_entry(name);
 
             if (ent) {
@@ -452,7 +452,7 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
                 new_tree->add_entry(dir_entry(name, st));
             }
         });
-    }    
+    }
 }
 
 void vfs::file_deleted(cancel_state &state, const paths::string &path) {
@@ -466,18 +466,18 @@ void vfs::file_renamed(cancel_state &state, const paths::string &src, const path
 
     paths::string src_name = paths::file_name(src);
     paths::string dest_name = paths::file_name(dest);
-    
+
     state.no_cancel([&] {
         dir_entry *ent = new_tree->get_entry(src_name);
 
         if (ent) {
             exists = true;
-            
+
             ent->orig_subpath(dest_name);
 
             remove_entry(dest_name);
             new_tree->add_entry(std::move(*ent));
-            
+
             remove_entry(src_name);
         }
     });
@@ -512,9 +512,9 @@ void vfs::call_new_entry(dir_entry &ent, bool refresh) {
 void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool refresh) {
     // Pause queue to prevent update tasks from being run before
     // commit_read is called.
-    
+
     queue->pause();
-    
+
     queue_main([=] (vfs *self) {
         finish(cancelled, error, refresh);
         if (cancelled || error) self->queue->resume();
@@ -526,3 +526,18 @@ void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool r
     });
 }
 
+
+/// Create tree lister
+
+tree_lister * vfs::get_tree_lister(std::vector<dir_entry *> entries) {
+    std::vector<paths::string> paths;
+
+    for (dir_entry *ent : entries) {
+        paths.push_back(ent->subpath());
+
+        if (ent->type() == dir_entry::type_dir)
+            paths.back() += '/';
+    }
+
+    return cur_type.create_tree_lister(paths);
+}

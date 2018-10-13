@@ -21,7 +21,7 @@
 
 #include "app_window.h"
 
-#include "async_task.h"
+#include "tasks/async_task.h"
 
 #include <sigc++/sigc++.h>
 

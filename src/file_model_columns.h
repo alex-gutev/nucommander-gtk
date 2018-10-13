@@ -24,7 +24,7 @@
 #include <gdkmm/rgba.h>
 #include <gdkmm/pixbuf.h>
 
-#include "dir_entry.h"
+#include "directory/dir_entry.h"
 
 namespace nuc {
     /**

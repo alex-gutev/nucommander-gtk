@@ -26,7 +26,7 @@
 #include <vector>
 #include <tuple>
 
-#include "error.h"
+#include "errors/error.h"
 
 namespace nuc {
     /**

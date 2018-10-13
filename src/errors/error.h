@@ -30,7 +30,7 @@
 
 #include <glibmm/ustring.h>
 
-#include "task_queue.h"
+#include "tasks/task_queue.h"
 
 /**
  * Error handling functions.

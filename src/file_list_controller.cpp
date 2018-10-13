@@ -21,9 +21,10 @@
 
 #include <algorithm>
 
-#include "async_task.h"
-#include "icon_loader.h"
+#include "tasks/async_task.h"
+#include "directory/icon_loader.h"
 
+#include "copy/copy.h"
 
 using namespace nuc;
 

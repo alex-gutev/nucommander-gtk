@@ -24,7 +24,7 @@
 #include <atomic>
 #include <memory>
 
-#include "task_queue.h"
+#include "tasks/task_queue.h"
 
 #include "dir_type.h"
 #include "dir_monitor.h"
@@ -40,7 +40,7 @@ namespace nuc {
      *
      * TODO: Implement path case canonicalization
      */
-    class vfs : public std::enable_shared_from_this<vfs> {        
+    class vfs : public std::enable_shared_from_this<vfs> {
         /**
          * The dir_type object, responsible for creating the lister
          * and dir_tree objects, of the current directory.
@@ -61,9 +61,9 @@ namespace nuc {
          */
         dir_type new_type;
 
-        
+
         /* Directory Tree */
-        
+
         /**
          * The directory tree containing the entries of the current
          * directory.
@@ -85,7 +85,7 @@ namespace nuc {
          */
         std::unique_ptr<dir_tree> new_tree = nullptr;
 
-        
+
         /* Background Tasks */
 
         /**
@@ -116,10 +116,10 @@ namespace nuc {
          */
         bool finalized = false;
 
-        
+
         /**
          * Adds a task to the background task queue.
-         * 
+         *
          * Task function prototype:
          *
          *     void(vfs *this, cancel_state &state)
@@ -168,7 +168,7 @@ namespace nuc {
          */
         template <typename F>
         void queue_main(F fn);
-        
+
         /**
          * Cancels the directory monitor and all background tasks, and
          * sets the finalized flag.
@@ -177,7 +177,7 @@ namespace nuc {
 
     public:
         /**
-         * Begin callback function type. 
+         * Begin callback function type.
          *
          * Called, on the background thread, before beginning a
          * background operation. Takes the following arguments:
@@ -220,14 +220,14 @@ namespace nuc {
          * is returned the update operation is not initiated.
          */
         typedef std::function<finish_fn()> changed_fn;
-        
+
         /**
          * Signal type, of the signal sent when the directory has been
          * deleted.
          */
         typedef sigc::signal<void, paths::string> deleted_signal;
 
-        
+
         /* Constructor */
         vfs();
 
@@ -236,7 +236,7 @@ namespace nuc {
          * pointer to it.
          */
         static std::shared_ptr<vfs> create();
-        
+
         /**
          * Sets the begin callback function.
          */
@@ -278,7 +278,7 @@ namespace nuc {
         paths::string path() {
             return cur_type.logical_path();
         }
-        
+
         /**
          * Initiates a background read operation for the directory at
          * 'path'.
@@ -325,7 +325,7 @@ namespace nuc {
          *   listed, false otherwise.
          */
         bool ascend(finish_fn finish);
-        
+
         /**
          * Cancels the current background operation if any. The
          * operation is considered cancelled when the finish callback
@@ -335,12 +335,16 @@ namespace nuc {
          *    was cancelled.
          */
         bool cancel();
-        
+
         /**
          * Returns the status (error code) of the last operation.
          */
         int status() const {
             return op_error;
+        }
+
+        dir_type directory_type() const {
+            return cur_type;
         }
 
         /**
@@ -384,8 +388,19 @@ namespace nuc {
         dir_tree::entry_range get_entries(const paths::string &path) {
             return cur_tree->get_entries(path);
         }
-        
-        
+
+        /**
+         * Creates a tree lister for a set of entries. Directory
+         * entries are descended into, other entries are simply
+         * visited once.
+         *
+         * @param entries List of entries to be visited by the tree
+         *    lister.
+         *
+         * @return The tree_lister object.
+         */
+        tree_lister *get_tree_lister(std::vector<dir_entry*> entries);
+
         /**
          * Asynchronous cleanup method.
          *
@@ -399,7 +414,7 @@ namespace nuc {
          */
         template <typename F>
         void cleanup(F fn);
-        
+
     private:
         /**
          * New entry callback function.
@@ -414,7 +429,7 @@ namespace nuc {
          * Directory changed callback function.
          */
         changed_fn cb_changed;
-        
+
         /**
          * Deleted signal
          */
@@ -449,7 +464,7 @@ namespace nuc {
          * to the background task queue.
          */
         void add_refresh_task();
-        
+
         /**
          * Reads the directory at @a path.
          *
@@ -473,13 +488,13 @@ namespace nuc {
          * @param refresh True if the directory is being reread.
          */
         void list_dir(cancel_state &state, dir_type type, bool refresh);
-        
+
         /**
          * Read task finish callback. Calls the finish callback.
          */
         void finish_read(bool cancelled, bool refresh, finish_fn finish);
 
-        
+
         /**
          * Adds an entry to the 'new_tree' directory tree. The adding
          * of the entry is performed with the cancellation state set
@@ -504,9 +519,9 @@ namespace nuc {
          * @param subpath The subpath to read.
          */
         void add_read_subdir(const paths::string &subpath, finish_fn finish);
-        
+
         /**
-         * Read subdirectory task. 
+         * Read subdirectory task.
          *
          * Reads the subdirectory of the directory tree if it
          * exists. The subdirectory is obtained and the callback
@@ -532,8 +547,8 @@ namespace nuc {
          * subdirectory is read.
          */
         void refresh_subdir();
-        
-        
+
+
         /* Directory Monitoring */
 
         dir_monitor monitor;
@@ -549,7 +564,7 @@ namespace nuc {
          * May only be called from the main thread.
          */
         void resume_monitor();
-        
+
         /**
          * Signal handler for the file event signal.
          */
@@ -582,7 +597,7 @@ namespace nuc {
          * @param subpath The subpath of the entry
          */
         void remove_entry(const paths::string &subpath);
-        
+
         /**
          * Obtains the stat attributes of a file. First the stat
          * system call is attempted, if that fails the lstat system
@@ -600,7 +615,7 @@ namespace nuc {
 
 
         /** Callbacks */
-        
+
         /**
          * Calls the begin callback. The cancellation is switched
          * switched to the "no cancel" state, before calling the
@@ -658,7 +673,7 @@ void nuc::vfs::for_each(F f) {
 template <typename F>
 void nuc::vfs::cleanup(F fn) {
     finalize();
-    
+
     queue->add([fn] (cancel_state &state) {
         dispatch_main(fn);
     });
