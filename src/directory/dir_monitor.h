@@ -276,6 +276,12 @@ namespace nuc {
          * itself.
          */
         bool is_dir_event(const Glib::RefPtr<Gio::File> &file);        
+
+        /**
+         * Emits the EVENTS_END event, stops the timer and sets the
+         * changing flag to false.
+         */
+        void end_events();
         
         /**
          * Creates the timer
