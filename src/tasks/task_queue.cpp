@@ -37,7 +37,7 @@ void task_queue::add(task_type task) {
 }
 
 void task_queue::begin_loop() {
-    if (!running.test_and_set() && !paused) {
+    if (!paused && !running.test_and_set()) {
         std::shared_ptr<cancel_state> state = get_cancel_state();
         std::shared_ptr<task_queue> ptr = shared_from_this();
         

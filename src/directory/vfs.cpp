@@ -177,8 +177,9 @@ void vfs::finish_read_subdir(bool cancelled, const paths::string &subpath, finis
 
         finish(cancelled, !cancelled ? op_error : 0, false);
 
+        self->queue->resume();
+
         if (cancelled || self->op_error) {
-            self->queue->resume();
             self->resume_monitor();
         }
     });
@@ -245,8 +246,6 @@ void vfs::commit_read() {
     else {
         resume_monitor();
     }
-
-    queue->resume();
 
     reading = false;
     updating = false;
@@ -517,7 +516,7 @@ void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool r
 
     queue_main([=] (vfs *self) {
         finish(cancelled, error, refresh);
-        if (cancelled || error) self->queue->resume();
+        self->queue->resume();
 
         if (refresh && !cancelled && !error) {
             // Check that the current tree's subpath still exists.
