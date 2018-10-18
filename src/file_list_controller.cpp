@@ -540,3 +540,35 @@ bool file_list_controller::descend(const dir_entry& ent) {
         return false;
     }
 }
+
+
+//// Getting a tree lister
+
+tree_lister * file_list_controller::get_tree_lister() {
+    return vfs->get_tree_lister(selected_entries());
+}
+
+task_queue::task_type file_list_controller::make_copy_task(const paths::string &dest) {
+    return ::make_copy_task(vfs->directory_type(), selected_entries(), dest);
+}
+
+std::vector<dir_entry*> file_list_controller::selected_entries() {
+    std::vector<dir_entry*> entries;
+
+    if (marked_set.size()) {
+        for (auto &row : marked_set) {
+            entries.push_back(row.second[columns.ent]);
+        }
+    }
+    else {
+        auto row = view->get_selection()->get_selected();
+        if (row) {
+            dir_entry *ent = (*row)[columns.ent];
+
+            if (ent->ent_type() != dir_entry::type_parent)
+                entries.push_back(ent);
+        }
+    }
+
+    return entries;
+}

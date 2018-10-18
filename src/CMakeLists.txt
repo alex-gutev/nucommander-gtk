@@ -29,4 +29,4 @@ add_subdirectory(lister/)
 add_subdirectory(directory/)
 add_subdirectory(stream/)
 add_subdirectory(copy/)
-
+add_subdirectory(commands/)

@@ -10,6 +10,14 @@
 	plugin's configuration.
       </description>
     </key>
+    <key name="keybindings" type="a{ss}">
+      <default>{"F5": "copy"}</default>
+      <description>
+        Dictionary of command key-bindings. Each key is the
+        key-sequence and the corresponding value is the name of the
+        command to execute.
+      </description>
+    </key>
   </schema>
 
   <schema id="org.agware.NuCommander.plugin" gettext-domain="NuCommander">

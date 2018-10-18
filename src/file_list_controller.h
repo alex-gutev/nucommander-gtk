@@ -551,6 +551,32 @@ namespace nuc {
         }
 
         /**
+         * Returns the list of selected/marked entries.
+         *
+         * @return An std::vector of the dir_entry objects
+         *   corresponding to the selected/marked entries.
+         */
+        std::vector<dir_entry*> selected_entries();
+
+        /**
+         * Creates a tree lister which lists all marked/selected files
+         * and the contents of all marked/selected directories.
+         *
+         * @return The tree lister.
+         */
+        tree_lister *get_tree_lister();
+
+        /**
+         * Creates a task which copies all marked/selected files to
+         * the destination directory @a dest.
+         *
+         * @param Path to the destination directory.
+         *
+         * @return The task.
+         */
+        task_queue::task_type make_copy_task(const paths::string &dest);
+
+        /**
          * Asynchronous cleanup method.
          *
          * @param fn The cleanup function to call once it is safe to

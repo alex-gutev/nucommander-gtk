@@ -124,9 +124,21 @@ namespace nuc {
         
     public:
         /**
+         * The opposite file_view, i.e. the destination pane.
+         */
+        file_view * next_file_view;
+
+        /**
          * Derived widget constructor.
          */
         file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Returns the path to the file view's current directory.
+         */
+        const paths::string path() const {
+            return flist.path();
+        }
 
         /**
          * Changes the current path of the file view, this changes the
@@ -134,6 +146,40 @@ namespace nuc {
          * the new path.
          */
         void path(const std::string &path, bool move_to_old = false);
+
+
+        /* Copy Tasks */
+
+        /**
+         * Creates a task which copies the selected/marked files to a
+         * destination directory.
+         *
+         * @param dest Path to the destination directory.
+         *
+         * @return The copy task.
+         */
+        task_queue::task_type make_copy_task(const paths::string &dest) {
+            return flist.make_copy_task(dest);
+        }
+
+        /**
+         * Creates a tree lister for listing the marked/selected files
+         * and the contents of any marked/selected directories.
+         *
+         * @return The tree lister.
+         */
+        tree_lister *get_tree_lister();
+
+        /**
+         * Returns a directory writer for modifying files in the
+         * file_view's directory.
+         *
+         * @return The directory writer.
+         */
+        dir_writer *get_dir_writer();
+
+
+        /* Cleanup */
 
         /**
          * Asynchronous cleanup method.

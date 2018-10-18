@@ -137,3 +137,14 @@ void file_view::path(const std::string &path, bool move_to_old) {
 void file_view::entry_path(const std::string &path) {
     path_entry->set_text(path);
 }
+
+
+//// Getting a tree lister
+
+tree_lister * file_view::get_tree_lister() {
+    return flist.get_tree_lister();
+}
+
+dir_writer * file_view::get_dir_writer() {
+    return dir_type::get_writer(flist.path());
+}
