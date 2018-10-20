@@ -22,6 +22,8 @@
 #include "app_window.h"
 #include "file_view.h"
 
+#include "settings/app_settings.h"
+
 #include "copy/copy.h"
 
 using namespace nuc;
@@ -58,7 +60,7 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
 
 /// command_keymap Implementation
 
-command_keymap::command_keymap() : settings(Gio::Settings::create(settings_id)) {
+command_keymap::command_keymap() {
     get_keymap();
 };
 
@@ -70,7 +72,7 @@ command_keymap &command_keymap::instance() {
 
 void command_keymap::get_keymap() {
     Glib::Variant<std::map<Glib::ustring, Glib::ustring>> gv_map;
-    settings->get_value("keybindings", gv_map);
+    app_settings::instance().settings()->get_value("keybindings", gv_map);
 
     auto map = gv_map.get();
 

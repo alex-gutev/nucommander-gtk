@@ -19,10 +19,11 @@
 
 #include "archive_plugin_loader.h"
 
+#include "settings/app_settings.h"
+
 using namespace nuc;
 
-archive_plugin_loader::archive_plugin_loader()
-    : settings(Gio::Settings::create(settings_id)) {
+archive_plugin_loader::archive_plugin_loader() {
     get_plugin_details();
 }
 
@@ -36,8 +37,8 @@ void archive_plugin_loader::get_plugin_details() {
     std::string reg;
     bool first = true;
 
-    for (const auto &child : settings->get_string_array("plugins")) {
-        Glib::ustring child_path(settings_path);
+    for (const auto &child : app_settings::instance().settings()->get_string_array("plugins")) {
+        Glib::ustring child_path(app_settings::settings_path);
 
         child_path.append(child);
         child_path.append("/");

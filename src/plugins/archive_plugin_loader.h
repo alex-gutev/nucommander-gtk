@@ -38,24 +38,9 @@ namespace nuc {
      */
     class archive_plugin_loader {
         /**
-         * ID of the GSettings schema of the application's settings.
-         */
-        static constexpr const char *settings_id = "org.agware.NuCommander";
-
-        /**
-         * GSettings path where the plugins' settings are stored.
-         */
-        static constexpr const char *settings_path = "/org/agware/NuCommander/";
-
-        /**
          * ID of the plugin GSettings schema.
          */
         static constexpr const char *plugin_schema = "org.agware.NuCommander.plugin";
-
-        /**
-         * GSettings object.
-         */
-        Glib::RefPtr<Gio::Settings> settings;
 
         /**
          * Archive file name regular expression.

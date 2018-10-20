@@ -57,16 +57,6 @@ namespace nuc {
      */
     class command_keymap {
         /**
-         * ID of the GSettings schema of the application's settings.
-         */
-        static constexpr const char *settings_id = "org.agware.NuCommander";
-
-        /**
-         * GSettings object.
-         */
-        Glib::RefPtr<Gio::Settings> settings;
-
-        /**
          * The keymap.
          *
          * Each key is a string corresponding to a key sequence and
