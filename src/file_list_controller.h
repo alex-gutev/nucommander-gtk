@@ -515,9 +515,21 @@ namespace nuc {
 
         /**
          * Returns the current path.
+         *
+         * @return The current path.
          */
         const std::string &path() const {
             return cur_path;
+        }
+
+        /**
+         * Returns a pointer to the vfs object responsible for reading
+         * the directory.
+         *
+         * @return The vfs object.
+         */
+        std::shared_ptr<nuc::vfs> dir_vfs() {
+            return vfs;
         }
 
         /**

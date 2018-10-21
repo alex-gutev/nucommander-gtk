@@ -424,7 +424,7 @@ bool file_list_controller::keypress_return() {
 
     if (row) {
         // Emit activate signal. This should be emitted automatically
-        // by the widget however the signal is not emiited if the
+        // by the widget however the signal is not emitted if the
         // selection was changed programmatically.
         view->row_activated(cur_list->get_path(row), *view->get_column(0));
         return true;

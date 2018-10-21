@@ -46,6 +46,17 @@ namespace nuc {
      */
     class file_view : public Gtk::Frame {
         /**
+         * Activate entry signal type.
+         *
+         * The signal is passed three arguments:
+         *
+         *   - Pointer to the "this" file_view.
+         *   - Pointer to the file_list_controller.
+         *   - Pointer to the activated entry.
+         */
+        typedef sigc::signal<void, file_view *, file_list_controller *, dir_entry *> signal_activate_entry_type;
+
+        /**
          * File list controller. Populates the tree view's model with
          * the directory's contents.
          */
@@ -68,6 +79,11 @@ namespace nuc {
          * widget is contained.
          */
         Gtk::ScrolledWindow *scroll_window;
+
+        /**
+         * Activate entry signal.
+         */
+        signal_activate_entry_type m_signal_activate_entry;
         
 
         /* Private Methods */
@@ -177,6 +193,20 @@ namespace nuc {
          * @return The directory writer.
          */
         dir_writer *get_dir_writer();
+
+
+        /* Signals */
+
+        /**
+         * Activate entry signal. This signal is emitted whenever the
+         * an (a row in the file tree view) is activate either by
+         * double clicking on it or pressing the return key.
+         *
+         * @return The signal.
+         */
+        signal_activate_entry_type signal_activate_entry() {
+            return m_signal_activate_entry;
+        }
 
 
         /* Cleanup */

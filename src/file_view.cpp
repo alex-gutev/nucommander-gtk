@@ -118,7 +118,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
     dir_entry &ent = *row[flist.columns.ent];
 
-    flist.descend(ent);
+    m_signal_activate_entry.emit(this, &flist, &ent);
 }
 
 void file_view::on_path_changed(const paths::string &path) {

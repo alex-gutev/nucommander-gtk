@@ -23,10 +23,10 @@
 #include <functional>
 #include <iostream>
 
+#include <giomm/appinfo.h>
+
 #include "tasks/async_task.h"
-
 #include "commands/commands.h"
-
 #include "copy/copy.h"
 
 using namespace nuc;
@@ -95,6 +95,8 @@ void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
 
     ptr->add_events(Gdk::KEY_RELEASE_MASK);
     ptr->signal_key_release_event().connect(sigc::bind<file_view*>(sigc::mem_fun(this, &app_window::on_keypress), ptr), false);
+
+    ptr->signal_activate_entry().connect(sigc::mem_fun(this, &app_window::on_entry_activate));
 }
 
 
@@ -115,7 +117,29 @@ bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
     }
 
     return false;
-};
+}
+
+void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controller *flist, nuc::dir_entry *ent) {
+    using namespace std::placeholders;
+
+    if (!flist->descend(*ent)) {
+        dir_type type = flist->dir_vfs()->directory_type();
+
+        if (!type.is_dir()) {
+            add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));
+        }
+        else {
+            std::string full_path = paths::appended_component(flist->path(), ent->orig_subpath());
+            add_operation([=] (cancel_state &) {
+                open_file(full_path.c_str());
+            });
+        }
+    }
+}
+
+void app_window::open_file(const char *cpath) {
+    Gio::AppInfo::launch_default_for_uri("file://" + std::string(cpath));
+}
 
 void app_window::add_operation(task_queue::task_type op) {
     using namespace std::placeholders;

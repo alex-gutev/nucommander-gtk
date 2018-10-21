@@ -77,6 +77,9 @@ namespace nuc {
          */
         std::shared_ptr<task_queue> operations{task_queue::create()};
 
+
+        /* Initialization Methods */
+
         /**
          * Creates and adds the file view widgets to the paned view
          * container, and sets up the focus chain.
@@ -100,6 +103,9 @@ namespace nuc {
          */
         Glib::RefPtr<Gtk::Builder> file_view_builder();
 
+
+        /* Signal Handlers */
+
         /**
          * Signal handler for the key press event on each file_view.
          *
@@ -108,6 +114,25 @@ namespace nuc {
          */
         bool on_keypress(const GdkEventKey *e, file_view *src);
 
+        /**
+         * Signal handler for the activate entry signal.
+         *
+         * @param src The file_view in which the entry was activated.
+         * @param flist The file_view's file list controller.
+         * @param ent The activated entry.
+         */
+        void on_entry_activate(file_view *src, file_list_controller *flist, dir_entry *ent);
+
+        /**
+         * Opens the file at @a path, with the default application for
+         * the file type.
+         *
+         * Performs synchronous IO to determine the file type thus
+         * should only be run from the task queue.
+         *
+         * @param path Path to the file.
+         */
+        void open_file(const char *path);
 
         /* Error handling */
 
