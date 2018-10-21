@@ -28,7 +28,7 @@
 using namespace nuc;
 
 
-file_outstream::file_outstream(const char *path, int flags, int perms) :path(path) {
+file_outstream::file_outstream(const char *path, int flags, int perms) : path(path) {
     int excl = O_EXCL;
 
     global_restart overwrite(overwrite_restart(excl));

@@ -88,6 +88,16 @@ namespace nuc {
         file_outstream(int dirfd, const char *path, int flags, int perms = S_IRWXU);
 
         /**
+         * Create a file output stream with an open file
+         * descriptor. Data is written directly to the file descriptor
+         * and the file descriptor is closed when the object is
+         * destroyed.
+         *
+         * @param fd The file descriptor.
+         */
+        file_outstream(int fd) : fd(fd) {};
+
+        /**
          * Closes the output stream.
          */
         ~file_outstream() {

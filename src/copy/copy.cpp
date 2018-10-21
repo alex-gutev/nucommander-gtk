@@ -24,6 +24,7 @@
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"
 
+#include "stream/file_outstream.h"
 
 using namespace nuc;
 
@@ -35,7 +36,19 @@ using namespace nuc;
  * @param in    Input stream to read data from.
  * @param out   Output stream to write data to.
  */
-static void copy_file(cancel_state &state, instream *in, outstream *out);
+static void copy_file(cancel_state &state, instream &in, outstream &out);
+
+/**
+ * Copies the files read from the tree lister @a lst, to temporary
+ * files.
+ *
+ * @param state Cancellation state.
+ * @param lst Source directory tree lister.
+ *
+ * @param callback Callback which is called (with the paths to the
+ *    temporary files) after each file is copied successfully.
+ */
+static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::function<void(const char *)> &callback);
 
 /**
  * Skip exception.
@@ -79,7 +92,7 @@ nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vec
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
         try {
-            copy(state, lister.get(), writer.get());
+            copy(state, *lister, *writer);
         }
         catch (const error &e) {
             // Catch error to abort operation.
@@ -87,8 +100,8 @@ nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vec
     };
 }
 
-void nuc::copy(cancel_state &state, nuc::tree_lister *in, nuc::dir_writer *out) {
-    in->list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) {
+    in.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
         global_restart skip(skip_exception::restart);
 
         state.test_cancel();
@@ -97,14 +110,17 @@ void nuc::copy(cancel_state &state, nuc::tree_lister *in, nuc::dir_writer *out) 
             switch (ent.type) {
             case DT_DIR:
                 if (info == nuc::tree_lister::visit_preorder)
-                    out->mkdir(ent.name);
+                    out.mkdir(ent.name);
                 else if (info == nuc::tree_lister::visit_postorder)
-                    out->set_attributes(ent.name, st);
+                    out.set_attributes(ent.name, st);
                 break;
 
-            case DT_REG:
-                copy_file(state, in->open_entry(), out->create(ent.name, st));
-                break;
+            case DT_REG:{
+                std::unique_ptr<instream> src(in.open_entry());
+                std::unique_ptr<outstream> dest(out.create(ent.name, st));
+
+                copy_file(state, *src, *dest);
+            } break;
             }
         }
         catch (const skip_exception &) {
@@ -113,19 +129,44 @@ void nuc::copy(cancel_state &state, nuc::tree_lister *in, nuc::dir_writer *out) 
 
     });
 
-    out->close();
+    out.close();
 }
 
-static void copy_file(cancel_state &state, instream *src, outstream *dest) {
-    std::unique_ptr<instream> in(src);
-    std::unique_ptr<outstream> out(dest);
-
+static void copy_file(cancel_state &state, instream &in, outstream &out) {
     size_t size;
     off_t offset;
 
-    while (const instream::byte *block = in->read_block(size, offset)) {
+    while (const instream::byte *block = in.read_block(size, offset)) {
         state.test_cancel();
 
-        out->write(block, size, offset);
+        out.write(block, size, offset);
     }
+}
+
+
+nuc::task_queue::task_type nuc::make_unpack_task(const dir_type &src_type, const paths::string &subpath, const std::function<void(const char *)> &callback) {
+    return [=] (cancel_state &state) {
+        std::unique_ptr<tree_lister> ls(src_type.create_tree_lister({subpath}));
+
+        copy_to_temp(state, *ls, callback);
+    };
+}
+
+void copy_to_temp(cancel_state &state, tree_lister &lst, const std::function<void(const char *)> &callback) {
+    lst.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+        // TODO: Use mkstemps to create temporary with same extension
+        char name[] = "/tmp/nucommander-tmp-XXXXXX";
+        int fd = mkstemp(name);
+
+        if (fd >= 0) {
+            std::unique_ptr<instream> in(lst.open_entry());
+            std::unique_ptr<outstream> out(new file_outstream(fd));
+
+            copy_file(state, *in, *out);
+
+            state.no_cancel([&] {
+                callback(name);
+            });
+        }
+    });
 }

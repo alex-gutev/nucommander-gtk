@@ -57,7 +57,25 @@ namespace nuc {
      * @param lister Source directory tree lister.
      * @param dest Destination directiory writer.
      */
-	void copy(cancel_state &state, tree_lister *lister, dir_writer *dest);
+	void copy(cancel_state &state, tree_lister &lister, dir_writer &dest);
+
+    /**
+     * Creates a task which copies a file from a source directory to a
+     * temporary file. This primarily useful to unpack files from
+     * archives before opening them in an external program.
+     *
+     * @param src_type The directory type of the source directory.
+     *
+     * @param subpath Subpath of the file, within the source
+     *    directory.
+     *
+     * @param callback A callback that is called when the operation
+     *    completes (if it completes successfully), with the path to
+     *    the temporary file passed as an argument.
+     *
+     * @return The task.
+     */
+    task_queue::task_type make_unpack_task(const dir_type &src_type, const paths::string &subpath, const std::function<void(const char *)> &callback);
 }
 
 #endif
