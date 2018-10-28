@@ -64,6 +64,16 @@ namespace nuc {
         virtual bool entry_stat(struct stat &st);
 
         virtual instream *open_entry();
+
+        /* Archive Lister Specific Methods */
+
+        /**
+         * Retrieves the symbolic link target path of the last entry
+         * read if it is a symbolic link.
+         *
+         * @return The target path.
+         */
+        const char *symlink_path() const;
     };
 }
 

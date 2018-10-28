@@ -41,6 +41,7 @@ namespace nuc {
          */
         FTSENT *last_ent = nullptr;
 
+
         /**
          * Converts the value of the fts_info field, of the entry, to
          * a dirent file type constant.
@@ -102,6 +103,8 @@ namespace nuc {
         /* Method Overrides */
 
         virtual void list_entries(const list_callback &fn);
+
+        virtual std::string symlink_path();
 
         virtual instream * open_entry();
     };

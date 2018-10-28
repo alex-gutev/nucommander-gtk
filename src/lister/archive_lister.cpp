@@ -21,6 +21,7 @@
 
 #include "stream/archive_instream.h"
 
+#include <cassert>
 
 using namespace nuc;
 
@@ -66,6 +67,12 @@ bool archive_lister::entry_stat(struct stat& st) {
 
 instream * archive_lister::open_entry() {
     return new archive_instream(plugin, handle);
+}
+
+const char *archive_lister::symlink_path() const {
+    assert(S_ISLNK(arch_entry.stat->st_mode));
+
+    return arch_entry.symlink_dest;
 }
 
 // Local Variables:

@@ -19,6 +19,11 @@
 
 #include "dir_tree_lister.h"
 
+#include <cassert>
+
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "stream/file_instream.h"
 
 using namespace nuc;
@@ -134,6 +139,25 @@ dir_tree_lister::visit_info dir_tree_lister::get_visit_info(FTSENT *last_ent) {
     }
 }
 
+
+std::string dir_tree_lister::symlink_path() {
+    assert(last_ent->fts_info == FTS_SL);
+
+    std::string buf(last_ent->fts_statp->st_size+1, 0);
+
+    try_op([&] {
+        ssize_t sz;
+
+        while ((sz = readlink(last_ent->fts_path, &buf.front(), buf.size())) == buf.size()) {
+            buf.resize(sz + 1, 0);
+        }
+
+        if (sz == -1)
+            raise_error(errno);
+    });
+
+    return buf;
+}
 
 instream * dir_tree_lister::open_entry() {
     return new file_instream(last_ent->fts_path);

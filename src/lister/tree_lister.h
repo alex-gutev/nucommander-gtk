@@ -100,6 +100,14 @@ namespace nuc {
         virtual void list_entries(const list_callback &fn) = 0;
 
         /**
+         * Retrieves the realpath of the last entry read if it was a
+         * symbolic link.
+         *
+         * @return Target path of the symbolic link.
+         */
+        virtual std::string symlink_path() = 0;
+
+        /**
          * Opens the last entry read, for reading. This may only be
          * used if the last entry is a regular file.
          *

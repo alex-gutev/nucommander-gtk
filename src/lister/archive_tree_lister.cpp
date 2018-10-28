@@ -112,6 +112,9 @@ void archive_tree_lister::add_visited_dirs(const list_callback &fn, size_t base_
     }
 }
 
+std::string archive_tree_lister::symlink_path() {
+    return listr.symlink_path();
+}
 
 // Local Variables:
 // indent-tabs-mode: nil

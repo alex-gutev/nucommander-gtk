@@ -107,6 +107,8 @@ namespace nuc {
         virtual instream * open_entry() {
             return listr.open_entry();
         }
+
+        virtual std::string symlink_path();
     };
 }
 

@@ -52,7 +52,7 @@ void reg_dir_writer::mkdir(const char *path) {
 }
 
 void reg_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
-    TRY_OP(symlinkat(path, fd, target))
+    TRY_OP(symlinkat(target, fd, path))
 
     set_attributes(path, st);
 }
