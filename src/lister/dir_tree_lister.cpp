@@ -149,11 +149,14 @@ std::string dir_tree_lister::symlink_path() {
         ssize_t sz;
 
         while ((sz = readlink(last_ent->fts_path, &buf.front(), buf.size())) == buf.size()) {
-            buf.resize(sz + 1, 0);
+            buf.resize(sz * 2);
         }
 
         if (sz == -1)
             raise_error(errno);
+
+        buf.resize(sz + 1);
+        buf[sz] = 0;
     });
 
     return buf;
