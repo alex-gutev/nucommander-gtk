@@ -10,7 +10,7 @@ The twin pane interface, of Norton Commander, is preserved however all
 redundant UI elements, such as command buttons and toolbars are
 removed in favour of a clean, minimal user interface.
 
-[[img/screenshot.png]]
+![Screenshot](img/screenshot.png)
 
 ## Status
 
