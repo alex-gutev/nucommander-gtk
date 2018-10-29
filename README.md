@@ -16,8 +16,8 @@ removed in favour of a clean, minimal user interface.
 
 NuCommander is currently in early stages of development.
 
-The following basic features have been implemented, __there is still
-significant polishing up to do__:
+The following basic features have been implemented, _there is still
+significant polishing up to do_:
 
    * *Browsing Directories* - both regular directories and archives.
    * *Opening files* in their default applications.
