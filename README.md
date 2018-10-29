@@ -19,7 +19,7 @@ NuCommander is currently in early stages of development.
 The following basic features have been implemented, _there is still
 significant polishing up to do_:
 
-   * *Browsing Directories* - both regular directories and archives.
-   * *Opening files* in their default applications.
-   * *File Copying* - both to and from regular directories and archives.
-   * *Archive plugin interface* - for creating plugins to read various archive types
+   * **Browsing Directories** - both regular directories and archives.
+   * **Opening files** in their default applications.
+   * **File Copying** - both to and from regular directories and archives.
+   * **Archive plugin interface** - for creating plugins to read various archive types
