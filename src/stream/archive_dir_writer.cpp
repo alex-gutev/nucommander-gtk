@@ -27,12 +27,7 @@ using namespace nuc;
 
 archive_dir_writer::archive_dir_writer(paths::string arch_path, archive_plugin *plugin, paths::string subpath)
     : path(std::move(arch_path)), subpath(subpath), plugin(plugin) {
-    int err;
-
-    try_op([&] {
-        if (!(in_handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &err)))
-            raise_error(errno, err);
-    });
+    open_old();
 
     try {
         open_temp();
@@ -41,6 +36,15 @@ archive_dir_writer::archive_dir_writer(paths::string arch_path, archive_plugin *
         close_handles();
         throw;
     }
+}
+
+void archive_dir_writer::open_old() {
+    try_op([this] {
+        int err;
+
+        if (!(in_handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &err)))
+            raise_error(errno, err);
+    });
 }
 
 void archive_dir_writer::open_temp() {
@@ -74,13 +78,7 @@ void archive_dir_writer::open_temp() {
     });
 
 
-    // Copy type of existing archive
-
-    try_op([=] {
-        nuc_arch_entry ent;
-        if (int err = plugin->next_entry(in_handle, &ent) || plugin->copy_archive_type(out_handle, in_handle))
-            raise_error(errno, err);
-    });
+    get_old_entries();
 }
 
 archive_dir_writer::~archive_dir_writer() {
@@ -126,16 +124,70 @@ void archive_dir_writer::close() {
     tmp_exists = false;
 }
 
+
+void archive_dir_writer::get_old_entries() {
+    nuc_arch_entry ent;
+    bool copied = false;;
+
+    while (next_entry(&ent)) {
+        paths::string cpath = paths::canonicalized_path(ent.path);
+
+        add_old_entry(cpath, IFTODT(ent.stat->st_mode));
+
+        add_parent_entries(cpath);
+
+        if (!copied) {
+            copy_archive_type();
+            copied = true;
+        }
+    }
+
+    plugin->close(in_handle);
+    in_handle = nullptr;
+}
+
+void archive_dir_writer::add_parent_entries(paths::string path) {
+    while(paths::remove_last_component(path), path.length()) {
+        if (!add_old_entry(path, DT_DIR)) break;
+    }
+}
+
+bool archive_dir_writer::add_old_entry(const paths::string &path, int type) {
+    auto pair = old_entries.insert(std::make_pair(path, type));
+
+    if (!pair.second) {
+        if (type == DT_DIR && pair.first->second != DT_DIR) {
+            pair.first->second = DT_DIR;
+            return true;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+void archive_dir_writer::copy_archive_type() {
+    try_op([=] {
+        if (int err = plugin->copy_archive_type(out_handle, in_handle))
+            raise_error(errno, err);
+    });
+}
+
 void archive_dir_writer::copy_old_entries() {
     nuc_arch_entry ent;
     int err = 0;
 
-    do {
-        try_op([=] {
-            if (plugin->copy_last_entry(out_handle, in_handle))
-                raise_error(errno, err);
-        });
-    } while (next_entry(&ent));
+    open_old();
+
+    while (next_entry(&ent)) {
+        if (old_entries.count(paths::canonicalized_path(ent.path))) {
+            try_op([=] {
+                if (plugin->copy_last_entry(out_handle, in_handle))
+                    raise_error(errno, err);
+            });
+        }
+    }
 }
 
 bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
@@ -150,47 +202,74 @@ bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
 }
 
 outstream * archive_dir_writer::create(const char *path, const struct stat *st, int flags) {
-    nuc_arch_entry ent{};
-
-    paths::string ent_path = paths::appended_component(subpath, path);
-
-    ent.path = ent_path.c_str();
-    ent.stat = st;
-
-    create_entry(&ent);
+    create_entry(path, st);
 
     return new archive_outstream(plugin, out_handle);
 }
 
 void archive_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
-    nuc_arch_entry ent{};
-
-    paths::string ent_path = paths::appended_component(subpath, path);
-
-    ent.path = ent_path.c_str();
-    ent.symlink_dest = target;
-    ent.stat = st;
-
-    create_entry(&ent);
+    create_entry(path, st, target);
 }
 
 void archive_dir_writer::set_attributes(const char *path, const struct stat *st) {
     if (S_ISDIR(st->st_mode)) {
-        nuc_arch_entry ent{};
-
-        paths::string ent_path = subpath;
-        paths::append_component(ent_path, path);
-
-        ent.path = ent_path.c_str();
-        ent.stat = st;
-
-        create_entry(&ent);
+        create_entry(path, st);
     }
 }
 
+void archive_dir_writer::create_entry(const char *path, const struct stat *st, const char *symlink_dest) {
+    nuc_arch_entry ent{};
+
+    paths::string ent_path = paths::canonicalized_path(paths::appended_component(subpath, path));
+
+    ent.path = ent_path.c_str();
+    ent.stat = st;
+    ent.symlink_dest = symlink_dest;
+
+    create_entry(&ent);
+}
+
 void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
+    bool replace = false;
+
+    global_restart overwrite(restart("overwrite", [&replace, this, ent] (const nuc::error &e, boost::any) {
+        replace = true;
+        remove_old_entry(ent->path);
+    },
+    [] (const nuc::error &e) {
+        return e.code() == EEXIST;
+    }));
+
+    global_restart duplicate(restart("duplicate", [&replace] (const nuc::error &e, boost::any) {
+        replace = true;
+    },
+    [] (const nuc::error &e) {
+        return e.code() == EEXIST;
+    }));
+
     try_op([&] {
+        if (!replace && old_entries.count(ent->path))
+            raise_error(EEXIST);
+
         if (int err = plugin->create_entry(out_handle, ent))
             raise_error(errno, err);
     });
+}
+
+void archive_dir_writer::remove_old_entry(paths::string path) {
+    auto it = old_entries.find(path);
+
+    if (it != old_entries.end()) {
+        bool is_dir = it->second == DT_DIR;
+
+        it = old_entries.erase(it);
+
+        if (is_dir) {
+            paths::append_component(path, "");
+
+            while (it != old_entries.end() && paths::is_prefix(path, it->first)) {
+                it = old_entries.erase(it);
+            }
+        }
+    }
 }

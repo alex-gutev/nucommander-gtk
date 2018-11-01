@@ -20,6 +20,8 @@
 #ifndef NUC_ARCHIVE_DIR_WRITER_H
 #define NUC_ARCHIVE_DIR_WRITER_H
 
+#include <map>
+
 #include "dir_writer.h"
 
 #include "paths/utils.h"
@@ -61,6 +63,14 @@ namespace nuc {
         archive_plugin *plugin;
 
         /**
+         * Map containing the entries already in the archive. Each key
+         * is the canonicalized subpath to the entry and the
+         * corresponding value is the type of the entry as a dirent
+         * (DT_x) constant.
+         */
+        std::map<paths::string, int> old_entries;
+
+        /**
          * Handle of the existing archive (open for reading).
          */
         void *in_handle = nullptr;
@@ -72,10 +82,52 @@ namespace nuc {
 
 
         /**
+         * Opens the old archive for reading.
+         */
+        void open_old();
+
+        /**
          * Creates a temporary file and opens a new archive handle at
          * the file's location.
          */
         void open_temp();
+
+        /**
+         * Obtain the subpaths of all entries in the old archive and
+         * store them in old_entries.
+         */
+        void get_old_entries();
+
+        /**
+         * Adds the parent directory entries of the entry with subpath
+         * @path to the old_entries map.
+         *
+         * @param path Subpath to the entry.
+         */
+        void add_parent_entries(paths::string path);
+
+        /**
+         * Adds an old entry with subpath @a path to the old_entries
+         * map.
+         *
+         * If there is already an entry with the same subpath in the
+         * map, its type is not DT_DIR and @type is DT_DIR, it is
+         * replaced.
+         *
+         * @param path Subpath to the entry.
+         * @param type Type of the entry as a dirent constant.
+         *
+         * @return True if the entry was inserted in the map. False if
+         *   there was an entry with the same subpath in the map, and
+         *   it was not replaced.
+         */
+        bool add_old_entry(const paths::string &path, int type);
+
+        /**
+         * Sets the type of the new archive to the same type as the
+         * old archive.
+         */
+        void copy_archive_type();
 
         /**
          * Copies all entries in the existing archive to the new
@@ -83,7 +135,25 @@ namespace nuc {
          */
         void copy_old_entries();
 
+        /**
+         * Retrieve the metadata of the the next entry.
+         *
+         * @param ent Pointer to the nuc_arch_entry struct into which
+         *    the metadata is read.
+         */
         bool next_entry(nuc_arch_entry *ent);
+
+        /**
+         * Adds an entry header to the archive.
+         *
+         * @param path Path to the entry relative to 'subpath'.
+         *
+         * @param st Stat attributes of the entry
+         *
+         * @param symlink_dest Path to the symlink target if the entry
+         *   is a symbolic link.
+         */
+        void create_entry(const char *path, const struct stat *st, const char *symlink_dest = nullptr);
 
         /**
          * Adds an entry header to the archive.
@@ -91,6 +161,14 @@ namespace nuc {
          * @param ent The entry to add.
          */
         void create_entry(nuc_arch_entry *ent);
+
+        /**
+         * Removes the entry at subpath @a path. If it is a directory
+         * entry all child entries are removed as well.
+         *
+         * @param path Subpath to the entry.
+         */
+        void remove_old_entry(paths::string path);
 
         /**
          * Closes the two archive handles and deletes the new archive
