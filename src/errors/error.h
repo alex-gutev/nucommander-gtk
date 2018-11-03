@@ -63,6 +63,8 @@ namespace nuc {
          */
         error(int code, bool can_retry = true) : m_code(code), m_can_retry(can_retry) {}
 
+        virtual ~error() = default;
+
         /**
          * Returns the error code identifying the error.
          *
