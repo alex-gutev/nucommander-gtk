@@ -17,15 +17,32 @@
  *
  */
 
-#include "outstream.h"
+#include "create_error.h"
 
 #include <error.h>
 
-Glib::ustring nuc::outstream::error::explanation() const noexcept {
+using namespace nuc;
+
+
+Glib::ustring create_error::explanation() const noexcept {
     switch (code()) {
+    case EACCES:
+        return Glib::ustring::compose("Write access to '%1' denied.", file);
+
     case EEXIST:
         return Glib::ustring::compose("Destination file '%1' exists.", file);
-        break;
+
+    case EISDIR:
+        return Glib::ustring::compose("Destination file '%1' is a directory.", file);
+
+    case ENOENT:
+        return Glib::ustring::compose("Directory '%1' does not exist.", paths::removed_last_component(file));
+
+    case ENOTDIR:
+        return Glib::ustring::compose("'%1' is not a directory.", paths::removed_last_component(file));
+
+    case ETXTBSY:
+        return Glib::ustring::compose("Can't write to '%1' as it is a currently running executable.", file);
 
     default:
         return nuc::error::explanation();

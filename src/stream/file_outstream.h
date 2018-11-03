@@ -121,7 +121,7 @@ namespace nuc {
 
     protected:
         void raise_error(int code, bool can_retry = true) {
-            throw error(code, can_retry, path);
+            throw create_error(code, can_retry, path);
         }
     };
 }

@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "errors/error.h"
+#include "errors/errors.h"
 #include "outstream.h"
 
 namespace nuc {
