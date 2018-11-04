@@ -88,8 +88,11 @@ namespace nuc {
         /**
          * Returns a string explaining the error.
          *
-         * The default implementation simply returns a generic string
-         * containing the error code.
+         * The default implementation simply returns the system error
+         * description, returned by strerror.
+         *
+         * This method is not thread-safe and should thus only be
+         * called from the main thread.
          *
          * @return A string explaining the error.
          */

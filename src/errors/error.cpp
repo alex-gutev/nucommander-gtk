@@ -20,6 +20,7 @@
 #include "error.h"
 
 #include <cassert>
+#include <cstring>
 
 /**
  * Map of established restarts (error handler functions)
@@ -47,5 +48,8 @@ nuc::global_restart::~global_restart() {
 }
 
 Glib::ustring nuc::error::explanation() const noexcept {
-    return Glib::ustring::compose("Error with code: %1.", m_code);
+    // strerror is not thread-safe thus renders the entire method not
+    // thread-safe.
+
+    return strerror(m_code);
 }
