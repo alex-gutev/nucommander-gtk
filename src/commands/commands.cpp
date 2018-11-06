@@ -53,8 +53,10 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
 /// Builtin Command Implementations
 
 void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
-    if (window && src)
-        window->add_operation(src->make_copy_task(src->next_file_view->path()));
+    if (window && src) {
+        if (auto task = src->make_copy_task(src->next_file_view->path()))
+            window->add_operation(task);
+    }
 }
 
 

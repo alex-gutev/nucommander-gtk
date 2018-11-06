@@ -549,7 +549,12 @@ tree_lister * file_list_controller::get_tree_lister() {
 }
 
 task_queue::task_type file_list_controller::make_copy_task(const paths::string &dest) {
-    return ::make_copy_task(vfs->directory_type(), selected_entries(), dest);
+    auto entries = selected_entries();
+
+    if (entries.size())
+        return ::make_copy_task(vfs->directory_type(), std::move(entries), dest);
+    else
+        return task_queue::task_type();
 }
 
 std::vector<dir_entry*> file_list_controller::selected_entries() {
