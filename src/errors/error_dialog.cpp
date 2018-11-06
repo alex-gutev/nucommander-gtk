@@ -47,6 +47,8 @@ error_dialog::error_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
     exec_button->signal_clicked().connect(sigc::mem_fun(this, &error_dialog::exec_clicked));
     actions_view->signal_row_activated().connect(sigc::mem_fun(this, &error_dialog::row_clicked));
 
+    signal_delete_event().connect(sigc::mem_fun(this, &error_dialog::on_delete));
+
     init_model();
 }
 
@@ -99,4 +101,12 @@ void error_dialog::exec_clicked() {
 
 void error_dialog::row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn *column) {
     exec_clicked();
+}
+
+bool error_dialog::on_delete(GdkEventAny *e) {
+    action_chosen(&restart_abort);
+
+    gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
+
+    return true;
 }

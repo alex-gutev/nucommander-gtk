@@ -133,6 +133,16 @@ namespace nuc {
          */
         void row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn *column);
 
+        /**
+         * Signal handler for the "deleted" signal. Called when the
+         * user closes the dialog.
+         *
+         * Sets the "abort" restart as the chosen action.
+         *
+         * @param e The event which triggered the delete signal.
+         */
+        bool on_delete(GdkEventAny *e);
+
     public:
         using Gtk::Dialog::show;
 
