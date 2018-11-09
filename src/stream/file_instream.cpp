@@ -28,13 +28,14 @@
 
 using namespace nuc;
 
-file_instream::file_instream(const char *path, size_t buf_size) : buf_size(buf_size) {
+
+file_instream::file_instream(const char *path, size_t buf_size) : path(path), buf_size(buf_size) {
     alloc_buf();
 
     TRY_OP((fd = ::open(path, O_CLOEXEC | O_RDONLY)) < 0)
 }
 
-file_instream::file_instream(int dirfd, const char *file, size_t buf_size) : buf_size(buf_size) {
+file_instream::file_instream(int dirfd, const char *file, size_t buf_size) : path(file), buf_size(buf_size) {
     alloc_buf();
 
     TRY_OP((fd = openat(dirfd, file, O_CLOEXEC | O_RDONLY)) < 0)

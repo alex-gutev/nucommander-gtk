@@ -23,9 +23,16 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "error_macros.h"
-
 using namespace nuc;
+
+/**
+ * Short-hand for calling the try_op method with a function in which
+ * if the expression op returns non-zero, raise_error is called with
+ * the value of errno.
+ */
+#define TRY_OP(type, op) try_op([&] {  \
+        if ((op)) raise_error(errno, (type));   \
+    });
 
 
 file_outstream::file_outstream(const char *path, int flags, int perms) : path(path) {
@@ -33,14 +40,14 @@ file_outstream::file_outstream(const char *path, int flags, int perms) : path(pa
 
     global_restart overwrite(overwrite_restart(excl));
 
-    TRY_OP((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
+    TRY_OP(error::type_create_file, (fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
 }
 file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) : path(path) {
     int excl = O_EXCL;
 
     global_restart overwrite(overwrite_restart(excl));
 
-    TRY_OP((fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
+    TRY_OP(error::type_create_file, (fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
 }
 
 restart file_outstream::overwrite_restart(int &excl) {
@@ -54,7 +61,7 @@ restart file_outstream::overwrite_restart(int &excl) {
 
 void file_outstream::close() {
     if (close_fd())
-        raise_error(errno, false);
+        raise_error(errno, error::type_write_file, false);
 }
 
 int file_outstream::close_fd() {
@@ -74,7 +81,7 @@ void file_outstream::write(const byte *buf, size_t n, off_t offset) {
         try_op([&] {
             ssize_t bytes_written = ::write(fd, (const char *)buf, n);
 
-            if (bytes_written < 0) raise_error(errno);
+            if (bytes_written < 0) raise_error(errno, error::type_write_file);
 
             n -= bytes_written;
             buf += bytes_written;
@@ -89,6 +96,6 @@ void file_outstream::seek(off_t offset) {
     // the size of the block is non-zero.
 
     if (offset) {
-        TRY_OP(lseek(fd, offset, SEEK_CUR))
+        TRY_OP(error::type_write_file, lseek(fd, offset, SEEK_CUR))
     }
 }

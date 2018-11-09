@@ -131,6 +131,13 @@ namespace nuc {
          */
         Glib::RefPtr<Gtk::ListStore> create_model();
 
+        /**
+         * Sets the contents of the error label to the description of
+         * the error @a e.
+         *
+         * @param e The error.
+         */
+        void set_error_label(const error &e);
 
         /* Signal Handlers */
 

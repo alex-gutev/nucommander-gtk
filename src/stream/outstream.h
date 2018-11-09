@@ -67,8 +67,8 @@ namespace nuc {
          * @param can_retry True if the operation can be retried,
          *    false otherwise.
          */
-        void raise_error(int code, bool can_retry = true) {
-            throw create_error(code, can_retry);
+        void raise_error(int code, bool can_retry = true, error::type_code type = error::type_write_file) {
+            throw error(code, can_retry, type);
         };
     };
 }

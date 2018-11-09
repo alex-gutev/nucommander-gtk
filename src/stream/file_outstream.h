@@ -120,8 +120,8 @@ namespace nuc {
         }
 
     protected:
-        void raise_error(int code, bool can_retry = true) {
-            throw create_error(code, can_retry, path);
+        void raise_error(int code, error::type_code type, bool can_retry = true) {
+            throw file_error(code, type, can_retry, path);
         }
     };
 }

@@ -28,9 +28,9 @@
 
 namespace nuc {
     /**
-     * File Creation Error Exception.
+     * Error involving a particular file.
      */
-    class create_error : public error {
+    class file_error : public error {
         /**
          * The name of the file which triggered the error.
          */
@@ -50,10 +50,10 @@ namespace nuc {
          * @param file Path to the file which could not be created.
          */
         template <typename T>
-        create_error(int code, bool can_retry, T&& file) :
-            nuc::error(code, can_retry), file(std::forward<T>(file)) {}
+        file_error(int code, type_code type, bool can_retry, T&& file) :
+            nuc::error(code, type, can_retry), file(std::forward<T>(file)) {}
 
-        virtual Glib::ustring explanation() const noexcept;
+        virtual Glib::ustring type_explanation() const noexcept;
     };
 }
 

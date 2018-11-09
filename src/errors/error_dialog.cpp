@@ -89,7 +89,7 @@ void error_dialog::show(const error &e, const restart_map &restarts, chose_actio
 
     action_chosen = chose_fn;
 
-    error_label->set_label(e.explanation());
+    set_error_label(e);
 
     Gtk::Dialog::show();
     present();
@@ -100,6 +100,18 @@ void error_dialog::show(action_promise &promise, const error &e, const restart_m
         promise.set_value(std::make_pair(r, all));
     });
 }
+
+void error_dialog::set_error_label(const nuc::error &e) {
+    auto type = e.type_explanation();
+
+    if (type.empty()) {
+        error_label->set_label(e.explanation());
+    }
+    else {
+        error_label->set_label(Glib::ustring::compose("%1\n\n%2", e.type_explanation(), e.explanation()));
+    }
+}
+
 
 void error_dialog::exec_clicked() {
     choose_action(false);

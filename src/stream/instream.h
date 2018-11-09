@@ -26,7 +26,7 @@
 #include <vector>
 #include <tuple>
 
-#include "errors/error.h"
+#include "errors/errors.h"
 
 namespace nuc {
     /**
@@ -34,14 +34,6 @@ namespace nuc {
      */
     class instream {
     public:
-        /**
-         * Error exception
-         */
-        class error : public nuc::error {
-        public:
-            using nuc::error::error;
-        };
-
         typedef uint8_t byte;
 
         virtual ~instream() = default;
@@ -76,8 +68,8 @@ namespace nuc {
          * @param can_retry True if the operation can be retried,
          *    false otherwise.
          */
-        void raise_error(int code, bool can_retry = true) {
-            throw error(code, can_retry);
+        void raise_error(int code, bool can_retry = true, error::type_code type = error::type_read_file) {
+            throw error(code, can_retry, type);
         };
     };
 }

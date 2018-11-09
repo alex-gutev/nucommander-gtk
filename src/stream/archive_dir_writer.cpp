@@ -249,7 +249,7 @@ void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
 
     try_op([&] {
         if (!replace && old_entries.count(ent->path))
-            throw create_error(EEXIST, true, ent->path);
+            throw file_error(EEXIST, error::type_create_file, true, ent->path);
 
         if (int err = plugin->create_entry(out_handle, ent))
             raise_error(errno, err);

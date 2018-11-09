@@ -35,6 +35,11 @@ namespace nuc {
         int fd = -1;
 
         /**
+         * Path to the file being read.
+         */
+        paths::string path;
+
+        /**
          * Default buffer size (size of the blocks).
          */
         static constexpr size_t default_buf_size = 131072;
@@ -100,6 +105,11 @@ namespace nuc {
         virtual void close();
 
         virtual const byte *read_block(size_t &size, off_t &offset);
+
+    protected:
+        void raise_error(int code, bool can_retry = true) {
+            throw file_error(code, error::type_read_file, can_retry, path);
+        }
     };
 }
 

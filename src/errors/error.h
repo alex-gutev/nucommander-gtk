@@ -60,6 +60,18 @@ namespace nuc {
     public:
 
         /**
+         * Error type codes.
+         */
+        enum type_code {
+            type_create_file = 0,
+            type_write_file,
+            type_read_file,
+
+            type_create_dir,
+        };
+
+
+        /**
          * Constructs an error exception.
          *
          * @param code The error code.
@@ -115,6 +127,18 @@ namespace nuc {
          * @return A string explaining the error.
          */
         virtual Glib::ustring explanation() const noexcept;
+
+        /**
+         * Returns a string explaining the type of error that
+         * occurred.
+         *
+         * By default returns an empty string;
+         *
+         * @return A string describing the error type.
+         */
+        virtual Glib::ustring type_explanation() const noexcept {
+            return "";
+        }
 
         /**
          * Returns A unique constant identifying the type of error.
