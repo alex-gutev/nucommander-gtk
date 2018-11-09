@@ -47,6 +47,12 @@ namespace nuc {
         int m_code;
 
         /**
+         * Unique constant identifying the type of error in the
+         * context of the application, e.g. a read error, write error.
+         */
+        int m_type = 0;
+
+        /**
          * Flag: true if the operation can be retried.
          */
         bool m_can_retry;
@@ -61,7 +67,19 @@ namespace nuc {
          * @param can_retry Flag for whether the operation can be
          *    retried.
          */
-        error(int code, bool can_retry = true) : m_code(code), m_can_retry(can_retry) {}
+        error(int code, bool can_retry = true) : error(code, 0, can_retry) {}
+
+        /**
+         * Constructs an error exception object.
+         *
+         * @param code The error code.
+         *
+         * @param type The error type code.
+         *
+         * @param can_retry Flag for whether the operation can be
+         *    retried.
+         */
+        error(int code, int type, bool can_retry) : m_code(code), m_type(type), m_can_retry(can_retry) {}
 
         virtual ~error() = default;
 
@@ -81,7 +99,7 @@ namespace nuc {
          * @return True if the operation can be retried, false
          *   otherwise.
          */
-        bool can_retry() const {
+        bool can_retry() const noexcept {
             return m_can_retry;
         }
 
@@ -97,7 +115,24 @@ namespace nuc {
          * @return A string explaining the error.
          */
         virtual Glib::ustring explanation() const noexcept;
+
+        /**
+         * Returns A unique constant identifying the type of error.
+         */
+        int error_type() const noexcept {
+            return m_type;
+        }
     };
+
+    /**
+     * Error equality comparison operator.
+     *
+     * Two error objects are considered equal if they have the same
+     * error code and type.
+     */
+    inline bool operator==(const error &e1, const error &e2) {
+        return e1.code() == e2.code() && e1.error_type() == e2.error_type();
+    }
 
 
     /* Restarts */
@@ -286,14 +321,14 @@ namespace nuc {
      * @param handler The error handler function to call if @a op
      *    throws an exception.
      */
-    template<typename F>
-    void try_op(F op, error_handler_fn handler);
+    template<typename Fop, typename Fh>
+    void try_op(Fop op, Fh&& handler);
 }
 
 /* Template Implementation */
 
-template<typename F>
-void nuc::try_op(F op, error_handler_fn handler) {
+template<typename Fop, typename Fh>
+void nuc::try_op(Fop op, Fh&& handler) {
     while (true) {
         try {
             op();
@@ -306,6 +341,18 @@ void nuc::try_op(F op, error_handler_fn handler) {
                 throw;
         }
     }
+}
+
+// Error object hash function
+namespace std {
+    template <> struct hash<nuc::error> {
+        size_t operator()(const nuc::error &e) const {
+            hash<size_t> h{};
+            size_t hash = (h(e.code()) * 2654435761U) ^ h(e.error_type());
+
+            return hash;
+        }
+    };
 }
 
 #endif

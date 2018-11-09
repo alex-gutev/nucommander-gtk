@@ -41,10 +41,13 @@ error_dialog *error_dialog::create() {
 
 error_dialog::error_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) : Gtk::Dialog(cobject) {
     builder->get_widget("actions", actions_view);
-    builder->get_widget("exec_button", exec_button);
     builder->get_widget("error-message", error_label);
+    builder->get_widget("exec_button", exec_button);
+    builder->get_widget("all_button", all_button);
 
     exec_button->signal_clicked().connect(sigc::mem_fun(this, &error_dialog::exec_clicked));
+    all_button->signal_clicked().connect(sigc::mem_fun(this, &error_dialog::all_clicked));
+
     actions_view->signal_row_activated().connect(sigc::mem_fun(this, &error_dialog::row_clicked));
 
     signal_delete_event().connect(sigc::mem_fun(this, &error_dialog::on_delete));
@@ -68,7 +71,7 @@ Glib::RefPtr<Gtk::ListStore> error_dialog::create_model() {
 }
 
 
-void error_dialog::show(std::promise<const restart *> &promise, const error &e, const restart_map &restarts) {
+void error_dialog::show(const error &e, const restart_map &restarts, chose_action_fn chose_fn) {
     actions->clear();
 
     for (auto &restart : restarts) {
@@ -80,9 +83,7 @@ void error_dialog::show(std::promise<const restart *> &promise, const error &e, 
         }
     }
 
-    action_chosen = [this, &promise] (const restart *r) {
-        promise.set_value(r);
-    };
+    action_chosen = chose_fn;
 
     error_label->set_label(e.explanation());
 
@@ -90,11 +91,25 @@ void error_dialog::show(std::promise<const restart *> &promise, const error &e, 
     present();
 }
 
+void error_dialog::show(action_promise &promise, const error &e, const restart_map &restarts) {
+    show(e, restarts, [this, &promise] (const restart *r, bool all) {
+        promise.set_value(std::make_pair(r, all));
+    });
+}
+
 void error_dialog::exec_clicked() {
+    choose_action(false);
+}
+
+void error_dialog::all_clicked() {
+    choose_action(true);
+}
+
+void error_dialog::choose_action(bool all) {
     auto row = *actions_view->get_selection()->get_selected();
 
     if (row) {
-        action_chosen(row[columns.action]);
+        action_chosen(row[columns.action], all);
         hide();
     }
 }
@@ -104,7 +119,7 @@ void error_dialog::row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeVi
 }
 
 bool error_dialog::on_delete(GdkEventAny *e) {
-    action_chosen(&restart_abort);
+    action_chosen(&restart_abort, false);
 
     gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
 

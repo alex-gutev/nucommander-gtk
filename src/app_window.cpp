@@ -142,22 +142,47 @@ void app_window::open_file(const char *cpath) {
 }
 
 void app_window::add_operation(task_queue::task_type op) {
-    using namespace std::placeholders;
-
-    operations->add(with_error_handler(std::move(op), std::bind(&app_window::handle_error, this, _1)));
+    operations->add(with_error_handler(std::move(op), error_handler(this)));
 }
 
-void app_window::handle_error(const error &e) {
+
+/// Error Handlers
+
+void app_window::error_handler::operator()(const nuc::error &e) {
+    auto it = chosen_actions.find(e);
     auto &actions = restarts();
 
-    std::promise<const restart *> promise;
+    if (it != chosen_actions.end()) {
+        auto r_it = actions.find(it->second);
+
+        if (r_it != actions.end()) {
+            r_it->second(e);
+            return;
+        }
+    }
+
+    const restart *r;
+    bool all;
+
+    std::tie(r, all) = window->choose_action(e);
+
+    if (all) {
+        chosen_actions[e] = r->name;
+    }
+
+    (*r)(e);
+}
+
+std::pair<const restart *, bool> app_window::choose_action(const error &e) {
+    auto &actions = restarts();
+
+    error_dialog::action_promise promise;
 
     dispatch_main([&] {
         show_error(promise, e, actions);
     });
 
-    const restart &r = *promise.get_future().get();
-    r(e);
+    return promise.get_future().get();
 }
 
 
@@ -171,7 +196,7 @@ void app_window::create_error_dialog() {
     }
 }
 
-void app_window::show_error(std::promise<const restart *> &promise, const nuc::error &err, const restart_map &restarts) {
+void app_window::show_error(error_dialog::action_promise &promise, const nuc::error &err, const restart_map &restarts) {
     create_error_dialog();
 
     err_dialog->show(promise, err, restarts);

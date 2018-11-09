@@ -20,6 +20,8 @@
 #ifndef APP_WINDOW_H
 #define APP_WINDOW_H
 
+#include <unordered_map>
+
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/builder.h>
 #include <gtkmm/box.h>
@@ -33,6 +35,7 @@
 
 #include "tasks/task_queue.h"
 
+#include "errors/errors.h"
 #include "errors/error_dialog.h"
 
 namespace nuc {
@@ -134,17 +137,44 @@ namespace nuc {
          */
         void open_file(const char *path);
 
+
         /* Error handling */
 
         /**
-         * File operation error handler.
+         * Error handler functor object.
          *
-         * Displays a dialog with a list of error recovery options
-         * (restarts).
-         *
-         * @param e The error.
+         * Stores a map of error codes and the restarts which should
+         * be invoked, when a restart is chosen for all future errors
+         * of the same type.
          */
-        void handle_error(const error &e);
+        struct error_handler {
+            /**
+             * Map of chosen restarts for all errors of a given type.
+             *
+             * The keys are the error objects and the corresponding
+             * values are the identifier names of the chosen restarts.
+             */
+            std::unordered_map<error, std::string> chosen_actions;
+
+            /**
+             * The dialog window.
+             */
+            app_window *window;
+
+            /**
+             * Constructor.
+             *
+             * @param window The dialog window.
+             */
+            error_handler(app_window *window) : window(window) {}
+
+            /**
+             * Error handler function.
+             *
+             * @param e The error.
+             */
+            void operator()(const error &e);
+        };
 
 
         /* Error Dialog */
@@ -166,8 +196,21 @@ namespace nuc {
          *
          * @param restarts The restart map (recovery options).
          */
-        void show_error(std::promise<const restart *> &promise, const error &err, const restart_map &restarts);
+        void show_error(error_dialog::action_promise &promise, const error &err, const restart_map &restarts);
 
+        /**
+         * Displays the error dialog with the error @e and the
+         * recovery options returned by restarts().
+         *
+         * Blocks until the user chooses an error recovery action.
+         *
+         * @param e The error.
+         *
+         * @return A pair consisting of a pointer to the chosen
+         *    restart and a flag, which is true if the recovery action
+         *    should be applied to all future errors of the same type.
+         */
+        std::pair<const restart *, bool> choose_action(const error &e);
 
     public:
         /* Constructor. */

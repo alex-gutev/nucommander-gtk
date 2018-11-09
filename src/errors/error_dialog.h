@@ -40,6 +40,18 @@ namespace nuc {
      */
     class error_dialog : public Gtk::Dialog {
         /**
+         * Recovery action chosen callback function type.
+         *
+         * Arguments:
+         *
+         *  1. Pointer to the restart object of the chosen action.
+         *
+         *  2. Flag: true if the chosen action should be applied to
+         *     all future errors.
+         */
+        typedef std::function<void(const restart *, bool)> chose_action_fn;
+
+        /**
          * Columns model for an error recovery action.
          */
         class action_model_columns : public Gtk::TreeModelColumnRecord {
@@ -73,6 +85,11 @@ namespace nuc {
         Gtk::Button *exec_button;
 
         /**
+         * Execute action for all future errors button.
+         */
+        Gtk::Button *all_button;
+
+        /**
          * The tree view in which the list of recovery options is
          * displayed.
          */
@@ -91,14 +108,10 @@ namespace nuc {
 
 
         /**
-         * A function which is executed after a recovery action has
-         * been chosen by the user.
-         *
-         * Arguments:
-         *
-         *  1. Pointer to the restart object of the chosen action.
+         * Callback function which is executed after the user has
+         * chosen a recovery action type.
          */
-        std::function<void(const restart *)> action_chosen;
+        chose_action_fn action_chosen;
 
 
         /* Initialization Methods */
@@ -128,6 +141,20 @@ namespace nuc {
         void exec_clicked();
 
         /**
+         * Signal handler for the "clicked" event of the "all" button.
+         */
+        void all_clicked();
+
+        /**
+         * Calls the 'action_chosen' callback function with the
+         * currently selected recovery action and hides the dialog.
+         *
+         * @param all The value of the all flag which should be passed
+         *   to the callback function.
+         */
+        void choose_action(bool all);
+
+        /**
          * Signal handler for the "row_activated" event, triggered
          * when the user clicks on a row in the tree view.
          */
@@ -146,6 +173,16 @@ namespace nuc {
     public:
         using Gtk::Dialog::show;
 
+        /**
+         * Action promise type.
+         *
+         * The promise value is a pair where the first element is a
+         * pointer to the chosen restart and the second value is a
+         * flag for whether the action should be executed for all
+         * future errors.
+         */
+        typedef std::promise<std::pair<const restart *, bool>> action_promise;
+
         /** Constructor */
         error_dialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
 
@@ -153,6 +190,24 @@ namespace nuc {
          * Creates a new error dialog.
          */
         static error_dialog *create();
+
+        /**
+         * Shows the error dialog, displaying the error @a err and the
+         * recovery options @a restarts.
+         *
+         * When the user has chosen a recovery option, the callback
+         * function @a chose_fn is called with the chosen restart.
+         *
+         * @param err The error to display.
+         *
+         * @param restarts The restart map at the point at which the
+         *    error was triggered.
+         *
+         * @param chose_fn Callback function which is called, with the
+         *   chosen restart passed as an argument when the recovery
+         *   action has been chosen by the user.
+         */
+        void show(const error &err, const restart_map &restarts, chose_action_fn chose_fn);
 
         /**
          * Shows the error dialog, displaying the error @a err and the
@@ -170,7 +225,7 @@ namespace nuc {
          * @param restarts The restart map at the point at which the
          *    error was triggered.
          */
-        void show(std::promise<const restart *> &promise, const error &err, const restart_map &restarts);
+        void show(action_promise &promise, const error &err, const restart_map &restarts);
     };
 }
 
