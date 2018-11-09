@@ -52,6 +52,10 @@ error_dialog::error_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
 
     signal_delete_event().connect(sigc::mem_fun(this, &error_dialog::on_delete));
 
+    add_events(Gdk::KEY_PRESS_MASK);
+
+    signal_key_press_event().connect(sigc::mem_fun(this, &error_dialog::key_pressed));
+
     init_model();
 }
 
@@ -118,10 +122,19 @@ void error_dialog::row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeVi
     exec_clicked();
 }
 
-bool error_dialog::on_delete(GdkEventAny *e) {
+bool error_dialog::on_delete(const GdkEventAny *e) {
     action_chosen(&restart_abort, false);
 
     gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
 
     return true;
+}
+
+bool error_dialog::key_pressed(const GdkEventKey *e) {
+    if (e->keyval == GDK_KEY_Return && e->state & GDK_SHIFT_MASK) {
+        all_clicked();
+        return true;
+    }
+
+    return false;
 }

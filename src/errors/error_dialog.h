@@ -168,7 +168,12 @@ namespace nuc {
          *
          * @param e The event which triggered the delete signal.
          */
-        bool on_delete(GdkEventAny *e);
+        bool on_delete(const GdkEventAny *e);
+
+        /**
+         * Signal handler for key press events.
+         */
+        bool key_pressed(const GdkEventKey *e);
 
     public:
         using Gtk::Dialog::show;
