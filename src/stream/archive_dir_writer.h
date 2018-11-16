@@ -241,6 +241,19 @@ namespace nuc {
             dir_writer::raise_error(code, type == NUC_AP_RETRY);
         }
 
+        /**
+         * Throws an error exception with the code and error
+         * description obtained using archive_plugin::error_code and
+         * archive::plugin_error_string.
+         *
+         * @param handle Handle of the archive in which the error was
+         *   triggered.
+         *
+         * @param type Error type constant returned by the plugin.
+         */
+        void raise_plugin_error(void *handle, int type) {
+            throw error(plugin->error_code(handle), error::type_general, type == NUC_AP_RETRY, plugin->error_string(handle));
+        }
     };
 }
 

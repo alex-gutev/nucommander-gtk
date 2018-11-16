@@ -170,6 +170,7 @@ bool archive_dir_writer::add_old_entry(const paths::string &path, int type) {
 void archive_dir_writer::copy_archive_type() {
     try_op([=] {
         if (int err = plugin->copy_archive_type(out_handle, in_handle))
+            // TODO: Obtain error description
             raise_error(errno, err);
     });
 }
@@ -184,6 +185,7 @@ void archive_dir_writer::copy_old_entries() {
         if (old_entries.count(paths::canonicalized_path(ent.path))) {
             try_op([=] {
                 if (plugin->copy_last_entry(out_handle, in_handle))
+                    // TODO: Obtain error description
                     raise_error(errno, err);
             });
         }
@@ -195,7 +197,7 @@ bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
     try_op([&] {
         err = plugin->next_entry(in_handle, ent);
         if (err < 0)
-            raise_error(errno, err);
+            raise_plugin_error(in_handle, err);
     });
 
     return err == NUC_AP_OK;
@@ -252,7 +254,7 @@ void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
             throw file_error(EEXIST, error::type_create_file, true, ent->path);
 
         if (int err = plugin->create_entry(out_handle, ent))
-            raise_error(errno, err);
+            raise_plugin_error(out_handle, err);
     });
 }
 

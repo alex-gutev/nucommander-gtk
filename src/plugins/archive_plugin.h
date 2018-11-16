@@ -44,6 +44,9 @@ namespace nuc {
         typedef void*(*open_fn)(const char *, int, int *);
         typedef int(*close_fn)(void *);
 
+        typedef int(*error_code_fn)(void *);
+        typedef const char *(*error_string_fn)(void *);
+
         typedef int(*next_entry_fn)(void *, nuc_arch_entry *);
         typedef int(*unpack_fn)(void *, const char **, size_t *, off_t *);
 
@@ -157,6 +160,9 @@ namespace nuc {
 
         open_fn open;
         close_fn close;
+
+        error_code_fn error_code;
+        error_string_fn error_string;
 
         next_entry_fn next_entry;
         unpack_fn unpack;

@@ -51,5 +51,5 @@ Glib::ustring nuc::error::explanation() const noexcept {
     // strerror is not thread-safe thus renders the entire method not
     // thread-safe.
 
-    return strerror(m_code);
+    return error_string.empty() ? strerror(m_code) : error_string;
 }

@@ -62,6 +62,28 @@ int nuc_arch_close(void *handle);
 
 
 /**
+ * Error Reporting API
+ */
+
+/**
+ * Returns a unique code identifying the last error that occurred.
+ *
+ * @param handle Handle to the archive.
+ *
+ * @return Error code.
+ */
+int nuc_arch_error_code(void *handle);
+/**
+ * Returns a string describing the last error that occurred.
+ *
+ * @param handle Handle to the archive.
+ *
+ * @return The error string.
+ */
+const char * nuc_arch_error_string(void *handle);
+
+
+/**
  * Unpacking API
  */
 

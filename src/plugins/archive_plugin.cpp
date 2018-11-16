@@ -43,6 +43,8 @@ void archive_plugin::load() {
 
         LOAD_CHECK_FN(open);
         LOAD_CHECK_FN(close);
+        LOAD_CHECK_FN(error_code);
+        LOAD_CHECK_FN(error_string);
         LOAD_CHECK_FN(next_entry);
         LOAD_CHECK_FN(unpack);
         LOAD_CHECK_FN(copy_archive_type);

@@ -32,7 +32,7 @@ const instream::byte *archive_instream::read_block(size_t &size, off_t &offset) 
         err = plugin->unpack(handle, (const char **)&buf, &size, &new_offset);
 
         if (err < NUC_AP_OK)
-            raise_error(errno, err == NUC_AP_RETRY);
+            throw error(plugin->error_code(handle), error::type_read_file, err == NUC_AP_RETRY, plugin->error_string(handle));
     });
 
     offset = new_offset - last_offset;

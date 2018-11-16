@@ -57,14 +57,24 @@ namespace nuc {
          */
         bool m_can_retry;
 
+        /**
+         * String explaining the error. If empty the string is assumed
+         * to be a system error constant with the error description
+         * obtained using strerror.
+         */
+        Glib::ustring error_string;
+
     public:
 
         /**
          * Error type codes.
          */
         enum type_code {
+            // General Error type
+            type_general = 0,
+
             // File Errors
-            type_create_file = 0,
+            type_create_file,
             type_write_file,
             type_read_file,
 
@@ -98,7 +108,24 @@ namespace nuc {
          * @param can_retry Flag for whether the operation can be
          *    retried.
          */
-        error(int code, int type, bool can_retry) : m_code(code), m_type(type), m_can_retry(can_retry) {}
+        error(int code, int type, bool can_retry) : error(code, type, can_retry, "") {}
+
+        /**
+         * Constructs an error exception object.
+         *
+         * @param code The error code.
+         *
+         * @param type The error type code.
+         *
+         * @param can_retry Flag for whether the operation can be
+         *    retried.
+         *
+         * @param error_string String describing the error. Not used
+         *    if empty.
+         */
+        template <typename T>
+        error(int code, int type, bool can_retry, T&&error_string) :
+            m_code(code), m_type(type), m_can_retry(can_retry), error_string(std::forward<T>(error_string)) {}
 
         virtual ~error() = default;
 

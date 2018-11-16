@@ -248,6 +248,21 @@ int close_pack(nuc_arch_handle *handle) {
 }
 
 
+//// Error Reporting
+
+EXPORT
+int nuc_arch_error_code(void *ctx) {
+	nuc_arch_handle *handle = ctx;
+	return archive_errno(handle->ar);
+}
+
+EXPORT
+const char * nuc_arch_error_string(void *ctx) {
+	nuc_arch_handle *handle = ctx;
+	return archive_error_string(handle->ar);
+}
+
+
 //// Set Callback
 
 EXPORT
