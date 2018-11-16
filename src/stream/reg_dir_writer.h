@@ -37,9 +37,13 @@ namespace nuc {
          * Sets the attributes of an open file.
          *
          * @param fd File descriptor of the file.
+         *
+         * @param path Path to the file whose attributes are being
+         *   set. Only used for error reporting.
+         *
          * @param st Stat attributes to set.
          */
-        void set_file_attributes(int fd, const struct stat *st);
+        void set_file_attributes(int fd, const char *path, const struct stat *st);
 
     public:
         /**

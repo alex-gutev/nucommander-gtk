@@ -7,6 +7,9 @@ add_sources(NUC_SRCS
   file_error.h
   file_error.cpp
 
+  attribute_error.h
+  attribute_error.cpp
+
   error_dialog.h
   error_dialog.cpp
   )

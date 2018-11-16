@@ -37,17 +37,6 @@ namespace nuc {
     class dir_writer {
     public:
         /**
-         * Error exception.
-         */
-        class error : public nuc::error {
-        public:
-            using nuc::error::error;
-        };
-
-        virtual ~dir_writer() = default;
-
-
-        /**
          * Closes the directory.
          */
         virtual void close() = 0;

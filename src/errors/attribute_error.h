@@ -17,10 +17,10 @@
  *
  */
 
-#ifndef NUC_ERRORS_CREATE_ERROR_H
-#define NUC_ERRORS_CREATE_ERROR_H
+#ifndef NUC_ERRORS_ATTRIBUTE_ERROR_H
+#define NUC_ERRORS_ATTRIBUTE_ERROR_H
 
-#include "error.h"
+#include "file_error.h"
 
 #include "paths/utils.h"
 
@@ -30,16 +30,8 @@ namespace nuc {
     /**
      * Error involving a particular file.
      */
-    class file_error : public error {
-    protected:
-        /**
-         * The name of the file which triggered the error.
-         */
-        paths::string file;
-
+    class attribute_error : public file_error {
     public:
-        using error::error;
-
         /**
          * Constructor.
          *
@@ -51,8 +43,7 @@ namespace nuc {
          * @param file Path to the file which could not be created.
          */
         template <typename T>
-        file_error(int code, type_code type, bool can_retry, T&& file) :
-            nuc::error(code, type, can_retry), file(std::forward<T>(file)) {}
+        attribute_error(int code, type_code type, bool can_retry, T&& file) : nuc::file_error(code, type, can_retry, file) {}
 
         virtual Glib::ustring type_explanation() const noexcept;
     };

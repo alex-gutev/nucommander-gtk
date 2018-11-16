@@ -17,15 +17,23 @@
  *
  */
 
-#ifndef NUC_ERRORS_ERRORS_H
-#define NUC_ERRORS_ERRORS_H
-
-/**
- * Includes all files which define error exceptions
- */
-
-#include "error.h"
-#include "file_error.h"
 #include "attribute_error.h"
 
-#endif
+#include <error.h>
+
+using namespace nuc;
+
+Glib::ustring attribute_error::type_explanation() const noexcept {
+    switch (error_type()) {
+    case error::type_set_mode:
+        return Glib::ustring::compose("Error setting permissions of '%1'.", file);
+
+    case error::type_set_owner:
+        return Glib::ustring::compose("Error setting owner of '%1'.", file);
+
+    case error::type_set_times:
+        return Glib::ustring::compose("Error setting access/modification time of '%1'.", file);
+    }
+
+    return "";
+}

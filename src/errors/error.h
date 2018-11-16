@@ -63,11 +63,18 @@ namespace nuc {
          * Error type codes.
          */
         enum type_code {
+            // File Errors
             type_create_file = 0,
             type_write_file,
             type_read_file,
 
+            // Directory Errors
             type_create_dir,
+
+            // Attribute Errors
+            type_set_mode,
+            type_set_owner,
+            type_set_times
         };
 
 

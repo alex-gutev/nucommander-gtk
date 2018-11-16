@@ -19,6 +19,8 @@
 
 #include "reg_dir_writer.h"
 
+#include <exception>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -31,6 +33,12 @@
 
 using namespace nuc;
 
+class skip_attribute : public std::exception {};
+
+template <typename F>
+void with_skip_attrib(F op);
+
+
 reg_dir_writer::reg_dir_writer(const char *path) {
     TRY_OP((fd = open(path, O_DIRECTORY)) < 0)
 }
@@ -42,13 +50,14 @@ void reg_dir_writer::close() {
 outstream * reg_dir_writer::create(const char *path, const struct stat *st, int flags) {
     file_outstream *stream = new file_outstream(fd, path, flags);
 
-    set_file_attributes(stream->get_fd(), st);
+    set_file_attributes(stream->get_fd(), path, st);
 
     return stream;
 }
 
 void reg_dir_writer::mkdir(const char *path) {
-    TRY_OP(mkdirat(fd, path, S_IRWXU))
+    TRY_OP_(mkdirat(fd, path, S_IRWXU),
+            throw file_error(errno, error::type_create_dir, path))
 }
 
 void reg_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
@@ -60,26 +69,58 @@ void reg_dir_writer::symlink(const char *path, const char *target, const struct 
 
 /// Setting Attributes
 
-void reg_dir_writer::set_file_attributes(int fd, const struct stat *st) {
+void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct stat *st) {
     if (st) {
-        TRY_OP(fchmod(fd, st->st_mode & ~S_IFMT))
-        TRY_OP(fchown(fd, st->st_uid, st->st_gid))
+        with_skip_attrib([=] {
+            TRY_OP_(fchmod(fd, st->st_mode & ~S_IFMT),
+                    throw attribute_error(errno, error::type_set_mode, true, path));
+        });
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
-        TRY_OP(futimens(fd, times))
+        with_skip_attrib([&] {
+            TRY_OP_(futimens(fd, times),
+                    throw attribute_error(errno, error::type_set_times, true, path));
+        });
+
+        with_skip_attrib([=] {
+            TRY_OP_(fchown(fd, st->st_uid, st->st_gid),
+                    throw attribute_error(errno, error::type_set_owner, true, path));
+        });
     }
 }
 
 void reg_dir_writer::set_attributes(const char *path, const struct stat *st) {
     if (st) {
         if (!S_ISLNK(st->st_mode))
-            TRY_OP(fchmodat(fd, path, st->st_mode & ~S_IFMT, 0))
-
-        TRY_OP(fchownat(fd, path, st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW))
+            with_skip_attrib([=] {
+                TRY_OP_(fchmodat(fd, path, st->st_mode & ~S_IFMT, 0),
+                        throw attribute_error(errno, error::type_set_mode, true, path));
+            });
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
-        TRY_OP(utimensat(fd, path, times, AT_SYMLINK_NOFOLLOW))
+        with_skip_attrib([&] {
+            TRY_OP_(utimensat(fd, path, times, AT_SYMLINK_NOFOLLOW),
+                    throw attribute_error(errno, error::type_set_times, true, path));
+        });
+
+        with_skip_attrib([=] {
+            TRY_OP_(fchownat(fd, path, st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW),
+                    throw attribute_error(errno, error::type_set_owner, true, path));
+        });
+    }
+}
+
+template <typename F>
+void with_skip_attrib(F op) {
+    global_restart skip(restart("skip attribute", [] (const error &, boost::any) {
+        throw skip_attribute();
+    }));
+
+    try {
+        op();
+    }
+    catch (const skip_attribute &) {
     }
 }
