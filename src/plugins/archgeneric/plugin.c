@@ -373,6 +373,9 @@ int nuc_arch_create_entry(void *ctx, const nuc_arch_entry *ent) {
     archive_entry_set_pathname(ar_ent, ent->path);
     archive_entry_copy_stat(ar_ent, ent->stat);
 
+    if (S_ISLNK(ent->stat->st_mode) && ent->symlink_dest)
+	    archive_entry_set_symlink(ar_ent, ent->symlink_dest);
+
     err = err_code(handle, archive_write_header(handle->ar, ar_ent));
 
     archive_entry_free(ar_ent);
