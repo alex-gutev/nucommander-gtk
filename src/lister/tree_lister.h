@@ -67,8 +67,16 @@ namespace nuc {
          *   visited in pre-order), or could not be obtained.
          *
          * - The entry's visit info
+         *
+         * When visiting a directory and the return value is true,
+         * traversal continues into the directory, otherwise if the
+         * return value is false the contents of the directory are not
+         * visited.
+         *
+         * When visiting a any file which is not a directory, the
+         * return value is ignored.
          */
-        typedef std::function<void(const lister::entry &, const struct stat *, visit_info)> list_callback;
+        typedef std::function<bool(const lister::entry &, const struct stat *, visit_info)> list_callback;
 
         /**
          * Error exception.

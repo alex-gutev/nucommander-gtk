@@ -40,7 +40,7 @@ namespace nuc {
         /**
          * Attributes of the visited directories.
          */
-        std::map<paths::string, struct stat> visited_dirs;
+        std::map<paths::string, std::pair<struct stat, bool>> visited_dirs;
 
         /**
          * Archive lister for reading the archive.
@@ -81,7 +81,19 @@ namespace nuc {
          *
          * @param path Subpath of the entry being visited.
          */
-        void add_visited_dirs(const list_callback &fn, size_t base_offset, const paths::string &path);
+        bool add_visited_dirs(const list_callback &fn, size_t base_offset, const paths::string &path);
+
+        /**
+         * Adds the stat attributes of a directory to the visited_dirs
+         * map.
+         *
+         * @param name Subpath to the directory.
+         * @param st Stat attributes
+         *
+         * @return True if the directory has not yet been visited, false
+         *   if it has been visited.
+         */
+        bool add_dir_stat(const paths::string &name, const struct stat *st);
 
     public:
 

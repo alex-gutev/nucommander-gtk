@@ -67,7 +67,15 @@ void dir_tree_lister::list_entries(const list_callback &fn) {
         ent.type = get_type(last_ent);
         ent.name = path.c_str();
 
-        fn(ent, !stat_err(last_ent) && last_ent->fts_statp ? last_ent->fts_statp : nullptr, get_visit_info(last_ent));
+        if (!fn(ent, !stat_err(last_ent) && last_ent->fts_statp ? last_ent->fts_statp : nullptr, get_visit_info(last_ent))) {
+            fts_set(handle, last_ent, FTS_SKIP);
+
+            if (ent.type == DT_DIR) {
+                // Skip over next entry: directory in post-order.
+                fts_read(handle);
+                continue;
+            }
+        }
 
         // Update path to current directory
         set_dir(last_ent, name, current_dir);

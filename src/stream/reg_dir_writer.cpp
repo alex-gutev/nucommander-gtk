@@ -57,7 +57,7 @@ outstream * reg_dir_writer::create(const char *path, const struct stat *st, int 
 
 void reg_dir_writer::mkdir(const char *path) {
     TRY_OP_(mkdirat(fd, path, S_IRWXU),
-            throw file_error(errno, error::type_create_dir, path))
+            throw file_error(errno, error::type_create_dir, true, path))
 }
 
 void reg_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {

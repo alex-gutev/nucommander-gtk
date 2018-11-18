@@ -102,7 +102,17 @@ nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vec
 
 void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) {
     in.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+        // Flag for whether the directory's contents should be copied
+        // if the directory itself could not be copied.
+        bool copy_dir = false;
+
         global_restart skip(skip_exception::restart);
+        global_restart write_into(restart("write into", [&] (const error &, boost::any) {
+            copy_dir = true;
+            throw skip_exception();
+        }, [=] (const error &e) {
+            return e.error_type() == error::type_create_dir && e.code() == EEXIST;
+        }));
 
         state.test_cancel();
 
@@ -129,8 +139,10 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) 
         }
         catch (const skip_exception &) {
             // Do nothing in order to skip the current file.
+            return copy_dir;
         }
 
+        return true;
     });
 
     out.close();
@@ -172,5 +184,7 @@ void copy_to_temp(cancel_state &state, tree_lister &lst, const std::function<voi
                 callback(name);
             });
         }
+
+        return true;
     });
 }
