@@ -38,6 +38,8 @@
 #include "errors/errors.h"
 #include "errors/error_dialog.h"
 
+#include "interface/dest_dialog.h"
+
 namespace nuc {
     /**
      * Main Application Window.
@@ -73,6 +75,11 @@ namespace nuc {
          */
         error_dialog *err_dialog = nullptr;
 
+        /**
+         * Destination dialog: Queries the user for a destination
+         * path.
+         */
+        nuc::dest_dialog *m_dest_dialog = nullptr;
 
         /**
          * Operation task queue, onto which file operations are
@@ -230,6 +237,13 @@ namespace nuc {
          * @param op The operation to add.
          */
         void add_operation(task_queue::task_type op);
+
+        /**
+         * Returns a pointer to the destination dialog.
+         *
+         * @return Pointer to the destination dialog.
+         */
+        nuc::dest_dialog *dest_dialog();
 
         /**
          * Asynchronous cleanup method.

@@ -486,6 +486,20 @@ namespace nuc {
          */
         void load_icon(Gtk::TreeRow row);
 
+        /** Copy Task */
+
+        /**
+         * Returns the absolute destination path for a copy operation.
+         *
+         * If @a dest is an absolute path it is returned as is. If @a
+         * dest is a relative path it is appended to the current path.
+         *
+         * @param dest The destination path.
+         *
+         * @return The absolute destination path.
+         */
+        paths::string copy_task_dest_path(const paths::string &dest) const;
+
     public:
 
         /**

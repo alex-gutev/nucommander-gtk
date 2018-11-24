@@ -202,3 +202,15 @@ void app_window::show_error(error_dialog::action_promise &promise, const nuc::er
     err_dialog->show(promise, err, restarts);
     err_dialog->present();
 }
+
+
+//// Destination Dialog
+
+nuc::dest_dialog *app_window::dest_dialog() {
+    if (!m_dest_dialog) {
+        m_dest_dialog = dest_dialog::create();
+        m_dest_dialog->set_transient_for(*this);
+    }
+
+    return m_dest_dialog;
+}

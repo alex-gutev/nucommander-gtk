@@ -22,6 +22,8 @@
 #include "app_window.h"
 #include "file_view.h"
 
+#include "interface/dest_dialog.h"
+
 #include "settings/app_settings.h"
 
 #include "copy/copy.h"
@@ -54,8 +56,18 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
 
 void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        if (auto task = src->make_copy_task(src->next_file_view->path()))
-            window->add_operation(task);
+        paths::string dest = src->next_file_view->path();
+
+        dest_dialog *dialog = window->dest_dialog();
+
+        dialog->set_query_label("Copy to:");
+        dialog->set_dest_entry_text(dest);
+        dialog->set_exec_button_label("Copy");
+
+        window->dest_dialog()->show([=] (const Glib::ustring &path) {
+            if (auto task = src->make_copy_task(path))
+                window->add_operation(task);
+        });
     }
 }
 

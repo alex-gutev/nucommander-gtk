@@ -552,9 +552,17 @@ task_queue::task_type file_list_controller::make_copy_task(const paths::string &
     auto entries = selected_entries();
 
     if (entries.size())
-        return ::make_copy_task(vfs->directory_type(), std::move(entries), dest);
+        return ::make_copy_task(vfs->directory_type(), std::move(entries), copy_task_dest_path(dest));
     else
         return task_queue::task_type();
+}
+
+paths::string file_list_controller::copy_task_dest_path(const paths::string &dest) const {
+    if (paths::is_relative(dest)) {
+        return paths::appended_component(cur_path, dest);
+    }
+
+    return dest;
 }
 
 std::vector<dir_entry*> file_list_controller::selected_entries() {
