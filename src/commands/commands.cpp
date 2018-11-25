@@ -37,18 +37,46 @@ using namespace nuc;
  * destination pane's directory.
  *
  * @param window Pointer to the app_window, in which the command was
- *   executed.
+ *  triggered.
  *
- * @param src Pointer to the source pane (file_vie), in which the
- *   command was executed.
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
  */
 static void copy_command_fn(nuc::app_window *window, nuc::file_view *src);
+
+/**
+ * Make directory command function.
+ *
+ * Displays a destination path dialog which queries the user for the
+ * name of the directory to create.
+ *
+ * Adds a task to the window's task queue which creates the directory
+ * in the source path.
+ *
+ * @param window Pointer to the app_window, in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pan (file_view), in which the
+ *   command was triggered.
+ */
+static void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
+
+/**
+ * Make directory task function. Creates the directory @a name in the
+ * directory @a dest.
+ *
+ * @param state Task cancellation state.
+ * @param dest The directory in which to create the directory.
+ * @param name Name of the directory to create.
+ */
+static void make_dir_task(nuc::cancel_state &state, const nuc::paths::string &dest, const nuc::paths::string &name);
 
 
 // Initialize Builtin command table.
 
 std::unordered_map<std::string, nuc::command_fn> nuc::commands{
-    std::make_pair("copy", copy_command_fn)
+    std::make_pair("copy", copy_command_fn),
+    std::make_pair("make-directory", make_dir_command_fn)
 };
 
 
@@ -71,6 +99,29 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
     }
 }
 
+void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    using namespace std::placeholders;
+
+    if (window && src) {
+        paths::string dest = src->path();
+
+        dest_dialog *dialog = window->dest_dialog();
+
+        dialog->set_query_label("Directory Name:");
+        dialog->set_dest_entry_text("");
+        dialog->set_exec_button_label("Create Directory");
+
+        window->dest_dialog()->show([=] (const Glib::ustring &name) {
+            window->add_operation(std::bind(make_dir_task, _1, dest, name));
+        });
+    }
+}
+
+void make_dir_task(cancel_state &state, const paths::string &dest, const paths::string &name) {
+    std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
+
+    writer->mkdir(name.c_str());
+}
 
 /// command_keymap Implementation
 
