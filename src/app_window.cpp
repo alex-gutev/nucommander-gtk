@@ -93,8 +93,8 @@ void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
         pane_view->pack2(*ptr, true, true);
     }
 
-    ptr->add_events(Gdk::KEY_RELEASE_MASK);
-    ptr->signal_key_release_event().connect(sigc::bind<file_view*>(sigc::mem_fun(this, &app_window::on_keypress), ptr), false);
+    ptr->add_events(Gdk::KEY_PRESS_MASK);
+    ptr->signal_key_press_event().connect(sigc::bind<file_view*>(sigc::mem_fun(this, &app_window::on_keypress), ptr), false);
 
     ptr->signal_activate_entry().connect(sigc::mem_fun(this, &app_window::on_entry_activate));
 }
