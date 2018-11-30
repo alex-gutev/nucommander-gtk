@@ -21,6 +21,8 @@
 
 #include <memory>
 
+#include "errors/restarts.h"
+
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"
 
@@ -49,30 +51,6 @@ static void copy_file(cancel_state &state, instream &in, outstream &out);
  *    temporary files) after each file is copied successfully.
  */
 static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::function<void(const char *)> &callback);
-
-/**
- * Skip exception.
- *
- * This exception is thrown when the "skip" restart is invoked, and is
- * caught in the directory traversal function, in order to skip
- * copying that file.
- */
-struct skip_exception {
-    /**
-     * Skip restart function. Throws a "skip_exception".
-     */
-    static void skip(const error &, boost::any) {
-        throw skip_exception();
-    }
-
-    /**
-     * The skip restart.
-     */
-    static const nuc::restart restart;
-};
-
-// Initialize skip restart
-const nuc::restart skip_exception::restart = nuc::restart("skip", skip_exception::skip);
 
 
 //// Implementation
