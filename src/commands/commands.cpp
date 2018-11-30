@@ -27,14 +27,16 @@
 #include "settings/app_settings.h"
 
 #include "copy/copy.h"
+#include "copy/move.h"
 
 using namespace nuc;
 
 /**
  * Copy command function.
  *
- * Copies the selected/marked files in the source pane, @a src, to the
- * destination pane's directory.
+ * Queries the user for a destination directory, via the destination
+ * dialog, and copies the selected/marked files in the source pane, @a
+ * src, to that directory.
  *
  * @param window Pointer to the app_window, in which the command was
  *  triggered.
@@ -56,7 +58,7 @@ static void copy_command_fn(nuc::app_window *window, nuc::file_view *src);
  * @param window Pointer to the app_window, in which the command was
  *   triggered.
  *
- * @param src Pointer to the source pan (file_view), in which the
+ * @param src Pointer to the source pane (file_view), in which the
  *   command was triggered.
  */
 static void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
@@ -71,12 +73,27 @@ static void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
  */
 static void make_dir_task(nuc::cancel_state &state, const nuc::paths::string &dest, const nuc::paths::string &name);
 
+/**
+ * Move command function.
+ *
+ * Queries the user for a destination directory, via the destination
+ * dialog, and moves the selected/marked files in the source pane, @a
+ * src, to the that directory.
+ *
+ * @param window Pointer to the app_window, in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void move_command_fn(nuc::app_window *window, nuc::file_view *src);
 
 // Initialize Builtin command table.
 
 std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("copy", copy_command_fn),
-    std::make_pair("make-directory", make_dir_command_fn)
+    std::make_pair("make-directory", make_dir_command_fn),
+    std::make_pair("move", move_command_fn)
 };
 
 
@@ -122,6 +139,27 @@ void make_dir_task(cancel_state &state, const paths::string &dest, const paths::
 
     writer->mkdir(name.c_str());
 }
+
+void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    if (window && src) {
+        paths::string dest = src->next_file_view->path();
+
+        dest_dialog *dialog = window->dest_dialog();
+
+        dialog->set_query_label("Move/Rename to:");
+        dialog->set_dest_entry_text(dest);
+        dialog->set_exec_button_label("Move");
+
+        window->dest_dialog()->show([=] (const Glib::ustring &path) {
+            auto entries = src->file_list().selected_entries();
+
+            if (!entries.empty()) {
+                window->add_operation(make_move_task(src->file_list().dir_vfs()->directory_type(), entries, path));
+            }
+        });
+    }
+}
+
 
 /// command_keymap Implementation
 

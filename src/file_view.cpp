@@ -38,14 +38,14 @@ using namespace nuc;
 file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & builder)
     : Gtk::Frame(cobject) {
     builder->get_widget("path_entry", path_entry);
-    builder->get_widget("file_list", file_list);
+    builder->get_widget("file_list", file_list_view);
     builder->get_widget("scroll_window", scroll_window);
     
     init_file_list();
     init_path_entry();
 
     // Exclude entry widget from tab order focus chain.
-    set_focus_chain({file_list});
+    set_focus_chain({file_list_view});
 }
 
 
@@ -53,7 +53,7 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
 
 void file_view::init_file_list() {
     // Associate file list controller with tree view widget
-    flist.tree_view(file_list);
+    flist.tree_view(file_list_view);
 
     flist.signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
     
@@ -71,7 +71,7 @@ void file_view::init_file_list() {
     // adjustment object fired the initial change signal.
     
     adj->signal_changed().connect([this] {
-        auto adj = file_list->get_vadjustment();
+        auto adj = file_list_view->get_vadjustment();
         scroll_window->get_vadjustment()->configure(
             adj->get_value(),
             adj->get_lower(),
@@ -83,21 +83,21 @@ void file_view::init_file_list() {
     });
     
     adj->signal_value_changed().connect([this] {
-        scroll_window->get_vadjustment()->set_value(file_list->get_vadjustment()->get_value());
+        scroll_window->get_vadjustment()->set_value(file_list_view->get_vadjustment()->get_value());
     });
     
-    file_list->set_vadjustment(adj);
+    file_list_view->set_vadjustment(adj);
 
     // Scroll window adjustment signals
     
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
-        file_list->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
+        file_list_view->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
 
 
     // Add tree view signal handlers
     
-    file_list->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
+    file_list_view->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
 }
 
 void file_view::init_path_entry() {
@@ -110,7 +110,7 @@ void file_view::init_path_entry() {
 
 void file_view::on_path_entry_activate() {
     flist.path(path_entry->get_text());
-    file_list->grab_focus();
+    file_list_view->grab_focus();
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {

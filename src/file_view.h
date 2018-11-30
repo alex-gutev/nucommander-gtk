@@ -72,7 +72,7 @@ namespace nuc {
         /**
          * File list tree view widget.
          */
-        Gtk::TreeView *file_list;
+        Gtk::TreeView *file_list_view;
 
         /**
          * Scrolled window widget in which the file list tree view
@@ -148,6 +148,15 @@ namespace nuc {
          * Derived widget constructor.
          */
         file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Returns the file list controller.
+         *
+         * @return The file list controller.
+         */
+        file_list_controller &file_list() {
+            return flist;
+        }
 
         /**
          * Returns the path to the file view's current directory.
