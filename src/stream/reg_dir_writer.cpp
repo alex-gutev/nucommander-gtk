@@ -124,3 +124,27 @@ void with_skip_attrib(F op) {
     catch (const skip_attribute &) {
     }
 }
+
+
+/// Renaming
+
+void reg_dir_writer::rename(const char *src, const char *dest) {
+    bool replace = false;
+
+    global_restart(restart("replace", [&] (const error &e, boost::any) {
+        replace = true;
+    }, [&] (const error &e) {
+        return e.code() == EEXIST;
+    }));
+
+    try_op([&] {
+        // Check if file exists
+        if (!replace && !faccessat(fd, dest, F_OK, AT_SYMLINK_NOFOLLOW)) {
+            throw file_error(EEXIST, error::type_rename_file, true, dest);
+        }
+
+        if (renameat(fd, src, fd, dest)) {
+            throw file_error(errno, error::type_rename_file, true, dest);
+        }
+    });
+}

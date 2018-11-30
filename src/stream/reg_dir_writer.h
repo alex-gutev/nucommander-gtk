@@ -72,6 +72,8 @@ namespace nuc {
         virtual void symlink(const char *path, const char *target, const struct stat *st);
 
         virtual void set_attributes(const char *path, const struct stat *st);
+
+        virtual void rename(const char *src, const char *dest);
     };
 }
 

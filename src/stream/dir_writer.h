@@ -85,6 +85,14 @@ namespace nuc {
          */
         virtual void set_attributes(const char *path, const struct stat *st) = 0;
 
+        /**
+         * Rename the file at path @a src to @a dest.
+         *
+         * @param src Path to the file to rename.
+         * @param dest Destination path to rename the file to.
+         */
+        virtual void rename(const char *src, const char *dest) = 0;
+
     protected:
         /**
          * Throws an error exception.

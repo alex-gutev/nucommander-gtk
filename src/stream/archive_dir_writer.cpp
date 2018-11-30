@@ -119,7 +119,7 @@ void archive_dir_writer::close() {
 
     // TODO: copy attributes of old archive file.
 
-    TRY_OP(rename(tmp_path.c_str(), path.c_str()));
+    TRY_OP(::rename(tmp_path.c_str(), path.c_str()));
 
     tmp_exists = false;
 }
@@ -274,4 +274,9 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
             }
         }
     }
+}
+
+
+void archive_dir_writer::rename(const char *src, const char *dest) {
+    // TODO: Implement renaming.
 }

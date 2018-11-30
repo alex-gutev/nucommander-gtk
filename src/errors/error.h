@@ -78,6 +78,8 @@ namespace nuc {
             type_write_file,
             type_read_file,
 
+            type_rename_file,
+
             // Directory Errors
             type_create_dir,
 
