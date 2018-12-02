@@ -21,11 +21,53 @@
 
 #include <memory>
 
+#include "copy.h"
+
 #include "errors/restarts.h"
 
 #include "stream/dir_writer.h"
 
 using namespace nuc;
+
+/**
+ * Exception which is thrown when the copy restart is invoked.
+ *
+ * This is used to begin a copy task after a rename task fails due to
+ * the destination being located on another device.
+ */
+struct begin_copy_exception {};
+
+/**
+ * Attempts to move the files in @a paths to the destination directory
+ * @a dest. A copy restart is established which, if invoked, copies
+ * the files to the destination directory.
+ *
+ * @param state Cancellation state.
+ *
+ * @param src_type Directory type of the source directory containing
+ *   the items to be renamed.
+ *
+ * @param paths Vector containing the subpaths, within the source
+ *   directory, to be renamed.
+ *
+ * @param dest Path to the destination directory.
+ */
+static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest);
+
+/**
+ * Copies the files in @a paths to the destination directory @a dest.
+ *
+ * @param state Cancellation state.
+ *
+ * @param src_type Directory type of the source directory containing
+ *   the items to be copied.
+ *
+ * @param paths Vector containing the subpaths, within the source
+ *   directory, to be copied.
+ *
+ * @param dest Path to the destination directory.
+ */
+static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest);
 
 task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest) {
     std::vector<paths::string> paths;
@@ -38,15 +80,34 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
     }
 
     return [=] (cancel_state &state) {
-        std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
-
         try {
-            move(state, paths, dest, *writer);
+            move_or_copy(state, src_type, paths, dest);
         }
         catch (const error &e) {
             // Catch error to abort operation.
         }
     };
+}
+
+static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
+    // TODO: Check that destination is of the same type as the
+    // source, if not perform a copy and delete operation.
+
+    std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
+
+    global_restart copy(restart("copy", [] (const error &e, boost::any) {
+        throw begin_copy_exception();
+    },
+    [] (const error &e) {
+        return e.code() == EXDEV;
+    }));
+
+    try {
+        move(state, paths, dest, *writer);
+    }
+    catch (const begin_copy_exception &) {
+        copy_files(state, src_type, paths, dest);
+    }
 }
 
 void nuc::move(cancel_state &state, const std::vector<paths::string> &items, const paths::string &dest, dir_writer &dir) {
@@ -60,4 +121,15 @@ void nuc::move(cancel_state &state, const std::vector<paths::string> &items, con
             // Do nothing to skip the current file
         }
     }
+}
+
+static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
+    std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
+    std::unique_ptr<dir_writer> writer{dir_type::get_writer(dest)};
+
+    // TODO: Add post-traverse actions which are called on each file
+    // after the copy operation is performed. The post-traverse action
+    // deletes the source files after they are copied.
+
+    nuc::copy(state, *lister, *writer);
 }
