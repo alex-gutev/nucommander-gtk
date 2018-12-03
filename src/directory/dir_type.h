@@ -161,6 +161,15 @@ namespace nuc {
          */
         static std::pair<paths::string, paths::string> find_dir(const paths::string &path);
 
+        /**
+         * Checks whether the file @a path is a regular directory.
+         *
+         * @path Path to the file.
+         *
+         * @return True if the file is a regular directory.
+         */
+        static bool is_reg_dir(const paths::string &path);
+
     public:
         /**
          * Constructs an "empty" dir_type object with no path and no
@@ -303,6 +312,20 @@ namespace nuc {
          * @return The directory writer object.
          */
         static dir_writer *get_writer(paths::string path);
+
+        /**
+         * Checks whether two directories are on the same file system.
+         *
+         * Currently this only checks whether both paths point to
+         * regular directories.
+         *
+         * @param dir1 Path to the first directory.
+         * @param dir2 Path to the second directory.
+         *
+         * @return True if the directories are on the same file
+         * system, false otherwise.
+         */
+        static bool on_same_fs(const paths::string &dir1, const paths::string &dir2);
     };
 }
 

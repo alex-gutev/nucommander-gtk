@@ -19,6 +19,8 @@
 
 #include "dir_type.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <boost/algorithm/string.hpp>
@@ -164,21 +166,32 @@ std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::find_dir(const 
     );
 }
 
+
+bool nuc::dir_type::is_reg_dir(const paths::string &path) {
+    struct stat st;
+
+    return !stat(path.c_str(), &st) && S_ISDIR(st.st_mode);
+}
+
 /// Public static methods
+
+// Getting a dir_type object
 
 nuc::dir_type nuc::dir_type::get(const paths::string &path) {
     using namespace std::placeholders;
 
     paths::string cpath = canonicalize(path);
-    std::pair<paths::string, paths::string> pair = canonicalize_case(cpath);
+    auto pair = canonicalize_case(cpath);
 
-    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
-        return dir_type(std::move(pair.first),
-                        std::bind(make_archive_lister, plugin, _1),
-                        std::bind(make_archive_tree_lister, plugin, _1, _2),
-                        make_archive_tree,
-                        false,
-                        std::move(pair.second));
+    if (!pair.second.empty() || !is_reg_dir(pair.first)) {
+        if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
+            return dir_type(std::move(pair.first),
+                            std::bind(make_archive_lister, plugin, _1),
+                            std::bind(make_archive_tree_lister, plugin, _1, _2),
+                            make_archive_tree,
+                            false,
+                            std::move(pair.second));
+        }
     }
 
     if (!pair.second.empty())
@@ -219,6 +232,9 @@ nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
     }
 }
 
+
+// Getting a directory writer object
+
 nuc::dir_writer * nuc::dir_type::get_writer(paths::string path) {
     paths::string cpath = paths::expand_tilde(path);
     std::pair<paths::string, paths::string> parts = find_dir(cpath);
@@ -227,6 +243,16 @@ nuc::dir_writer * nuc::dir_type::get_writer(paths::string path) {
         return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
 
     return new reg_dir_writer(path.c_str());
+}
+
+
+// Querying Directory Type Properties
+
+bool nuc::dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
+    auto path1 = find_dir(dir1).first;
+    auto path2 = find_dir(dir2).first;
+
+    return is_reg_dir(path1) && is_reg_dir(path2);
 }
 
 // Local Variables:

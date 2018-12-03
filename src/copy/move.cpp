@@ -90,22 +90,26 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
 }
 
 static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
-    // TODO: Check that destination is of the same type as the
-    // source, if not perform a copy and delete operation.
+    // Check that the source and destination directories are on the
+    // same file system.
+    if (dir_type::on_same_fs(src_type.path(), dest)) {
+        std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
 
-    std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
+        global_restart copy(restart("copy", [] (const error &e, boost::any) {
+            throw begin_copy_exception();
+        },
+        [] (const error &e) {
+            return e.code() == EXDEV;
+        }));
 
-    global_restart copy(restart("copy", [] (const error &e, boost::any) {
-        throw begin_copy_exception();
-    },
-    [] (const error &e) {
-        return e.code() == EXDEV;
-    }));
-
-    try {
-        move(state, paths, dest, *writer);
+        try {
+            move(state, paths, dest, *writer);
+        }
+        catch (const begin_copy_exception &) {
+            copy_files(state, src_type, paths, dest);
+        }
     }
-    catch (const begin_copy_exception &) {
+    else {
         copy_files(state, src_type, paths, dest);
     }
 }
