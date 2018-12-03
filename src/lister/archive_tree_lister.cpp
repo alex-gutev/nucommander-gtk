@@ -71,7 +71,7 @@ bool archive_tree_lister::should_visit(const list_callback &fn, const paths::str
         if (it == visit_paths.end() || *it != path)
             --it;
 
-        if (paths::is_prefix(*it, path)) {
+        if (*it == path || paths::is_subpath(*it, path)) {
             size_t offset = it->rfind('/', it->size() - 2);
             offset = offset == paths::string::npos ? 0 : offset + 1;
 

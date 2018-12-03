@@ -122,6 +122,17 @@ namespace nuc {
         bool is_prefix(const string &str1, const string &str2);
 
         /**
+         * Checks whether @a parent is a subpath of @a subpath.
+         *
+         * @param parent Path to the parent directory.
+         *
+         * @param subpath The path to check whether it is a subpath.
+         *
+         * @retun True if @a subpath is a subpath of @a parent
+         */
+        bool is_subpath(const string &parent, const string &subpath);
+
+        /**
          * Checks whether a path has any directory components.
          *
          * @param path The path to test

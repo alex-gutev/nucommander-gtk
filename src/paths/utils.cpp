@@ -149,6 +149,10 @@ bool nuc::paths::is_prefix(const string &str1, const string &str2) {
     return res.first == str1.end();
 }
 
+bool nuc::paths::is_subpath(const string &parent, const string &subpath) {
+    return parent.empty() || (parent.back() == '/' && is_prefix(parent, subpath));
+}
+
 
 nuc::paths::string nuc::paths::expand_tilde(const string &path) {
     if (!path.empty() && path.front() == '~') {
