@@ -36,6 +36,8 @@ namespace nuc {
      */
     class dir_writer {
     public:
+        virtual ~dir_writer() = default;
+
         /**
          * Closes the directory.
          */
