@@ -163,6 +163,16 @@ namespace nuc {
         void create_entry(nuc_arch_entry *ent);
 
         /**
+         * Checks whether the old archive contains an entry at the
+         * subpath @a path. If so an error is raised with two restarts
+         * which allow the entry to be replaced or a new duplicate
+         * entry to be created.
+         *
+         * @param path Path to the entry.
+         */
+        void check_exists(const char *path);
+
+        /**
          * Removes the entry at subpath @a path. If it is a directory
          * entry all child entries are removed as well.
          *
@@ -215,11 +225,7 @@ namespace nuc {
 
         virtual outstream *create(const char *path, const struct stat *st = nullptr, int flags = 0);
 
-        virtual void mkdir(const char *path) {
-            // Does nothing as the directories are automatically
-            // created with their child entries. An actual directory
-            // entry is only created when its attributes are set.
-        }
+        virtual void mkdir(const char *path);
 
         virtual void symlink(const char *path, const char *target, const struct stat *st);
 

@@ -209,6 +209,16 @@ outstream * archive_dir_writer::create(const char *path, const struct stat *st, 
     return new archive_outstream(plugin, out_handle);
 }
 
+void archive_dir_writer::mkdir(const char *path) {
+    // Check whether an entry exists in the archive with the
+    // same name, however don't actually create a directory
+    // entry as it is implicitly created when its child
+    // entries. The actual directory entry is only created
+    // when the its attributes are set.
+
+    check_exists(path);
+}
+
 void archive_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
     create_entry(path, st, target);
 }
@@ -232,11 +242,20 @@ void archive_dir_writer::create_entry(const char *path, const struct stat *st, c
 }
 
 void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
+    check_exists(ent->path);
+
+    try_op([&] {
+        if (int err = plugin->create_entry(out_handle, ent))
+            raise_plugin_error(out_handle, err);
+    });
+}
+
+void archive_dir_writer::check_exists(const char *path) {
     bool replace = false;
 
-    global_restart overwrite(restart("overwrite", [&replace, this, ent] (const nuc::error &e, boost::any) {
+    global_restart overwrite(restart("overwrite", [&replace, this, path] (const nuc::error &e, boost::any) {
         replace = true;
-        remove_old_entry(ent->path);
+        remove_old_entry(path);
     },
     [] (const nuc::error &e) {
         return e.code() == EEXIST;
@@ -250,11 +269,8 @@ void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
     }));
 
     try_op([&] {
-        if (!replace && old_entries.count(ent->path))
-            throw file_error(EEXIST, error::type_create_file, true, ent->path);
-
-        if (int err = plugin->create_entry(out_handle, ent))
-            raise_plugin_error(out_handle, err);
+        if (!replace && old_entries.count(path))
+            throw file_error(EEXIST, error::type_create_file, true, path);
     });
 }
 
