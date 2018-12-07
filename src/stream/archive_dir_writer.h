@@ -233,6 +233,8 @@ namespace nuc {
 
         virtual void rename(const char *src, const char *dest);
 
+        virtual void remove(const char *path);
+
     private:
 
         using dir_writer::raise_error;

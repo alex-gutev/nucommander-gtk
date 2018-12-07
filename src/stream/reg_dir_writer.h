@@ -74,6 +74,8 @@ namespace nuc {
         virtual void set_attributes(const char *path, const struct stat *st);
 
         virtual void rename(const char *src, const char *dest);
+
+        virtual void remove(const char *path);
     };
 }
 

@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "file_outstream.h"
 
@@ -126,7 +127,7 @@ void with_skip_attrib(F op) {
 }
 
 
-/// Renaming
+/// Renaming Files
 
 void reg_dir_writer::rename(const char *src, const char *dest) {
     bool replace = false;
@@ -145,6 +146,25 @@ void reg_dir_writer::rename(const char *src, const char *dest) {
 
         if (renameat(fd, src, fd, dest)) {
             throw file_error(errno, error::type_rename_file, true, dest);
+        }
+    });
+}
+
+
+/// Deleting Files
+
+void reg_dir_writer::remove(const char *path) {
+    try_op([=] {
+        if (unlinkat(fd, path, 0)) {
+            int err = errno;
+
+            if (err == EISDIR) {
+                if (unlinkat(fd, path, AT_REMOVEDIR))
+                    throw file_error(errno, error::type_delete_file, true, path);
+            }
+            else {
+                throw file_error(err, error::type_delete_file, true, path);
+            }
         }
     });
 }

@@ -36,6 +36,9 @@ Glib::ustring file_error::type_explanation() const noexcept {
 
     case error::type_create_dir:
         return Glib::ustring::compose("Error creating directory '%1'.", file);
+
+    case error::type_delete_file:
+        return Glib::ustring::compose("Error deleting '%1'.", file);
     }
 
     return "";

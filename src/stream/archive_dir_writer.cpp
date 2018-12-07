@@ -296,3 +296,8 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
 void archive_dir_writer::rename(const char *src, const char *dest) {
     // TODO: Implement renaming.
 }
+
+void archive_dir_writer::remove(const char *path) {
+    // TODO: Raise an error if there is no such entry
+    remove_old_entry(paths::canonicalized_path(path));
+}

@@ -95,6 +95,13 @@ namespace nuc {
          */
         virtual void rename(const char *src, const char *dest) = 0;
 
+        /**
+         * Delete the file at path @a path.
+         *
+         * @param Path to the file to delete.
+         */
+        virtual void remove(const char *path) = 0;
+
     protected:
         /**
          * Throws an error exception.
