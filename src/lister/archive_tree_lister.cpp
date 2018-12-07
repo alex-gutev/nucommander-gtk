@@ -30,13 +30,15 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     lister::entry ent;
     struct stat st = {};
 
+    add_list_callback(fn);
+
     while (listr.read_entry(ent)) {
         paths::string ent_path = paths::canonicalized_path(ent.name);
 
         if (ent.type == DT_DIR)
             ent_path.push_back('/');
 
-        if (should_visit(fn, ent_path, ent)) {
+        if (should_visit(ent_path, ent)) {
             bool got_stat = listr.entry_stat(st);
 
             if (ent.type == DT_DIR) {
@@ -51,7 +53,7 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
                 }
             }
 
-            fn(ent, got_stat ? &st : nullptr, visit_preorder);
+            list_fn(ent, got_stat ? &st : nullptr, visit_preorder);
         }
     }
 
@@ -60,11 +62,11 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
         ent.type = DT_DIR;
 
         if (it->second.second)
-            fn(ent, &it->second.first, visit_postorder);
+            list_fn(ent, &it->second.first, visit_postorder);
     }
 }
 
-bool archive_tree_lister::should_visit(const list_callback &fn, const paths::string &path, lister::entry &ent) {
+bool archive_tree_lister::should_visit(const paths::string &path, lister::entry &ent) {
     auto it = visit_paths.lower_bound(path);
 
     if (visit_paths.begin() != visit_paths.end()) {
@@ -77,14 +79,14 @@ bool archive_tree_lister::should_visit(const list_callback &fn, const paths::str
 
             ent.name = path.c_str() + offset;
 
-            return add_visited_dirs(fn, offset, path);
+            return add_visited_dirs(offset, path);
         }
     }
 
     return false;
 }
 
-bool archive_tree_lister::add_visited_dirs(const list_callback &fn, size_t base_offset, const paths::string &path) {
+bool archive_tree_lister::add_visited_dirs(size_t base_offset, const paths::string &path) {
     struct stat st = {};
     st.st_mode = S_IFDIR | S_IRWXU;
 
@@ -107,7 +109,7 @@ bool archive_tree_lister::add_visited_dirs(const list_callback &fn, size_t base_
                 ent.name = dir_path.c_str();
                 ent.type = DT_DIR;
 
-                if (!fn(ent, nullptr, visit_preorder)) {
+                if (!list_fn(ent, nullptr, visit_preorder)) {
                     it.first->second.second = false;
                     return false;
                 }

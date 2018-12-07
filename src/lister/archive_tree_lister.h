@@ -55,8 +55,6 @@ namespace nuc {
          * calls the callback function for each component (if it
          * hasn't been visited yet).
          *
-         * @param fn The callback function, passed to list_entries.
-         *
          * @param path Subpath of the entry.
          *
          * @param ent Reference to a lister::entry structure. The
@@ -65,14 +63,12 @@ namespace nuc {
          *
          * @return True if the entry should be visited.
          */
-        bool should_visit(const list_callback &fn, const paths::string &path, lister::entry &ent);
+        bool should_visit(const paths::string &path, lister::entry &ent);
 
         /**
          * Adds the intermediate directory components of @a path to
          * visited_dirs, and calls @a fn for each component if it has
          * not been visited yet.
-         *
-         * @param fn The callback function passed to list_entries.
          *
          * @param base_offset Index of the first character of the
          *    path, following the base path (passed to the
@@ -81,7 +77,7 @@ namespace nuc {
          *
          * @param path Subpath of the entry being visited.
          */
-        bool add_visited_dirs(const list_callback &fn, size_t base_offset, const paths::string &path);
+        bool add_visited_dirs(size_t base_offset, const paths::string &path);
 
         /**
          * Adds the stat attributes of a directory to the visited_dirs

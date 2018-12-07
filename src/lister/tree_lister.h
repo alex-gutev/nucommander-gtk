@@ -98,6 +98,14 @@ namespace nuc {
 
         virtual ~tree_lister() = default;
 
+        /**
+         * Add a callback function which will be called when each
+         * entry is visited. The function will be called before the
+         * current function is called if any.
+         *
+         * @param fn The callback function.
+         */
+        void add_list_callback(const list_callback &fn);
 
         /**
          * Reads all entries in the tree and calls @a fn on each
@@ -125,6 +133,15 @@ namespace nuc {
         virtual instream * open_entry() = 0;
 
     protected:
+        /**
+         * Function which is called when each entry is visited.
+         *
+         * Subclasses should use add_list_callback to add the function
+         * passed to list_entries, and then call the function stored
+         * in this member variable.
+         */
+        list_callback list_fn;
+
         /**
          * Throws an exception with error code @a code.
          */
