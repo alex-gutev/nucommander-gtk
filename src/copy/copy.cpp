@@ -111,7 +111,7 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) 
             } break;
 
             case DT_LNK:
-                out.symlink(ent.name, in.symlink_path().c_str(), st);
+                out.symlink(ent.name, in.symlink_path(), st);
                 break;
             }
         }

@@ -214,29 +214,29 @@ bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
     return err == NUC_AP_OK;
 }
 
-outstream * archive_dir_writer::create(const char *path, const struct stat *st, int flags) {
-    create_entry(path, st);
+outstream * archive_dir_writer::create(const paths::string &path, const struct stat *st, int flags) {
+    create_entry(path.c_str(), st);
 
     return new archive_outstream(plugin, out_handle);
 }
 
-void archive_dir_writer::mkdir(const char *path) {
+void archive_dir_writer::mkdir(const paths::string &path) {
     // Check whether an entry exists in the archive with the
     // same name, however don't actually create a directory
     // entry as it is implicitly created when its child
     // entries. The actual directory entry is only created
     // when the its attributes are set.
 
-    check_exists(path);
+    check_exists(path.c_str());
 }
 
-void archive_dir_writer::symlink(const char *path, const char *target, const struct stat *st) {
-    create_entry(path, st, target);
+void archive_dir_writer::symlink(const paths::string &path, const paths::string &target, const struct stat *st) {
+    create_entry(path.c_str(), st, target.c_str());
 }
 
-void archive_dir_writer::set_attributes(const char *path, const struct stat *st) {
+void archive_dir_writer::set_attributes(const paths::string &path, const struct stat *st) {
     if (S_ISDIR(st->st_mode)) {
-        create_entry(path, st);
+        create_entry(path.c_str(), st);
     }
 }
 
@@ -304,11 +304,13 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
 }
 
 
-void archive_dir_writer::rename(const char *src, const char *dest) {
     // TODO: Implement renaming.
+void archive_dir_writer::rename(const paths::string &src, const paths::string &dest) {
 }
 
-void archive_dir_writer::remove(const char *path) {
+void archive_dir_writer::remove(const paths::string &path, bool relative) {
+    paths::string ent_path = paths::canonicalized_path(relative ? paths::appended_component(subpath, path) : path);
+
     // TODO: Raise an error if there is no such entry
-    remove_old_entry(paths::canonicalized_path(path));
+    remove_old_entry(ent_path);
 }

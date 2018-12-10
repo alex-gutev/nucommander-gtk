@@ -240,17 +240,17 @@ namespace nuc {
         virtual void close();
 
 
-        virtual outstream *create(const char *path, const struct stat *st = nullptr, int flags = 0);
+        virtual outstream *create(const paths::string &path, const struct stat *st = nullptr, int flags = 0);
 
-        virtual void mkdir(const char *path);
+        virtual void mkdir(const paths::string &path);
 
-        virtual void symlink(const char *path, const char *target, const struct stat *st);
+        virtual void symlink(const paths::string &path, const paths::string &target, const struct stat *st);
 
-        virtual void set_attributes(const char *path, const struct stat *st);
+        virtual void set_attributes(const paths::string &path, const struct stat *st);
 
-        virtual void rename(const char *src, const char *dest);
+        virtual void rename(const paths::string &src, const paths::string &dest);
 
-        virtual void remove(const char *path);
+        virtual void remove(const paths::string &path, bool relative);
 
     private:
 

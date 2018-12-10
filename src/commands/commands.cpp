@@ -137,7 +137,7 @@ void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
 void make_dir_task(cancel_state &state, const paths::string &dest, const paths::string &name) {
     std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
-    writer->mkdir(name.c_str());
+    writer->mkdir(name);
 }
 
 void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
