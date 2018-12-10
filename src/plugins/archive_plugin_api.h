@@ -169,11 +169,14 @@ int nuc_arch_copy_archive_type(void *dest_handle, const void *src_handle);
  * @param dest_handle The handle of the destination archive, to which
  *   to copy the entry.
  *
+ * @param ent If non-NULL, the attributes of the new entry are set to
+ *   the values of the non-NULL fields in the struct.
+ *
  * @return NUC_AP_OK (0) if the last entry was copied successfully. A
  *    NUC_AP_ error constant value is returned if there was an error,
  *    with a more detailed error code stored in errno.
  */
-int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle);
+int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nuc_arch_entry *ent);
 
 /**
  * Creates an entry in the archive. This only creates the entry's

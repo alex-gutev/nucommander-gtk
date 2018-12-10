@@ -35,6 +35,24 @@ namespace nuc {
      */
     class archive_dir_writer : public dir_writer {
         /**
+         * Old entry information.
+         */
+        struct old_entry {
+            /**
+             * Type of the entry as a DT_ constant.
+             */
+            int type;
+            /**
+             * The path under which the entry should be recreated in
+             * the new archive. If this is an empty string, the entry
+             * is recreated under the same path.
+             */
+            paths::string new_path;
+
+            old_entry(int type) : type(type) {}
+        };
+
+        /**
          * Path to the archive file being written to.
          */
         paths::string path;
@@ -65,10 +83,9 @@ namespace nuc {
         /**
          * Map containing the entries already in the archive. Each key
          * is the canonicalized subpath to the entry and the
-         * corresponding value is the type of the entry as a dirent
-         * (DT_x) constant.
+         * corresponding value is an old_entry struct.
          */
-        std::map<paths::string, int> old_entries;
+        std::map<paths::string, old_entry> old_entries;
 
         /**
          * Handle of the existing archive (open for reading).

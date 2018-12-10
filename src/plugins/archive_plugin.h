@@ -51,7 +51,7 @@ namespace nuc {
         typedef int(*unpack_fn)(void *, const char **, size_t *, off_t *);
 
         typedef int(*copy_archive_type_fn)(void *, const void *);
-        typedef int(*copy_last_entry_fn)(void *, const void *);
+        typedef int(*copy_last_entry_fn)(void *, const void *, const nuc_arch_entry *);
 
         typedef int(*create_entry_fn)(void *, const nuc_arch_entry *);
         typedef int(*pack_fn)(void *, const char *, size_t, off_t);

@@ -327,11 +327,17 @@ int nuc_arch_copy_archive_type(void *dest_handle, const void *src_handle) {
 
 
 EXPORT
-int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle) {
+int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nuc_arch_entry *ent) {
     const nuc_arch_handle *src = src_handle;
     nuc_arch_handle *dest = dest_handle;
 
     int err;
+
+    // Update attributes if new attributes provided
+    if (ent) {
+	    if (ent->path) archive_entry_set_pathname(src->ent, ent->path);
+	    if (ent->stat) archive_entry_copy_stat(src->ent, ent->stat);
+    }
 
     if ((err = err_code(dest, archive_write_header(dest->ar, src->ent)))) {
         return err;

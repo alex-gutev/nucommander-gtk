@@ -156,7 +156,7 @@ bool archive_dir_writer::add_old_entry(const paths::string &path, int type) {
     auto pair = old_entries.insert(std::make_pair(path, type));
 
     if (!pair.second) {
-        if (type == DT_DIR && pair.first->second != DT_DIR) {
+        if (type == DT_DIR && pair.first->second.type != DT_DIR) {
             pair.first->second = DT_DIR;
             return true;
         }
@@ -182,9 +182,20 @@ void archive_dir_writer::copy_old_entries() {
     open_old();
 
     while (next_entry(&ent)) {
-        if (old_entries.count(paths::canonicalized_path(ent.path))) {
+        auto it = old_entries.find(paths::canonicalized_path(ent.path));
+
+        if (it != old_entries.end()) {
+            // Clear all fields of the nuc_arch_entry struct
+            ent = nuc_arch_entry();
+
+            // If the entry should be recreated at a new path, set it
+            // in the nuc_arch_entry struct.
+            if (!it->second.new_path.empty()) {
+                ent.path = it->second.new_path.c_str();
+            }
+
             try_op([=] {
-                if (plugin->copy_last_entry(out_handle, in_handle))
+                if (plugin->copy_last_entry(out_handle, in_handle, &ent))
                     // TODO: Obtain error description
                     raise_error(errno, err);
             });
@@ -278,7 +289,7 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
     auto it = old_entries.find(path);
 
     if (it != old_entries.end()) {
-        bool is_dir = it->second == DT_DIR;
+        bool is_dir = it->second.type == DT_DIR;
 
         it = old_entries.erase(it);
 
