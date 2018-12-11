@@ -227,7 +227,7 @@ void archive_dir_writer::mkdir(const paths::string &path) {
     // entries. The actual directory entry is only created
     // when the its attributes are set.
 
-    check_exists(path.c_str());
+    check_exists(paths::appended_component(subpath, path));
 }
 
 void archive_dir_writer::symlink(const paths::string &path, const paths::string &target, const struct stat *st) {
@@ -261,14 +261,14 @@ void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
     });
 }
 
-void archive_dir_writer::check_exists(const char *path) {
+void archive_dir_writer::check_exists(paths::string path) {
     bool replace = false;
 
-    paths::string cpath = paths::canonicalized_path(path);
+    path = paths::canonicalized_path(path);
 
-    global_restart overwrite(restart("overwrite", [&replace, this, &cpath] (const nuc::error &e, boost::any) {
+    global_restart overwrite(restart("overwrite", [&replace, this, path] (const nuc::error &e, boost::any) {
         replace = true;
-        remove_old_entry(cpath);
+        remove_old_entry(path);
     },
     [] (const nuc::error &e) {
         return e.code() == EEXIST;
@@ -282,8 +282,8 @@ void archive_dir_writer::check_exists(const char *path) {
     }));
 
     try_op([&] {
-        if (!replace && old_entries.count(cpath))
-            throw file_error(EEXIST, error::type_create_file, true, cpath);
+        if (!replace && old_entries.count(path))
+            throw file_error(EEXIST, error::type_create_file, true, path);
     });
 }
 
@@ -307,7 +307,7 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
 
 
 void archive_dir_writer::rename(const paths::string &src, const paths::string &dest) {
-    check_exists(dest.c_str());
+    check_exists(dest);
 
     paths::string src_path = paths::canonicalized_path(src);
 

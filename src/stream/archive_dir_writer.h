@@ -187,7 +187,7 @@ namespace nuc {
          *
          * @param path Path to the entry.
          */
-        void check_exists(const char *path);
+        void check_exists(paths::string path);
 
         /**
          * Removes the entry at subpath @a path. If it is a directory
