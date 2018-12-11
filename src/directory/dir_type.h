@@ -314,18 +314,38 @@ namespace nuc {
         static dir_writer *get_writer(paths::string path);
 
         /**
+         * Virtual file system type.
+         */
+        enum fs_type {
+            /* No type */
+            fs_type_none = 0,
+            /* Regular directory */
+            fs_type_dir,
+            /* Virtual file system such as archives. */
+            fs_type_virtual
+        };
+
+        /**
          * Checks whether two directories are on the same file system.
-         *
-         * Currently this only checks whether both paths point to
-         * regular directories.
          *
          * @param dir1 Path to the first directory.
          * @param dir2 Path to the second directory.
          *
-         * @return True if the directories are on the same file
-         * system, false otherwise.
+         * @return If the two paths are on the same file system
+         *   returns the type of the file system (as an fs_type
+         *   constant) otherwise returns fs_type_none.
          */
-        static bool on_same_fs(const paths::string &dir1, const paths::string &dir2);
+        static fs_type on_same_fs(const paths::string &dir1, const paths::string &dir2);
+
+        /**
+         * Retrieves the subpath component, within a virtual file
+         * system, of a path. Returns the empty string if the path is
+         * not within a virtual file system.
+         *
+         * @param path The path.
+         * @return The subpath component.
+         */
+        static paths::string get_subpath(const paths::string &path);
     };
 }
 

@@ -92,7 +92,7 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
 static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
     // Check that the source and destination directories are on the
     // same file system.
-    if (dir_type::on_same_fs(src_type.path(), dest)) {
+    if (auto fs_type = dir_type::on_same_fs(src_type.path(), dest)) {
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
 
         global_restart copy(restart("copy", [] (const error &e, boost::any) {
@@ -103,7 +103,8 @@ static void move_or_copy(cancel_state &state, const dir_type &src_type, const st
         }));
 
         try {
-            move(state, paths, dest, *writer);
+            move(state, paths, fs_type == dir_type::fs_type_dir ? dest : dir_type::get_subpath(dest), *writer);
+            writer->close();
         }
         catch (const begin_copy_exception &) {
             copy_files(state, src_type, paths, dest);
@@ -119,7 +120,7 @@ void nuc::move(cancel_state &state, const std::vector<paths::string> &items, con
         global_restart skip(skip_exception::restart);
 
         try {
-            dir.rename(item.c_str(), paths::appended_component(dest, item).c_str());
+            dir.rename(item, paths::appended_component(dest, paths::file_name(item)));
         }
         catch (const skip_exception &) {
             // Do nothing to skip the current file

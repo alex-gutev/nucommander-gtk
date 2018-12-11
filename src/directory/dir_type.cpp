@@ -248,11 +248,27 @@ nuc::dir_writer * nuc::dir_type::get_writer(paths::string path) {
 
 // Querying Directory Type Properties
 
-bool nuc::dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
+nuc::dir_type::fs_type nuc::dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
     auto path1 = find_dir(dir1).first;
     auto path2 = find_dir(dir2).first;
 
-    return is_reg_dir(path1) && is_reg_dir(path2);
+    struct stat st1, st2;
+
+    if (!stat(path1.c_str(), &st1) && !stat(path2.c_str(), &st2)) {
+        if (S_ISDIR(st1.st_mode) && S_ISDIR(st2.st_mode)) {
+            return fs_type_dir;
+        }
+        else if (st1.st_ino == st2.st_ino && st1.st_dev == st2.st_dev) {
+            return fs_type_virtual;
+        }
+    }
+
+    return fs_type_none;
+}
+
+
+nuc::paths::string nuc::dir_type::get_subpath(const paths::string &path) {
+    return find_dir(path).second;
 }
 
 // Local Variables:
