@@ -130,11 +130,26 @@ void nuc::move(cancel_state &state, const std::vector<paths::string> &items, con
 
 static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
     std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
-    std::unique_ptr<dir_writer> writer{dir_type::get_writer(dest)};
+    std::unique_ptr<dir_writer> dest_writer{dir_type::get_writer(dest)};
 
-    // TODO: Add post-traverse actions which are called on each file
-    // after the copy operation is performed. The post-traverse action
-    // deletes the source files after they are copied.
+    std::unique_ptr<dir_writer> src_writer{dir_type::get_writer(src_type.logical_path())};
 
-    nuc::copy(state, *lister, *writer);
+    lister->add_list_callback([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+        global_restart skip(skip_exception::restart);
+
+        try {
+            if (ent.type != DT_DIR || info == tree_lister::visit_postorder) {
+                src_writer->remove(ent.name);
+            }
+        }
+        catch (const skip_exception &) {
+            // Do nothing to skip file.
+        }
+
+        return true;
+    });
+
+    nuc::copy(state, *lister, *dest_writer);
+
+    src_writer->close();
 }
