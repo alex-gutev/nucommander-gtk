@@ -67,7 +67,7 @@ namespace nuc {
 
         virtual outstream *create(const paths::string &path, const struct stat *st = nullptr, int flags = 0);
 
-        virtual void mkdir(const paths::string &path);
+        virtual void mkdir(const paths::string &path, bool defer);
 
         virtual void symlink(const paths::string &path, const paths::string &target, const struct stat *st);
 

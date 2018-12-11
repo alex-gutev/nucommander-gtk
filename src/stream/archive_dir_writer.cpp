@@ -220,14 +220,15 @@ outstream * archive_dir_writer::create(const paths::string &path, const struct s
     return new archive_outstream(plugin, out_handle);
 }
 
-void archive_dir_writer::mkdir(const paths::string &path) {
-    // Check whether an entry exists in the archive with the
-    // same name, however don't actually create a directory
-    // entry as it is implicitly created when its child
-    // entries. The actual directory entry is only created
-    // when the its attributes are set.
-
+void archive_dir_writer::mkdir(const paths::string &path, bool defer) {
     check_exists(paths::appended_component(subpath, path));
+
+    if (!defer) {
+        struct stat st{};
+
+        st.st_mode = S_IFDIR;
+        create_entry(path.c_str(), &st);
+    }
 }
 
 void archive_dir_writer::symlink(const paths::string &path, const paths::string &target, const struct stat *st) {

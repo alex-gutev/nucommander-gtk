@@ -56,7 +56,7 @@ outstream * reg_dir_writer::create(const paths::string &path, const struct stat 
     return stream;
 }
 
-void reg_dir_writer::mkdir(const paths::string &path) {
+void reg_dir_writer::mkdir(const paths::string &path, bool) {
     TRY_OP_(mkdirat(fd, path.c_str(), S_IRWXU),
             throw file_error(errno, error::type_create_dir, true, path))
 }

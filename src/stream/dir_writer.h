@@ -65,8 +65,12 @@ namespace nuc {
          *
          * @param path Subpath of the directory to create, relative to
          *    the directory of the dir_writer object.
+         *
+         * @param defer If true the creation of the directory may be
+         *   deferred until a file is created in it or its attributes
+         *   are set. 
          */
-        virtual void mkdir(const paths::string &path) = 0;
+        virtual void mkdir(const paths::string &path, bool defer = true) = 0;
 
 
         /**
