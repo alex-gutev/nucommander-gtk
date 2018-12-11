@@ -264,9 +264,11 @@ void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
 void archive_dir_writer::check_exists(const char *path) {
     bool replace = false;
 
-    global_restart overwrite(restart("overwrite", [&replace, this, path] (const nuc::error &e, boost::any) {
+    paths::string cpath = paths::canonicalized_path(path);
+
+    global_restart overwrite(restart("overwrite", [&replace, this, &cpath] (const nuc::error &e, boost::any) {
         replace = true;
-        remove_old_entry(path);
+        remove_old_entry(cpath);
     },
     [] (const nuc::error &e) {
         return e.code() == EEXIST;
@@ -280,8 +282,8 @@ void archive_dir_writer::check_exists(const char *path) {
     }));
 
     try_op([&] {
-        if (!replace && old_entries.count(path))
-            throw file_error(EEXIST, error::type_create_file, true, path);
+        if (!replace && old_entries.count(cpath))
+            throw file_error(EEXIST, error::type_create_file, true, cpath);
     });
 }
 
@@ -304,8 +306,27 @@ void archive_dir_writer::remove_old_entry(paths::string path) {
 }
 
 
-    // TODO: Implement renaming.
 void archive_dir_writer::rename(const paths::string &src, const paths::string &dest) {
+    check_exists(dest.c_str());
+
+    paths::string src_path = paths::canonicalized_path(src);
+
+    auto it = old_entries.find(src_path);
+
+    if (it != old_entries.end()) {
+        it->second.new_path = dest;
+
+        if (it->second.type == DT_DIR) {
+            size_t dir_len = src_path.length() + 1;
+
+            ++it;
+            for (auto end = old_entries.end(); it != end; ++it) {
+                if (!paths::is_subpath(src, it->first)) break;
+
+                it->second.new_path = paths::appended_component(dest, it->first.substr(dir_len));
+            }
+        }
+    }
 }
 
 void archive_dir_writer::remove(const paths::string &path, bool relative) {
