@@ -19,6 +19,8 @@
 
 #include "commands.h"
 
+#include <gtkmm/messagedialog.h>
+
 #include "app_window.h"
 #include "file_view.h"
 
@@ -28,6 +30,7 @@
 
 #include "copy/copy.h"
 #include "copy/move.h"
+#include "copy/delete.h"
 
 using namespace nuc;
 
@@ -88,12 +91,37 @@ static void make_dir_task(nuc::cancel_state &state, const nuc::paths::string &de
  */
 static void move_command_fn(nuc::app_window *window, nuc::file_view *src);
 
+/**
+ * Delete command function.
+ *
+ * Deletes the selected files in the source pane, after querying the
+ * user for confirmation.
+ *
+ * @param window Pointer to the app_window, in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void delete_command_fn(nuc::app_window *window, nuc::file_view *src);
+
+/**
+ * Creates the delete confirmation message.
+ *
+ * @param ents Array of selected entries to be deleted.
+ *
+ * @return The confirmation message.
+ */
+static Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents);
+
+
 // Initialize Builtin command table.
 
 std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("copy", copy_command_fn),
     std::make_pair("make-directory", make_dir_command_fn),
-    std::make_pair("move", move_command_fn)
+    std::make_pair("move", move_command_fn),
+    std::make_pair("delete", delete_command_fn)
 };
 
 
@@ -158,6 +186,36 @@ void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
                 window->add_operation(make_move_task(src->file_list().dir_vfs()->directory_type(), entries, path));
             }
         });
+    }
+}
+
+void delete_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    if (window && src) {
+        auto entries = src->file_list().selected_entries();
+
+        if (!entries.empty()) {
+            // Query for confirmation
+
+            Gtk::MessageDialog dialog(*window, "Confirm Delete", false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
+            dialog.set_secondary_text(confirm_delete_msg(entries));
+
+            int result = dialog.run();
+
+            // Add delete operation if response was OK
+
+            if (result == Gtk::RESPONSE_OK) {
+                window->add_operation(make_delete_task(src->file_list().dir_vfs()->directory_type(), entries));
+            }
+        }
+    }
+}
+
+Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents) {
+    if (ents.size() == 1) {
+        return Glib::ustring::compose("Are you sure you want to delete '%1'?", ents[0]->file_name());
+    }
+    else {
+        return Glib::ustring::compose("Are you sure you want to delete %1 selected files?", ents.size());
     }
 }
 

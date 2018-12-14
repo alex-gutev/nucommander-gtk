@@ -4,4 +4,7 @@ add_sources(NUC_SRCS
 
   move.h
   move.cpp
+
+  delete.h
+  delete.cpp
 )
