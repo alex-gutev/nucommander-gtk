@@ -27,7 +27,7 @@
 
 #include "tasks/async_task.h"
 #include "commands/commands.h"
-#include "copy/copy.h"
+#include "operations/copy.h"
 
 using namespace nuc;
 

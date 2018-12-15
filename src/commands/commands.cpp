@@ -28,9 +28,9 @@
 
 #include "settings/app_settings.h"
 
-#include "copy/copy.h"
-#include "copy/move.h"
-#include "copy/delete.h"
+#include "operations/copy.h"
+#include "operations/move.h"
+#include "operations/delete.h"
 
 using namespace nuc;
 
