@@ -31,6 +31,36 @@
 using namespace nuc;
 
 /**
+ * Copy task function.
+ *
+ * @param state Cancellation state.
+ *
+ * @param src_type Type of the directory containing the files to be
+ *   copied.
+ *
+ * @param paths The subpaths of the entries which should be copied.
+ *
+ * @param dest Destination path entered by the user.
+ */
+static void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string dest);
+
+/**
+ * Replaces the initial components of @a subpath with other
+ * components. Used when copying a directory to a directory with a
+ * different name.
+ *
+ * @param comp_len Length of the initial components to replace.
+ *
+ * @param replacement Replacement string.
+ *
+ * @param path The subpath.
+ *
+ * @return A path in which the initial @a comp_len characters, of @a
+ *   subpath, are replaced with @a replacement.
+ */
+static paths::string replace_initial_dir(size_t comp_len, const paths::string &replacement, const paths::string &path);
+
+/**
  * Copies the data from the input stream @a in, to the output stream
  * @a out. Closes both streams.
  *
@@ -56,6 +86,8 @@ static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::funct
 //// Implementation
 
 nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vector<dir_entry *> &entries, const paths::string &dest) {
+    using namespace std::placeholders;
+
     std::vector<paths::string> paths;
 
     for (dir_entry *ent : entries) {
@@ -65,20 +97,87 @@ nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vec
             paths.back() += '/';
     }
 
-    return [=] (cancel_state &state) {
-        std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
-        std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
+    return std::bind(copy_task_fn, _1, src_type, paths, dest);
+}
+
+void copy_task_fn(cancel_state &state, const dir_type &src_type,  const std::vector<paths::string> &paths, const paths::string dest) {
+    using namespace std::placeholders;
+
+    // Destination directory to copy files to. Only used if a single
+    // file is being copied.
+    paths::string dest_dir;
+    // The new name of the file to which the original file should be
+    // copied to. Only used if a single file is being copied.
+    paths::string new_name;
+
+    // Exception type thrown to begin copying within the destination
+    // directory, when it is determined that the directory directory
+    // exists.
+    struct copy_within {};
+
+    // Save previous error handler
+    auto old_handler = global_error_handler;
+
+    // Flag indicating whether at least one file was copied
+    // succesfully.
+    bool copied = false;
+
+    // Function which returns the destination file name.
+    map_name_fn map_name = identity();
+
+    // If only a single entry is being copied.
+    if (paths.size() == 1) {
+        dest_dir = paths::removed_last_component(dest);
+        new_name = paths::file_name(dest);
+
+        global_error_handler = [&] (const error &e) {
+            if (e.code() == EEXIST && !copied) {
+                dest_dir = dest;
+                new_name.clear();
+                map_name = identity();
+
+                global_error_handler = old_handler;
+
+                throw copy_within();
+            }
+
+            return old_handler(e);
+        };
+
+        const paths::string &old_name = paths::file_name(paths[0]);
+        map_name = std::bind(replace_initial_dir, old_name.length() - (old_name.back() == '/' ? 1 : 0), new_name, _1);
+    }
+
+    while(true) {
         try {
-            copy(state, *lister, *writer);
+            std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
+            std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest_dir));
+
+            lister->add_list_callback([&copied] (const lister::entry &, const struct stat *, tree_lister::visit_info) {
+                copied = true;
+                return true;
+            });
+
+            copy(state, *lister, *writer, map_name);
+            break;
         }
         catch (const error &e) {
             // Catch error to abort operation.
+            break;
         }
-    };
+        catch (const copy_within &) {
+            // Retry copy operation with new destination
+        }
+    }
 }
 
-void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) {
+paths::string replace_initial_dir(size_t len, const paths::string &replacement, const paths::string &path) {
+    return replacement + path.substr(len);
+}
+
+
+void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, const map_name_fn &map_name) {
     in.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
         // Flag for whether the directory's contents should be copied
         // if the directory itself could not be copied.
@@ -94,24 +193,26 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out) 
 
         state.test_cancel();
 
+        const paths::string &ent_name = map_name(ent.name);
+
         try {
             switch (ent.type) {
             case DT_DIR:
                 if (info == nuc::tree_lister::visit_preorder)
-                    out.mkdir(ent.name);
+                    out.mkdir(ent_name);
                 else if (info == nuc::tree_lister::visit_postorder)
-                    out.set_attributes(ent.name, st);
+                    out.set_attributes(ent_name, st);
                 break;
 
             case DT_REG:{
                 std::unique_ptr<instream> src(in.open_entry());
-                std::unique_ptr<outstream> dest(out.create(ent.name, st));
+                std::unique_ptr<outstream> dest(out.create(ent_name, st));
 
                 copy_file(state, *src, *dest);
             } break;
 
             case DT_LNK:
-                out.symlink(ent.name, in.symlink_path(), st);
+                out.symlink(ent_name, in.symlink_path(), st);
                 break;
             }
         }

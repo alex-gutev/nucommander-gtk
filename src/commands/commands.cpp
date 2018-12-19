@@ -138,7 +138,7 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
         dialog->set_exec_button_label("Copy");
 
         window->dest_dialog()->show([=] (const Glib::ustring &path) {
-            if (auto task = src->make_copy_task(path))
+            if (auto task = src->make_copy_task(paths::merge_paths(paths::ensure_trail_slash(src->path()), path)))
                 window->add_operation(task);
         });
     }

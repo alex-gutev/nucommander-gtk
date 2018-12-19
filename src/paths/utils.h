@@ -31,7 +31,7 @@
 
 namespace nuc {
     namespace paths {
-        /** Retrieving various parts */
+        /* Filename Component */
 
         /**
          * Returns the file name (basename) of 'path'.
@@ -43,7 +43,7 @@ namespace nuc {
         string file_extension(const string &path);
 
 
-        /** Path components */
+        /* Adding and Removing Path Components */
 
         /**
          * Appends the component 'comp' to the path string 'path'. If
@@ -84,6 +84,32 @@ namespace nuc {
 
 
         /**
+         * Merges two paths.
+         *
+         * If @a path2 is relative the absolute path, relative to @a
+         * path1 is returned. Otherwise @a path2 is returned.
+         *
+         * @param path1 First path.
+         * @param path2 Second path to merge into first path.
+         *
+         * @return The merged path.
+         */
+        string merge_paths(const string &path1, const string &path2);
+
+
+        /* Canonicalization */
+
+        /**
+         * Adds a trailing slash to a path if it does not already have
+         * one.
+         *
+         * @param path The path to add the slash to.
+         *
+         * @return Path with the trailing slash added.
+         */
+        string ensure_trail_slash(string path);
+
+        /**
          * Returns the canonical representation of a path by removing all
          * '.', '..' components and double slashes. Leading '..'
          * components or '..' components which refer to a parent directory
@@ -92,6 +118,8 @@ namespace nuc {
          */
         string canonicalized_path(const string &path);
 
+
+        /* Path Predicate Functions */
 
         /**
          * Returns true if 'path' is the file system root.
@@ -159,6 +187,9 @@ namespace nuc {
 
             return true;
         }
+
+
+        /* Expanding Special Paths */
 
         /**
          * Expands the leading tilde '~' in a path to the user's home

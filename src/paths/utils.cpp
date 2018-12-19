@@ -101,6 +101,23 @@ nuc::paths::string nuc::paths::path_from_components(const std::vector<string> &c
     return path;
 }
 
+
+nuc::paths::string nuc::paths::merge_paths(const string &path1, const string &path2) {
+    if (is_relative(path2))
+        return canonicalized_path(appended_component(removed_last_component(path1), path2));
+
+    return path2;
+}
+
+
+nuc::paths::string nuc::paths::ensure_trail_slash(string path) {
+    if (path.length() && path.back() != '/') {
+        path.push_back('/');
+    }
+
+    return path;
+}
+
 nuc::paths::string nuc::paths::canonicalized_path(const string &path) {
     path_components comps(path);
     std::vector<string> new_comps;
@@ -123,6 +140,7 @@ nuc::paths::string nuc::paths::canonicalized_path(const string &path) {
 
     return path_from_components(new_comps);
 }
+
 
 bool nuc::paths::is_root(const string &path) {
     // TODO: add more sophisticated checks for non-local file systems

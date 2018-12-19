@@ -20,6 +20,8 @@
 #ifndef NUC_COPY_H
 #define NUC_COPY_H
 
+#include "util/util.h"
+
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"
 
@@ -50,14 +52,31 @@ namespace nuc {
     task_queue::task_type make_copy_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
 
     /**
+     * Function which returns the name of the file to which a file
+     * should be copied.
+     *
+     * @param name The name of the original file.
+     *
+     * @return The name of the file to which the original file should
+     *   be copied.
+     */
+    typedef std::function<paths::string(const paths::string &)> map_name_fn;
+
+    /**
      * Copies the files returned by the tree lister @a lister to the
      * destination directory, with directory writer @a dest.
      *
      * @param state Cancellation state.
+     *
      * @param lister Source directory tree lister.
+     *
      * @param dest Destination directiory writer.
+     *
+     * @param new_name A function, which is called on the name of each
+     *   file, and should return the name of the file to which the
+     *   file should be copied.
      */
-	void copy(cancel_state &state, tree_lister &lister, dir_writer &dest);
+	void copy(cancel_state &state, tree_lister &lister, dir_writer &dest, const map_name_fn &new_name = identity());
 
     /**
      * Creates a task which copies a file from a source directory to a
