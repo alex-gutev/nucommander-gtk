@@ -121,7 +121,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
     m_signal_activate_entry.emit(this, &flist, &ent);
 }
 
-void file_view::on_path_changed(const paths::string &path) {
+void file_view::on_path_changed(const paths::pathname &path) {
     entry_path(path);
 }
 
@@ -129,7 +129,7 @@ void file_view::on_path_changed(const paths::string &path) {
 
 //// Changing the current path
 
-void file_view::path(const std::string &path, bool move_to_old) {
+void file_view::path(const paths::pathname &path, bool move_to_old) {
     entry_path(path);
     flist.path(path, move_to_old);
 }

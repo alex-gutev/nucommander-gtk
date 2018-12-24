@@ -52,6 +52,19 @@ namespace nuc {
     task_queue::task_type make_copy_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
 
     /**
+     * Returns the subpaths of the entries which should be visited by
+     * a tree lister.
+     *
+     * If an entry is a directory a trailing slash is appended to the
+     * subpath.
+     *
+     * @param entries Array of the entries which should be visited.
+     *
+     * @return Array of subpaths.
+     */
+    std::vector<paths::pathname> lister_paths(const std::vector<dir_entry*> &entries);
+
+    /**
      * Function which returns the name of the file to which a file
      * should be copied.
      *

@@ -24,6 +24,8 @@
 #include <atomic>
 #include <memory>
 
+#include "paths/pathname.h"
+
 #include "tasks/task_queue.h"
 
 #include "dir_type.h"
@@ -225,7 +227,7 @@ namespace nuc {
          * Signal type, of the signal sent when the directory has been
          * deleted.
          */
-        typedef sigc::signal<void, paths::string> deleted_signal;
+        typedef sigc::signal<void, paths::pathname> deleted_signal;
 
 
         /* Constructor */
@@ -290,7 +292,7 @@ namespace nuc {
          * @param finish The finish callback function to call once the
          *    operation completes.
          */
-        void read(const paths::string &path, finish_fn finish);
+        void read(const paths::pathname &path, finish_fn finish);
 
         /**
          * Attempts to list the contents of the entry @a ent.
@@ -446,7 +448,7 @@ namespace nuc {
          * @param refresh True if the current directory is being
          *   reread, false if a new directory is being read.
          */
-        void add_read_task(const std::string &path, bool refresh, finish_fn finish);
+        void add_read_task(const paths::pathname &path, bool refresh, finish_fn finish);
 
         /**
          * Adds a read task to the task queue.
@@ -474,7 +476,7 @@ namespace nuc {
          *
          * @param refresh True if the directory is being reread.
          */
-        void read_path(cancel_state &state, const std::string &path, bool refresh);
+        void read_path(cancel_state &state, const paths::pathname &path, bool refresh);
 
         /**
          * Reads the directory using the lister and dir_tree objects
@@ -518,7 +520,7 @@ namespace nuc {
          *
          * @param subpath The subpath to read.
          */
-        void add_read_subdir(const paths::string &subpath, finish_fn finish);
+        void add_read_subdir(const paths::pathname &subpath, finish_fn finish);
 
         /**
          * Read subdirectory task.
@@ -531,7 +533,7 @@ namespace nuc {
          * @param state  The cancellation state.
          * @param subdir The subdirectory to read.
          */
-        void read_subdir(cancel_state &state, const paths::string &subdir);
+        void read_subdir(cancel_state &state, const paths::pathname &subdir);
 
         /**
          * Read subdirectory task finish callback.
@@ -539,7 +541,7 @@ namespace nuc {
          * Queues a task on the main thread, which sets the subpath of
          * the directory tree and calls the finish callback.
          */
-        void finish_read_subdir(bool cancelled, const paths::string &subdir, finish_fn finish);
+        void finish_read_subdir(bool cancelled, const paths::pathname &subdir, finish_fn finish);
 
         /**
          * Checks whether the current subdirectory of the directory

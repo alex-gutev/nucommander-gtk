@@ -31,26 +31,26 @@ dir_entry *archive_tree::add_entry(dir_entry ent) {
     return add_components(dir_ent->subpath(), *dir_ent);
 }
 
-bool archive_tree::in_subpath(const paths::string& path) {
-    return paths::is_child_of(m_subpath, path);
+bool archive_tree::in_subpath(const paths::pathname& path) {
+    return path.is_child_of(m_subpath);
 }
 
-dir_entry *archive_tree::add_components(const paths::string &path, dir_entry &ent) {
-    paths::path_components comps(path);
+dir_entry *archive_tree::add_components(const paths::pathname &path, dir_entry &ent) {
+    std::vector<paths::string> comps = path.components();
 
     file_map<dir_entry *> *parent_map = &dirs[""];
-    std::string sub_path;
+    paths::pathname sub_path;
 
     dir_entry *child_ent = nullptr;
     
     for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
         std::string comp = *it;
-        
-        paths::append_component(sub_path, comp);
+
+        sub_path = sub_path.append(comp);
 
         dir_entry *dent;
         
-        if (!it.last()) {
+        if (it != (end - 1)) {
             dent = &make_dir_ent(sub_path);
             
             if (!add_to_map(*parent_map, comp, dent))
@@ -102,7 +102,7 @@ bool archive_tree::add_to_map(file_map<dir_entry *> &map, const paths::string &n
     return true;
 }
 
-dir_entry &archive_tree::make_dir_ent(const paths::string &path) {
+dir_entry &archive_tree::make_dir_ent(const paths::pathname &path) {
     auto range = map.equal_range(path);
     
     for (auto it = range.first; it != range.second; ++it) {
@@ -118,7 +118,7 @@ dir_entry &archive_tree::make_dir_ent(const paths::string &path) {
     return ent;
 }
 
-dir_tree::dir_map const * archive_tree::subpath_dir(const paths::string &path) const {
+dir_tree::dir_map const * archive_tree::subpath_dir(const paths::pathname &path) const {
     auto it = dirs.find(path);
 
     if (it != dirs.end()) {
@@ -133,11 +133,11 @@ bool archive_tree::is_subdir(const dir_entry& ent) const {
 }
 
 dir_entry *archive_tree::get_entry(const paths::string &name) {
-    return dir_tree::get_entry(paths::canonicalized_path(paths::appended_component(m_subpath, name)));
+    return dir_tree::get_entry(m_subpath.append(name).canonicalize());
 }
 
 dir_tree::entry_range archive_tree::get_entries(const paths::string &name) {
-    return dir_tree::get_entries(paths::canonicalized_path(paths::appended_component(m_subpath, name)));
+    return dir_tree::get_entries(m_subpath.append(name).canonicalize());
 }
 
 

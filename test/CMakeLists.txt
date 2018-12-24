@@ -9,7 +9,7 @@ add_definitions(-DBOOST_TEST_DYN_LINK)
 ## Get source files of "paths" component
 
 get_property(NUC_PATHS GLOBAL PROPERTY PATHS_SRCS)
-add_executable(Test path_utils_test.cpp ${NUC_PATHS})
+add_executable(Test path_utils_test.cpp pathname_test.cpp ${NUC_PATHS})
 
 target_link_libraries(Test
                       ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})

@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "types.h"
+#include "paths/pathname.h"
 
 #include "lister/lister.h"
 #include "lister/tree_lister.h"
@@ -55,7 +56,7 @@ namespace nuc {
          *
          * Returns a pointer to a newly created lister object.
          */
-        typedef std::function<lister*(const paths::string &)> create_lister_fn;
+        typedef std::function<lister*(const paths::pathname &)> create_lister_fn;
 
         /**
          * Create tree lister function type.
@@ -67,7 +68,7 @@ namespace nuc {
          *
          * Returns a pointer to a newly created tree_lister object.
          */
-        typedef std::function<tree_lister*(const paths::string &, const std::vector<paths::string> &)> create_tree_lister_fn;
+        typedef std::function<tree_lister*(const paths::pathname &, const std::vector<paths::pathname> &)> create_tree_lister_fn;
 
         /**
          * Create directory tree function type.
@@ -76,18 +77,18 @@ namespace nuc {
          * newly created dir_tree object with the subpath set to the
          * subpath passed as an argument.
          */
-        typedef std::function<dir_tree*(paths::string)> create_tree_fn;
+        typedef std::function<dir_tree*(const paths::pathname &)> create_tree_fn;
 
         /**
          * The path of the actual directory file which is read by the
          * lister.
          */
-        paths::string m_path;
+        paths::pathname m_path;
 
         /**
          * The initial subpath of the directory tree which is created.
          */
-        paths::string m_subpath;
+        paths::pathname m_subpath;
 
         /**
          * Create lister function.
@@ -119,7 +120,7 @@ namespace nuc {
          *
          * @return The canonicalized path.
          */
-        static paths::string canonicalize(const paths::string &path);
+        static paths::pathname canonicalize(const paths::pathname &path);
 
         /**
          * Canonicalizes the case of a path.
@@ -136,7 +137,7 @@ namespace nuc {
          *    which can be read, the second value is the remainder of
          *    the path, which has not been case-canonicalized.
          */
-        static std::pair<paths::string, paths::string> canonicalize_case(const paths::string &path);
+        static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths::pathname &path);
 
         /**
          * Searches the directory, at @a dir, for an entry with a name
@@ -188,7 +189,7 @@ namespace nuc {
          * @param is_dir             True if directory is a regular directory.
          * @param subpath            Initial subpath of tree.
          */
-        dir_type(paths::string path, create_lister_fn create_lister, create_tree_lister_fn tree_lister, create_tree_fn create_tree, bool is_dir, paths::string subpath)
+        dir_type(paths::pathname path, create_lister_fn create_lister, create_tree_lister_fn tree_lister, create_tree_fn create_tree, bool is_dir, paths::pathname subpath)
             : m_path(std::move(path)), m_subpath(std::move(subpath)),
               m_create_lister(create_lister), m_create_tree_lister(tree_lister),
               m_create_tree(create_tree), m_is_dir(is_dir) {}
@@ -212,7 +213,7 @@ namespace nuc {
          *
          * @return Pointer to a newly created tree_lister object.
          */
-        tree_lister * create_tree_lister(const std::vector<paths::string> &subpaths) const {
+        tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
             return m_create_tree_lister(m_path, subpaths);
         }
 
@@ -246,14 +247,14 @@ namespace nuc {
         /**
          * @return The path to the directory file.
          */
-        const paths::string & path() const {
+        const paths::pathname & path() const {
             return m_path;
         }
 
         /**
          * @return The initial subpath of the directory tree.
          */
-        const paths::string & subpath() const {
+        const paths::pathname & subpath() const {
             return m_subpath;
         }
 
@@ -263,8 +264,8 @@ namespace nuc {
          *
          * @param subpath The subpath
          */
-        void subpath(const paths::string subpath) {
-            m_subpath = subpath;
+        void subpath(paths::pathname subpath) {
+            m_subpath = std::move(subpath);
         }
 
 
@@ -275,8 +276,8 @@ namespace nuc {
          *
          * @return The logical path.
          */
-        paths::string logical_path() const {
-            return m_subpath.empty() ? m_path : paths::appended_component(m_path, m_subpath);
+        paths::pathname logical_path() const {
+            return m_subpath.empty() ? m_path : m_path.append(m_subpath);
         }
 
         /* Determining the type of a directory */
@@ -290,7 +291,7 @@ namespace nuc {
          *
          * @param path Path to the directory.
          */
-        static dir_type get(const paths::string &path);
+        static dir_type get(const paths::pathname &path);
 
         /**
          * Determines the directory type of the entry @a ent within
@@ -301,7 +302,7 @@ namespace nuc {
          * @param path Path to the directory containing the entry.
          * @param ent  The entry within the directory @a path.
          */
-        static dir_type get(paths::string path, const dir_entry &ent);
+        static dir_type get(const paths::pathname &path, const dir_entry &ent);
 
         /**
          * Returns a directory writer object for creating files in the
@@ -311,7 +312,7 @@ namespace nuc {
          *
          * @return The directory writer object.
          */
-        static dir_writer *get_writer(paths::string path);
+        static dir_writer *get_writer(const paths::pathname &path);
 
         /**
          * Virtual file system type.

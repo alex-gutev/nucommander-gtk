@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "paths/pathname.h"
+
 #include "file_model_columns.h"
 #include "directory/vfs.h"
 
@@ -53,7 +55,7 @@ namespace nuc {
          *
          * @param path The new path.
          */
-        typedef sigc::signal<void, const paths::string &> signal_path_type;
+        typedef sigc::signal<void, const paths::pathname &> signal_path_type;
 
         /**
          * Marked entries set type.
@@ -76,7 +78,7 @@ namespace nuc {
         /**
          * The current path.
          */
-        std::string cur_path;
+        paths::pathname cur_path;
 
         /**
          * Path changed signal.
@@ -232,7 +234,7 @@ namespace nuc {
          * root directory, an attempt is made to read its parent
          * directory.
          */
-        void vfs_finish_move_up(paths::string new_path, bool cancelled, int error, bool refresh);
+        void vfs_finish_move_up(paths::pathname new_path, bool cancelled, int error, bool refresh);
 
         /**
          * Directory changed callback.
@@ -247,7 +249,7 @@ namespace nuc {
         /**
          * Directory deleted signal handler.
          */
-        void vfs_dir_deleted(paths::string new_path);
+        void vfs_dir_deleted(paths::pathname new_path);
 
         
         /* Reading new directories */
@@ -260,7 +262,7 @@ namespace nuc {
          *
          * @return The expanded path.
          */
-        paths::string expand_path(paths::string path);
+        paths::pathname expand_path(const paths::pathname &path);
 
         /**
          * Records the current selected row in selected_row, sets the
@@ -296,7 +298,7 @@ namespace nuc {
          * @param path The path of the directory whose parent
          *    directory to read.
          */
-        void read_parent_dir(paths::string path);
+        void read_parent_dir(paths::pathname path);
         
 
         /* Resetting/Setting the treeview model */
@@ -329,7 +331,7 @@ namespace nuc {
          *
          * @param new_path The path of the directory being read.
          */
-        void add_parent_entry(const paths::string &new_path);
+        void add_parent_entry(const paths::pathname &new_path);
         
         /**
          * Sets the tree view's model to the new list, sets the
@@ -486,20 +488,6 @@ namespace nuc {
          */
         void load_icon(Gtk::TreeRow row);
 
-        /** Copy Task */
-
-        /**
-         * Returns the absolute destination path for a copy operation.
-         *
-         * If @a dest is an absolute path it is returned as is. If @a
-         * dest is a relative path it is appended to the current path.
-         *
-         * @param dest The destination path.
-         *
-         * @return The absolute destination path.
-         */
-        paths::string copy_task_dest_path(const paths::string &dest) const;
-
     public:
 
         /**
@@ -525,14 +513,14 @@ namespace nuc {
          * path displayed and begins a background read operation for
          * the new path.
          */
-        void path(const std::string &path, bool move_to_old = false);
+        void path(const paths::pathname &path, bool move_to_old = false);
 
         /**
          * Returns the current path.
          *
          * @return The current path.
          */
-        const std::string &path() const {
+        const paths::pathname &path() const {
             return cur_path;
         }
 
@@ -600,7 +588,7 @@ namespace nuc {
          *
          * @return The task.
          */
-        task_queue::task_type make_copy_task(const paths::string &dest);
+        task_queue::task_type make_copy_task(const paths::pathname &dest);
 
         /**
          * Asynchronous cleanup method.

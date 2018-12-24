@@ -43,13 +43,23 @@
 /**
  * Creates a dir_lister object.
  *
+ * @param path Path to the directory
+ *
  * @return The dir_lister object.
  */
-static nuc::lister * make_dir_lister(const nuc::paths::string &path) {
+static nuc::lister * make_dir_lister(const nuc::paths::pathname &path) {
     return new nuc::dir_lister(path);
 }
 
-static nuc::tree_lister * make_dir_tree_lister(const nuc::paths::string &dir, const std::vector<nuc::paths::string> &subpaths) {
+/**
+ * Creates a dir_tree_lister object.
+ *
+ * @param path Path to the directory.
+ * @param subpaths Subpaths, within the directory, to list.
+ *
+ * @return The tree_lister object.
+ */
+static nuc::tree_lister * make_dir_tree_lister(const nuc::paths::pathname &dir, const std::vector<nuc::paths::pathname> &subpaths) {
     return new nuc::dir_tree_lister(dir, subpaths);
 }
 
@@ -58,15 +68,25 @@ static nuc::tree_lister * make_dir_tree_lister(const nuc::paths::string &dir, co
  * plugin @a plugin.
  *
  * @param plugin The archive plugin.
+ * @param path Path to the archive.
  *
  * @return The archive_lister object.
  */
-static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin, const nuc::paths::string &path) {
+static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin, const nuc::paths::pathname &path) {
     plugin->load();
     return new nuc::archive_lister(plugin, path);
 }
 
-static nuc::tree_lister * make_archive_tree_lister(nuc::archive_plugin *plugin, const nuc::paths::string &base, const std::vector<nuc::paths::string> &subpaths) {
+/**
+ * Creates an archive_tree_lister object.
+ *
+ * @param path Path to the archive.
+ * @param base Subpath within the archive.
+ * @param subpaths Subpaths, within the @a base directory , to list.
+ *
+ * @return The tree_lister object.
+ */
+static nuc::tree_lister * make_archive_tree_lister(nuc::archive_plugin *plugin, const nuc::paths::pathname &base, const std::vector<nuc::paths::pathname> &subpaths) {
     return new nuc::archive_tree_lister(plugin, base, subpaths);
 }
 
@@ -78,7 +98,7 @@ static nuc::tree_lister * make_archive_tree_lister(nuc::archive_plugin *plugin, 
  *
  * @return The dir_tree object.
  */
-static nuc::dir_tree * make_dir_tree(nuc::paths::string subpath) {
+static nuc::dir_tree * make_dir_tree(const nuc::paths::pathname &subpath) {
     return new nuc::dir_tree();
 }
 
@@ -90,15 +110,15 @@ static nuc::dir_tree * make_dir_tree(nuc::paths::string subpath) {
  *
  * @return The archive_tree object.
  */
-static nuc::dir_tree * make_archive_tree(nuc::paths::string subpath) {
-    return new nuc::archive_tree(subpath);
+static nuc::dir_tree * make_archive_tree(nuc::paths::pathname subpath) {
+    return new nuc::archive_tree(std::move(subpath));
 }
 
 
 /// Private methods
 
-nuc::paths::string nuc::dir_type::canonicalize(const paths::string &path) {
-    return paths::canonicalized_path(paths::expand_tilde(path));
+nuc::paths::pathname nuc::dir_type::canonicalize(const paths::pathname &path) {
+    return path.expand_tilde().canonicalize();
 }
 
 nuc::paths::string nuc::dir_type::find_match_comp(const paths::string &dir, const paths::string &comp) {
@@ -127,9 +147,9 @@ nuc::paths::string nuc::dir_type::find_match_comp(const paths::string &dir, cons
     }
 }
 
-std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::canonicalize_case(const paths::string &path) {
-    paths::string cpath;
-    paths::path_components comps(path);
+std::pair<nuc::paths::pathname, nuc::paths::pathname> nuc::dir_type::canonicalize_case(const paths::pathname &path) {
+    paths::pathname cpath;
+    auto comps(path.components());
 
     for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
         const paths::string &comp = *it;
@@ -138,10 +158,10 @@ std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::canonicalize_ca
 
         // Directory could not be read
         if (can_comp.empty()) {
-            return std::make_pair(cpath, path.substr(it.position()));
+            return std::make_pair(cpath, paths::pathname::from_components(std::vector<paths::string>(it, end), path.is_dir()));
         }
 
-        paths::append_component(cpath, can_comp);
+        cpath = cpath.append(can_comp);
     }
 
     return std::make_pair(cpath, "");
@@ -177,11 +197,10 @@ bool nuc::dir_type::is_reg_dir(const paths::string &path) {
 
 // Getting a dir_type object
 
-nuc::dir_type nuc::dir_type::get(const paths::string &path) {
+nuc::dir_type nuc::dir_type::get(const paths::pathname &path) {
     using namespace std::placeholders;
 
-    paths::string cpath = canonicalize(path);
-    auto pair = canonicalize_case(cpath);
+    auto pair = canonicalize_case(canonicalize(path));
 
     if (!pair.second.empty() || !is_reg_dir(pair.first)) {
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
@@ -195,7 +214,7 @@ nuc::dir_type nuc::dir_type::get(const paths::string &path) {
     }
 
     if (!pair.second.empty())
-        paths::append_component(pair.first, pair.second);
+        pair.first = pair.first.append(pair.second);
 
     return dir_type(std::move(pair.first),
                     make_dir_lister,
@@ -205,21 +224,19 @@ nuc::dir_type nuc::dir_type::get(const paths::string &path) {
                     "");
 }
 
-nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
+nuc::dir_type nuc::dir_type::get(const paths::pathname &path, const dir_entry& ent) {
     using namespace std::placeholders;
 
     switch (ent.type()) {
     case dir_entry::type_dir:
-        paths::append_component(path, ent.file_name());
-        return dir_type(path,
+        return dir_type(path.append(ent.file_name()),
                         make_dir_lister,
                         make_dir_tree_lister,
                         make_dir_tree, true, "");
 
     case dir_entry::type_reg:
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
-            paths::append_component(path, ent.file_name());
-            return dir_type(path,
+            return dir_type(path.append(ent.file_name()),
                             std::bind(make_archive_lister, plugin, _1),
                             std::bind(make_archive_tree_lister, plugin, _1, _2),
                             make_archive_tree,
@@ -235,14 +252,14 @@ nuc::dir_type nuc::dir_type::get(paths::string path, const dir_entry& ent) {
 
 // Getting a directory writer object
 
-nuc::dir_writer * nuc::dir_type::get_writer(paths::string path) {
-    paths::string cpath = paths::expand_tilde(path);
+nuc::dir_writer * nuc::dir_type::get_writer(const paths::pathname &path) {
+    paths::pathname cpath = path.expand_tilde();
     std::pair<paths::string, paths::string> parts = find_dir(cpath);
 
     if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(parts.first))
         return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
 
-    return new reg_dir_writer(path.c_str());
+    return new reg_dir_writer(cpath.path().c_str());
 }
 
 

@@ -56,7 +56,7 @@ namespace nuc {
      * @param lister Source directory tree lister.
      * @param dest Destination directory writer.
      */
-	void move(cancel_state &state, const std::vector<paths::string> &paths, const paths::string &dest, dir_writer &dir);
+	void move(cancel_state &state, const std::vector<paths::pathname> &paths, const paths::string &dest, dir_writer &dir);
 }
 
 #endif

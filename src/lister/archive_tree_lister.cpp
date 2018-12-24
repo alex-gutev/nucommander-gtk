@@ -22,7 +22,7 @@
 
 using namespace nuc;
 
-archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const paths::string &base, const std::vector<paths::string> &paths)
+archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const paths::pathname &base, const std::vector<paths::pathname> &paths)
     : visit_paths(paths.begin(), paths.end()), listr(plugin, base) {}
 
 
@@ -33,13 +33,16 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     add_list_callback(fn);
 
     while (listr.read_entry(ent)) {
-        paths::string ent_path = paths::canonicalized_path(ent.name);
+        paths::pathname ent_path = paths::pathname(ent.name).canonicalize();
 
         if (ent.type == DT_DIR)
-            ent_path.push_back('/');
+            ent_path = paths::pathname(ent_path, true);
 
-        if (should_visit(ent_path, ent)) {
+        size_t offset = path_offset(ent_path);
+        if (offset != paths::string::npos) {
             bool got_stat = listr.entry_stat(st);
+
+            ent.name = ent_path.path().c_str() + offset;
 
             if (ent.type == DT_DIR) {
                 if (!got_stat) {
@@ -58,7 +61,7 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     }
 
     for (auto it = visited_dirs.rbegin(), end = visited_dirs.rend(); it != end; ++it) {
-        ent.name = it->first.c_str();
+        ent.name = it->first.path().c_str();
         ent.type = DT_DIR;
 
         if (it->second.second)
@@ -66,63 +69,50 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     }
 }
 
-bool archive_tree_lister::should_visit(const paths::string &path, lister::entry &ent) {
-    auto it = visit_paths.lower_bound(path);
+size_t archive_tree_lister::path_offset(const paths::pathname &path) {
+    size_t offset = paths::pathname::subpath_offset(visit_paths, path);
 
-    if (visit_paths.begin() != visit_paths.end()) {
-        if (it == visit_paths.end() || *it != path)
-            --it;
-
-        if (*it == path || paths::is_subpath(*it, path)) {
-            size_t offset = it->rfind('/', it->size() - 2);
-            offset = offset == paths::string::npos ? 0 : offset + 1;
-
-            ent.name = path.c_str() + offset;
-
-            return add_visited_dirs(offset, path);
-        }
+    if (offset != paths::string::npos) {
+        return add_visited_dirs(offset, path) ? offset : paths::string::npos;
     }
 
-    return false;
+    return paths::string::npos;
 }
 
-bool archive_tree_lister::add_visited_dirs(size_t base_offset, const paths::string &path) {
+bool archive_tree_lister::add_visited_dirs(size_t base_offset, const paths::pathname &path) {
     struct stat st = {};
     st.st_mode = S_IFDIR | S_IRWXU;
 
-    paths::string subpath = path.substr(base_offset);
-    paths::path_components comps(subpath);
+    paths::pathname subpath = path.path().substr(base_offset);
+    std::vector<paths::string> comps = subpath.components();
 
-    paths::string dir_path;
+    paths::pathname dir_path;
 
-    for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
-        if (!it.last()) {
-            paths::append_component(dir_path, *it);
-            dir_path += '/';
+    for (auto it = comps.begin(), end = comps.end()-1; it != end; ++it) {
+        dir_path = paths::pathname(dir_path.append(*it), true);
 
-            auto visited_it = visited_dirs.find(dir_path);
+        auto visited_it = visited_dirs.find(dir_path);
 
-            if (visited_it == visited_dirs.end()) {
-                auto it = visited_dirs.emplace(std::make_pair(dir_path, std::make_pair(st, true)));
+        if (visited_it == visited_dirs.end()) {
+            auto it = visited_dirs.emplace(std::make_pair(dir_path, std::make_pair(st, true)));
 
-                lister::entry ent;
-                ent.name = dir_path.c_str();
-                ent.type = DT_DIR;
+            lister::entry ent;
+            ent.name = dir_path.path().c_str();
+            ent.type = DT_DIR;
 
-                if (!list_fn(ent, nullptr, visit_preorder)) {
-                    it.first->second.second = false;
-                    return false;
-                }
-            }
-            else if (!visited_it->second.second)
+            if (!list_fn(ent, nullptr, visit_preorder)) {
+                it.first->second.second = false;
                 return false;
+            }
         }
+        else if (!visited_it->second.second)
+            return false;
     }
 
     return true;
 }
 
-bool archive_tree_lister::add_dir_stat(const paths::string &name, const struct stat *st) {
+bool archive_tree_lister::add_dir_stat(const paths::pathname &name, const struct stat *st) {
     auto dir_it = visited_dirs.find(name);
 
     if (dir_it != visited_dirs.end()) {

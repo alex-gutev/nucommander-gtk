@@ -26,6 +26,8 @@
 #include "tree_lister.h"
 #include "archive_lister.h"
 
+#include "paths/pathname.h"
+
 namespace nuc {
     /**
      * Archive tree lister.
@@ -36,11 +38,11 @@ namespace nuc {
         /**
          * Set of subpaths to visit (base paths).
          */
-        std::set<paths::string> visit_paths;
+        std::set<paths::pathname> visit_paths;
         /**
          * Attributes of the visited directories.
          */
-        std::map<paths::string, std::pair<struct stat, bool>> visited_dirs;
+        std::map<paths::pathname, std::pair<struct stat, bool>> visited_dirs;
 
         /**
          * Archive lister for reading the archive.
@@ -57,13 +59,13 @@ namespace nuc {
          *
          * @param path Subpath of the entry.
          *
-         * @param ent Reference to a lister::entry structure. The
-         *    subpath of the entry following the base path is stored
-         *    in the name field of the structure.
-         *
-         * @return True if the entry should be visited.
+         * @return The offset within, @a path, of the base component
+         *   (of the paths in visit_paths of which @a path is a
+         *   subpath), if the path should be
+         *   visited. paths::string::npos if the path should not be
+         *   visisted.
          */
-        bool should_visit(const paths::string &path, lister::entry &ent);
+        size_t path_offset(const paths::pathname &path);
 
         /**
          * Adds the intermediate directory components of @a path to
@@ -77,7 +79,7 @@ namespace nuc {
          *
          * @param path Subpath of the entry being visited.
          */
-        bool add_visited_dirs(size_t base_offset, const paths::string &path);
+        bool add_visited_dirs(size_t base_offset, const paths::pathname &path);
 
         /**
          * Adds the stat attributes of a directory to the visited_dirs
@@ -89,7 +91,7 @@ namespace nuc {
          * @return True if the directory has not yet been visited, false
          *   if it has been visited.
          */
-        bool add_dir_stat(const paths::string &name, const struct stat *st);
+        bool add_dir_stat(const paths::pathname &name, const struct stat *st);
 
     public:
 
@@ -105,7 +107,7 @@ namespace nuc {
          *    canonicalized and paths to directories should have a
          *    trailing slash '/'.
          */
-        archive_tree_lister(archive_plugin *plugin, const paths::string &archive, const std::vector<paths::string> &paths);
+        archive_tree_lister(archive_plugin *plugin, const paths::pathname &archive, const std::vector<paths::pathname> &paths);
 
 
         /* Method Overrides */

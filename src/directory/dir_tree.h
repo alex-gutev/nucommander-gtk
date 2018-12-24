@@ -109,7 +109,7 @@ namespace nuc {
          *
          * @return The current subdirectory.
          */
-        virtual paths::string subpath() const {
+        virtual paths::pathname subpath() const {
             // The empty string cannot be a valid directory name.
             return "";
         }
@@ -120,7 +120,7 @@ namespace nuc {
          *
          * @param path The new subpath.
          */
-        virtual void subpath(paths::string path) {}
+        virtual void subpath(paths::pathname path) {}
 
         /**
          * Returns the contents of a subdirectory, if it exists.
@@ -132,7 +132,7 @@ namespace nuc {
          *    returned, otherwise nullptr is returned, if there is no
          *    such subdirectory.
          */
-        virtual dir_map const * subpath_dir(const paths::string &path) const {
+        virtual dir_map const * subpath_dir(const paths::pathname &path) const {
             return nullptr;
         }
 

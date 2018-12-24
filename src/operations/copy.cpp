@@ -42,7 +42,7 @@ using namespace nuc;
  *
  * @param dest Destination path entered by the user.
  */
-static void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string dest);
+static void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string dest);
 
 /**
  * Replaces the initial components of @a subpath with other
@@ -88,20 +88,21 @@ static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::funct
 nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vector<dir_entry *> &entries, const paths::string &dest) {
     using namespace std::placeholders;
 
-    std::vector<paths::string> paths;
-
-    for (dir_entry *ent : entries) {
-        paths.push_back(ent->subpath());
-
-        if (ent->type() == dir_entry::type_dir)
-            paths.back() += '/';
-    }
-
-
-    return std::bind(copy_task_fn, _1, src_type, paths, dest);
+    return std::bind(copy_task_fn, _1, src_type, lister_paths(entries), dest);
 }
 
-void copy_task_fn(cancel_state &state, const dir_type &src_type,  const std::vector<paths::string> &paths, const paths::string dest) {
+std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &entries) {
+    std::vector<paths::pathname> paths;
+
+    for (dir_entry *ent : entries) {
+        paths.push_back(paths::pathname(ent->subpath(), ent->type() == dir_entry::type_dir));
+    }
+
+    return paths;
+}
+
+
+void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string dest) {
     using namespace std::placeholders;
 
     // Destination directory to copy files to. Only used if a single

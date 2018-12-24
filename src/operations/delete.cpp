@@ -23,6 +23,8 @@
 
 #include "errors/restarts.h"
 
+#include "copy.h"
+
 /**
  * Delete task function.
  *
@@ -36,18 +38,9 @@
 static void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc::dir_writer &writer);
 
 nuc::task_queue::task_type nuc::make_delete_task(dir_type src_type, const std::vector<dir_entry*> &entries) {
-    std::vector<paths::string> paths;
-
-    for (dir_entry *ent : entries) {
-        paths.push_back(ent->subpath());
-
-        if (ent->type() == dir_entry::type_dir)
-            paths.back() += '/';
-    }
-
     return [=] (cancel_state &state) {
         try {
-            std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
+            std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(lister_paths(entries)));
             std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.logical_path()));
 
             delete_task(state, *lister, *writer);

@@ -31,6 +31,8 @@
 
 #include <unordered_map>
 
+#include "paths/pathname.h"
+
 #include "file_list_controller.h"
 
 namespace nuc {
@@ -135,7 +137,7 @@ namespace nuc {
          * Signal handler for the file list controller's path changed
          * signal.
          */
-        void on_path_changed(const std::string &path);
+        void on_path_changed(const paths::pathname &path);
 
         
     public:
@@ -161,7 +163,7 @@ namespace nuc {
         /**
          * Returns the path to the file view's current directory.
          */
-        const paths::string path() const {
+        const paths::pathname &path() const {
             return flist.path();
         }
 
@@ -170,7 +172,7 @@ namespace nuc {
          * path displayed and begins a background read operation for
          * the new path.
          */
-        void path(const std::string &path, bool move_to_old = false);
+        void path(const paths::pathname &path, bool move_to_old = false);
 
 
         /* Copy Tasks */
@@ -183,7 +185,7 @@ namespace nuc {
          *
          * @return The copy task.
          */
-        task_queue::task_type make_copy_task(const paths::string &dest) {
+        task_queue::task_type make_copy_task(const paths::pathname &dest) {
             return flist.make_copy_task(dest);
         }
 

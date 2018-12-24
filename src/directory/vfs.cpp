@@ -84,13 +84,13 @@ void vfs::finalize() {
 }
 
 
-void vfs::read(const paths::string& path, finish_fn finish) {
+void vfs::read(const paths::pathname& path, finish_fn finish) {
     cancel_update();
 
     add_read_task(path, false, finish);
 }
 
-void vfs::add_read_task(const std::string &path, bool refresh, finish_fn finish) {
+void vfs::add_read_task(const paths::pathname &path, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
 
     queue_task(std::bind(&vfs::read_path, _1, _2, path, refresh),
@@ -132,14 +132,14 @@ bool vfs::descend(const dir_entry &ent, finish_fn finish) {
 
 bool vfs::ascend(finish_fn finish) {
     if (!cur_tree->at_basedir()) {
-        add_read_subdir(paths::removed_last_component(cur_tree->subpath()), finish);
+        add_read_subdir(cur_tree->subpath().remove_last_component(), finish);
         return true;
     }
 
     return false;
 }
 
-void vfs::add_read_subdir(const paths::string &subpath, finish_fn finish) {
+void vfs::add_read_subdir(const paths::pathname &subpath, finish_fn finish) {
     using namespace std::placeholders;
 
     monitor.pause();
@@ -148,7 +148,7 @@ void vfs::add_read_subdir(const paths::string &subpath, finish_fn finish) {
                std::bind(&vfs::finish_read_subdir, _1, _2, subpath, finish));
 }
 
-void vfs::read_subdir(cancel_state &state, const paths::string &subpath) {
+void vfs::read_subdir(cancel_state &state, const paths::pathname &subpath) {
     call_begin(state, false);
 
     if (const dir_tree::dir_map *dir = cur_tree->subpath_dir(subpath)) {
@@ -167,7 +167,7 @@ void vfs::read_subdir(cancel_state &state, const paths::string &subpath) {
     }
 }
 
-void vfs::finish_read_subdir(bool cancelled, const paths::string &subpath, finish_fn finish) {
+void vfs::finish_read_subdir(bool cancelled, const paths::pathname &subpath, finish_fn finish) {
     queue->pause();
 
     queue_main([=] (vfs *self) {
@@ -187,19 +187,19 @@ void vfs::finish_read_subdir(bool cancelled, const paths::string &subpath, finis
 
 void vfs::refresh_subdir() {
     if (!cur_tree->at_basedir() && !cur_tree->subpath_dir(cur_tree->subpath())) {
-        paths::string subpath = cur_tree->subpath();
+        paths::pathname subpath = cur_tree->subpath();
 
-        cur_tree->subpath(paths::removed_last_component(cur_tree->subpath()));
+        cur_tree->subpath(subpath.remove_last_component());
 
         // While the subpath is not at the base directory and the
         // subdirectory does not exist
         while (!cur_tree->at_basedir() && !cur_tree->subpath_dir(cur_tree->subpath())) {
-            cur_tree->subpath(paths::removed_last_component(cur_tree->subpath()));
-            paths::remove_last_component(subpath);
+            cur_tree->subpath(cur_tree->subpath().remove_last_component());
+            subpath = subpath.remove_last_component();
         }
 
         cur_tree->subpath(subpath);
-        sig_deleted.emit(paths::appended_component(cur_type.path(), subpath));
+        sig_deleted.emit(cur_type.path().append(subpath));
     }
 }
 
@@ -254,7 +254,7 @@ void vfs::commit_read() {
 
 /// Read task
 
-void vfs::read_path(cancel_state &state, const std::string &path, bool refresh) {
+void vfs::read_path(cancel_state &state, const paths::pathname &path, bool refresh) {
     list_dir(state, dir_type::get(path), refresh);
 }
 
@@ -424,7 +424,7 @@ void vfs::file_created(cancel_state &state, const paths::string &path) {
 
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
-            const paths::string name(paths::file_name(path));
+            const paths::string name(paths::pathname(path).basename());
 
             remove_entry(name);
             new_tree->add_entry(dir_entry(name, st));
@@ -440,7 +440,7 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
 
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
-            const paths::string name(paths::file_name(path));
+            const paths::string name(paths::pathname(path).basename());
 
             dir_entry *ent = new_tree->get_entry(name);
 
@@ -456,15 +456,15 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
 
 void vfs::file_deleted(cancel_state &state, const paths::string &path) {
     state.no_cancel([=] {
-        remove_entry(paths::file_name(path));
+        remove_entry(paths::pathname(path).basename());
     });
 }
 
 void vfs::file_renamed(cancel_state &state, const paths::string &src, const paths::string &dest) {
     bool exists = false;
 
-    paths::string src_name = paths::file_name(src);
-    paths::string dest_name = paths::file_name(dest);
+    paths::string src_name = paths::pathname(src).basename();
+    paths::string dest_name = paths::pathname(dest).basename();
 
     state.no_cancel([&] {
         dir_entry *ent = new_tree->get_entry(src_name);
@@ -529,13 +529,10 @@ void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool r
 /// Create tree lister
 
 tree_lister * vfs::get_tree_lister(std::vector<dir_entry *> entries) {
-    std::vector<paths::string> paths;
+    std::vector<paths::pathname> paths;
 
     for (dir_entry *ent : entries) {
-        paths.push_back(ent->subpath());
-
-        if (ent->type() == dir_entry::type_dir)
-            paths.back() += '/';
+        paths.push_back(paths::pathname(ent->subpath(), ent->type() == dir_entry::type_dir));
     }
 
     return cur_type.create_tree_lister(paths);

@@ -22,6 +22,8 @@
 
 #include "tree_lister.h"
 
+#include "paths/pathname.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fts.h>
@@ -64,17 +66,15 @@ namespace nuc {
         static bool stat_err(FTSENT *ent);
 
         /**
-         * If the entry visited is a directory, appends the entry (as
-         * a component) to the path @a dir.
+         * Returns the new current directory.
          *
          * @param ent The FTS entry.
-         *
          * @param name The name of the entry.
+         * @param dir The current directory.
          *
-         * @param dir Reference to the path to the current directory,
-         *    to be updated.
+         * @return The new current directory.
          */
-        static void set_dir(FTSENT *ent, const paths::string &name, paths::string &dir);
+        static paths::pathname set_dir(FTSENT *ent, const paths::string &name, paths::pathname dir);
 
         /**
          * Returns the visit info for the entry @a ent. If the entry
@@ -96,7 +96,7 @@ namespace nuc {
          * @param paths Array of names of sub-directories/files which
          *    are to be listed.
          */
-        dir_tree_lister(const paths::string &base, const std::vector<paths::string> &paths);
+        dir_tree_lister(const paths::pathname &base, const std::vector<paths::pathname> &paths);
 
         virtual ~dir_tree_lister();
 

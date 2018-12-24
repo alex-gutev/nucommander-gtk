@@ -52,7 +52,7 @@ struct begin_copy_exception {};
  *
  * @param dest Path to the destination directory.
  */
-static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest);
+static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string &dest);
 
 /**
  * Copies the files in @a paths to the destination directory @a dest.
@@ -67,17 +67,10 @@ static void move_or_copy(cancel_state &state, const dir_type &src_type, const st
  *
  * @param dest Path to the destination directory.
  */
-static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest);
+static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string &dest);
 
 task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest) {
-    std::vector<paths::string> paths;
-
-    for (dir_entry *ent : entries) {
-        paths.push_back(ent->subpath());
-
-        if (ent->type() == dir_entry::type_dir)
-            paths.back() += '/';
-    }
+    std::vector<paths::pathname> paths = lister_paths(entries);
 
     return [=] (cancel_state &state) {
         try {
@@ -89,7 +82,7 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
     };
 }
 
-static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
+static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string &dest) {
     // Check that the source and destination directories are on the
     // same file system.
     if (auto fs_type = dir_type::on_same_fs(src_type.path(), dest)) {
@@ -115,7 +108,7 @@ static void move_or_copy(cancel_state &state, const dir_type &src_type, const st
     }
 }
 
-void nuc::move(cancel_state &state, const std::vector<paths::string> &items, const paths::string &dest, dir_writer &dir) {
+void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, const paths::string &dest, dir_writer &dir) {
     for (const paths::string &item : items) {
         global_restart skip(skip_exception::restart);
 
@@ -128,7 +121,7 @@ void nuc::move(cancel_state &state, const std::vector<paths::string> &items, con
     }
 }
 
-static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::string> &paths, const paths::string &dest) {
+static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string &dest) {
     std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
     std::unique_ptr<dir_writer> dest_writer{dir_type::get_writer(dest)};
 
