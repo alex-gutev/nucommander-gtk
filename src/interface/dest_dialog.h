@@ -85,6 +85,11 @@ namespace nuc {
         void cancel_clicked();;
 
         /**
+         * Called just after the dialog is shown.
+         */
+        void on_show() override;
+
+        /**
          * Signal handler for the "deleted" signal. Called when the
          * user closes the dialog.
          *
@@ -126,9 +131,25 @@ namespace nuc {
          *
          * @param label The label text.
          */
-        void set_dest_entry_text(Glib::ustring label) {
+        void dest_path(Glib::ustring label) {
             dest_entry->set_text(std::move(label));
         }
+
+        /**
+         * Returns the contents of the destination path text entry.
+         *
+         * @return The destination path.
+         */
+        Glib::ustring dest_path() const {
+            return dest_entry->get_text();
+        }
+
+        /**
+         * Displays the dialog and blocks until it is closed.
+         *
+         * @return The response code.
+         */
+        int run();
 
         /**
          * Shows the dialog.

@@ -35,6 +35,22 @@
 using namespace nuc;
 
 /**
+ * Expands relative destination paths to absolute paths relative to @a
+ * path.
+ *
+ * If @a dest is a relative path it is expanded relative to @a path,
+ * otherwise it is returned.
+ *
+ * @param The absolute path, relative to which, relative paths are
+ *   expanded.
+ *
+ * @param The destination path.
+ *
+ * @return The absolute relative destination path.
+ */
+static paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathname &dest);
+
+/**
  * Copy command function.
  *
  * Queries the user for a destination directory, via the destination
@@ -125,22 +141,30 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
 };
 
 
+paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathname &dest) {
+    return paths::pathname(path, true).merge(dest);
+}
+
 /// Builtin Command Implementations
 
 void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        paths::string dest = src->next_file_view->path();
+        auto entries = src->file_list().selected_entries();
 
-        dest_dialog *dialog = window->dest_dialog();
+        if (!entries.empty()) {
+            dest_dialog *dialog = window->dest_dialog();
 
-        dialog->set_query_label("Copy to:");
-        dialog->set_dest_entry_text(dest);
-        dialog->set_exec_button_label("Copy");
+            dialog->set_query_label("Copy to:");
+            dialog->dest_path(src->next_file_view->path().path());
+            dialog->set_exec_button_label("Copy");
 
-        window->dest_dialog()->show([=] (const Glib::ustring &path) {
-            if (auto task = src->make_copy_task(paths::merge_paths(paths::ensure_trail_slash(src->path()), path)))
-                window->add_operation(task);
-        });
+            if (dialog->run() == Gtk::RESPONSE_OK) {
+                window->add_operation(
+                    make_copy_task(src->file_list().dir_vfs()->directory_type(),
+                                   entries,
+                                   expand_dest_path(src->path(), dialog->dest_path())));
+            }
+        }
     }
 }
 
@@ -153,12 +177,12 @@ void make_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
         dest_dialog *dialog = window->dest_dialog();
 
         dialog->set_query_label("Directory Name:");
-        dialog->set_dest_entry_text("");
+        dialog->dest_path("");
         dialog->set_exec_button_label("Create Directory");
 
-        window->dest_dialog()->show([=] (const Glib::ustring &name) {
-            window->add_operation(std::bind(make_dir_task, _1, dest, name));
-        });
+        if (dialog->run() == Gtk::RESPONSE_OK) {
+            window->add_operation(std::bind(make_dir_task, _1, dest, dialog->dest_path()));
+        }
     }
 }
 
@@ -171,21 +195,22 @@ void make_dir_task(cancel_state &state, const paths::string &dest, const paths::
 
 void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        paths::string dest = src->next_file_view->path();
+        auto entries = src->file_list().selected_entries();
 
-        dest_dialog *dialog = window->dest_dialog();
+        if (!entries.empty()) {
+            dest_dialog *dialog = window->dest_dialog();
 
-        dialog->set_query_label("Move/Rename to:");
-        dialog->set_dest_entry_text(dest);
-        dialog->set_exec_button_label("Move");
+            dialog->set_query_label("Move/Rename to:");
+            dialog->dest_path(src->next_file_view->path().path());
+            dialog->set_exec_button_label("Move");
 
-        window->dest_dialog()->show([=] (const Glib::ustring &path) {
-            auto entries = src->file_list().selected_entries();
-
-            if (!entries.empty()) {
-                window->add_operation(make_move_task(src->file_list().dir_vfs()->directory_type(), entries, path));
+            if (dialog->run() == Gtk::RESPONSE_OK) {
+                window->add_operation(
+                    make_move_task(src->file_list().dir_vfs()->directory_type(),
+                                   entries,
+                                   expand_dest_path(src->path(), dialog->dest_path())));
             }
-        });
+        }
     }
 }
 

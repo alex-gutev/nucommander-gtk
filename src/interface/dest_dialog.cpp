@@ -53,11 +53,36 @@ dest_dialog::dest_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builde
     signal_delete_event().connect(sigc::mem_fun(this, &dest_dialog::on_delete));
 }
 
+int dest_dialog::run() {
+    int response = Gtk::Dialog::run();;
+    hide();
+
+    return response;
+}
+
 void dest_dialog::show(chose_dest_fn chose_fn) {
     dest_chosen = std::move(chose_fn);
 
     Gtk::Dialog::show();
     present();
+}
+
+void dest_dialog::exec_clicked() {
+    if (dest_chosen)
+        dest_chosen(dest_entry->get_text());
+
+    response(Gtk::RESPONSE_OK);
+
+    hide();
+}
+
+void dest_dialog::cancel_clicked() {
+    response(Gtk::RESPONSE_CANCEL);
+    hide();
+}
+
+void dest_dialog::on_show() {
+    Gtk::Dialog::on_show();
 
     Gdk::Geometry geom{};
 
@@ -66,15 +91,6 @@ void dest_dialog::show(chose_dest_fn chose_fn) {
     geom.max_width = get_screen()->get_width();
 
     set_geometry_hints(*this, geom, Gdk::HINT_MAX_SIZE | Gdk::HINT_MAX_SIZE);
-}
-
-void dest_dialog::exec_clicked() {
-    dest_chosen(dest_entry->get_text());
-    hide();
-}
-
-void dest_dialog::cancel_clicked() {
-    hide();
 }
 
 bool dest_dialog::on_delete(const GdkEventAny *e) {
