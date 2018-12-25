@@ -107,7 +107,7 @@ namespace nuc {
      *
      * @return The task.
      */
-    task_queue::task_type make_unpack_task(const dir_type &src_type, const paths::string &subpath, const std::function<void(const char *)> &callback);
+    task_queue::task_type make_unpack_task(const dir_type &src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback);
 }
 
 #endif

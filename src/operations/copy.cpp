@@ -42,7 +42,7 @@ using namespace nuc;
  *
  * @param dest Destination path entered by the user.
  */
-static void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string dest);
+static void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
 
 /**
  * Replaces the initial components of @a subpath with other
@@ -102,18 +102,18 @@ std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &en
 }
 
 
-void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::string dest) {
+void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
     using namespace std::placeholders;
 
     // Destination directory to copy files to. Only used if a single
     // file is being copied.
-    paths::string dest_dir;
+    paths::pathname dest_dir;
     // The new name of the file to which the original file should be
     // copied to. Only used if a single file is being copied.
     paths::string new_name;
 
     // Exception type thrown to begin copying within the destination
-    // directory, when it is determined that the directory directory
+    // directory, when it is determined that the destination directory
     // exists.
     struct copy_within {};
 
@@ -129,8 +129,8 @@ void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vect
 
     // If only a single entry is being copied.
     if (paths.size() == 1) {
-        dest_dir = paths::removed_last_component(dest);
-        new_name = paths::file_name(dest);
+        dest_dir = dest.remove_last_component();
+        new_name = dest.basename();
 
         global_error_handler = [&] (const error &e) {
             if (e.code() == EEXIST && !copied) {
@@ -146,8 +146,11 @@ void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vect
             return old_handler(e);
         };
 
-        const paths::string &old_name = paths::file_name(paths[0]);
-        map_name = std::bind(replace_initial_dir, old_name.length() - (old_name.back() == '/' ? 1 : 0), new_name, _1);
+        const paths::string &old_name = paths[0].basename();
+        map_name = std::bind(replace_initial_dir, old_name.length(), new_name, _1);
+    }
+    else {
+        dest_dir = dest;
     }
 
     while(true) {
@@ -240,7 +243,7 @@ static void copy_file(cancel_state &state, instream &in, outstream &out) {
 }
 
 
-nuc::task_queue::task_type nuc::make_unpack_task(const dir_type &src_type, const paths::string &subpath, const std::function<void(const char *)> &callback) {
+nuc::task_queue::task_type nuc::make_unpack_task(const dir_type &src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback) {
     return [=] (cancel_state &state) {
         std::unique_ptr<tree_lister> ls(src_type.create_tree_lister({subpath}));
 
