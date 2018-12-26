@@ -85,6 +85,8 @@ static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::funct
 
 //// Implementation
 
+/// Creating the copy task function
+
 nuc::task_queue::task_type nuc::make_copy_task(dir_type src_type, const std::vector<dir_entry *> &entries, const paths::string &dest) {
     using namespace std::placeholders;
 
@@ -103,6 +105,23 @@ std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &en
 
 
 void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+    determine_dest(paths, dest, [&] (const paths::pathname &dest, const map_name_fn &map_name, bool &copied) {
+        std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
+        std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
+
+        lister->add_list_callback([&copied] (const lister::entry &, const struct stat *, tree_lister::visit_info) {
+            copied = true;
+            return true;
+        });
+
+        copy(state, *lister, *writer, map_name);
+    });
+}
+
+
+/// Determining the destination directory
+
+void nuc::determine_dest(const std::vector<paths::pathname> &paths, const paths::pathname &dest, const copy_op_fn &op) {
     using namespace std::placeholders;
 
     // Destination directory to copy files to. Only used if a single
@@ -155,15 +174,7 @@ void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vect
 
     while(true) {
         try {
-            std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
-            std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest_dir));
-
-            lister->add_list_callback([&copied] (const lister::entry &, const struct stat *, tree_lister::visit_info) {
-                copied = true;
-                return true;
-            });
-
-            copy(state, *lister, *writer, map_name);
+            op(dest_dir, map_name, copied);
             break;
         }
         catch (const error &e) {
@@ -180,6 +191,8 @@ paths::string replace_initial_dir(size_t len, const paths::string &replacement, 
     return replacement + path.substr(len);
 }
 
+
+/// Actual copying of files
 
 void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, const map_name_fn &map_name) {
     in.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
@@ -242,6 +255,8 @@ static void copy_file(cancel_state &state, instream &in, outstream &out) {
     }
 }
 
+
+/// Unpacking files from archives
 
 nuc::task_queue::task_type nuc::make_unpack_task(const dir_type &src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback) {
     return [=] (cancel_state &state) {
