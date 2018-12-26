@@ -46,7 +46,7 @@ namespace nuc {
      *    the directory @a src_type, to the destination directory with
      *    writer @a dest.
      */
-    task_queue::task_type make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
+    task_queue::task_type make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest);
 
     /**
      * Moves the files returned by the tree lister @a lister to the
@@ -56,7 +56,7 @@ namespace nuc {
      * @param lister Source directory tree lister.
      * @param dest Destination directory writer.
      */
-	void move(cancel_state &state, const std::vector<paths::pathname> &paths, const paths::string &dest, dir_writer &dir);
+	void move(cancel_state &state, const std::vector<paths::pathname> &paths, const paths::pathname &dest, dir_writer &dir);
 }
 
 #endif

@@ -284,7 +284,7 @@ nuc::dir_type::fs_type nuc::dir_type::on_same_fs(const paths::string &dir1, cons
 }
 
 
-nuc::paths::string nuc::dir_type::get_subpath(const paths::string &path) {
+nuc::paths::pathname nuc::dir_type::get_subpath(const paths::pathname &path) {
     return find_dir(path).second;
 }
 

@@ -346,7 +346,7 @@ namespace nuc {
          * @param path The path.
          * @return The subpath component.
          */
-        static paths::string get_subpath(const paths::string &path);
+        static paths::pathname get_subpath(const paths::pathname &path);
     };
 }
 
