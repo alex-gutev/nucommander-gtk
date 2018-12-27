@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "paths/pathname.h"
+
 #include "errors/errors.h"
 #include "outstream.h"
 
@@ -56,7 +58,7 @@ namespace nuc {
          *
          * @return An outstream object for writing data to the file.
          */
-        virtual outstream *create(const paths::string &path, const struct stat *st = nullptr, int flags = 0) = 0;
+        virtual outstream *create(const paths::pathname &path, const struct stat *st = nullptr, int flags = 0) = 0;
 
         /**
          * Creates a directory, with read, write and search
@@ -70,7 +72,7 @@ namespace nuc {
          *   deferred until a file is created in it or its attributes
          *   are set. 
          */
-        virtual void mkdir(const paths::string &path, bool defer = true) = 0;
+        virtual void mkdir(const paths::pathname &path, bool defer = true) = 0;
 
 
         /**
@@ -80,7 +82,7 @@ namespace nuc {
          * @param target The target of the link.
          * @param st Stat attributes of the link
          */
-        virtual void symlink(const paths::string &path, const paths::string &target, const struct stat *st) = 0;
+        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st) = 0;
 
         /**
          * Sets the stat attributes of an existing file, in the
@@ -89,7 +91,7 @@ namespace nuc {
          * @param path Path to the file, relative to the directory.
          * @param st   The stat attributes to set.
          */
-        virtual void set_attributes(const paths::string &path, const struct stat *st) = 0;
+        virtual void set_attributes(const paths::pathname &path, const struct stat *st) = 0;
 
         /**
          * Rename the file at path @a src to @a dest.
@@ -97,7 +99,7 @@ namespace nuc {
          * @param src Path to the file to rename.
          * @param dest Destination path to rename the file to.
          */
-        virtual void rename(const paths::string &src, const paths::string &dest) = 0;
+        virtual void rename(const paths::pathname &src, const paths::pathname &dest) = 0;
 
         /**
          * Delete the file at path @a path.
@@ -108,7 +110,7 @@ namespace nuc {
          *   the subpath of the writer otherwise it is interpreted
          *   relative to the base path of the writer.
          */
-        virtual void remove(const paths::string &path, bool relative = true) = 0;
+        virtual void remove(const paths::pathname &path, bool relative = true) = 0;
 
     protected:
         /**

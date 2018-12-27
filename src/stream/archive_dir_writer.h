@@ -47,7 +47,7 @@ namespace nuc {
              * the new archive. If this is an empty string, the entry
              * is recreated under the same path.
              */
-            paths::string new_path;
+            paths::pathname new_path;
 
             old_entry(int type) : type(type) {}
         };
@@ -55,7 +55,7 @@ namespace nuc {
         /**
          * Path to the archive file being written to.
          */
-        paths::string path;
+        paths::pathname path;
         /**
          * Path to the new archive file that is being created.
          */
@@ -73,7 +73,7 @@ namespace nuc {
          * Subpath within the archive, where all new entries are
          * created.
          */
-        paths::string subpath;
+        paths::pathname subpath;
 
         /**
          * Plugin for writing to the archive.
@@ -85,7 +85,7 @@ namespace nuc {
          * is the canonicalized subpath to the entry and the
          * corresponding value is an old_entry struct.
          */
-        std::map<paths::string, old_entry> old_entries;
+        std::map<paths::pathname, old_entry> old_entries;
 
         /**
          * Handle of the existing archive (open for reading).
@@ -121,7 +121,7 @@ namespace nuc {
          *
          * @param path Subpath to the entry.
          */
-        void add_parent_entries(paths::string path);
+        void add_parent_entries(paths::pathname path);
 
         /**
          * Adds an old entry with subpath @a path to the old_entries
@@ -138,7 +138,7 @@ namespace nuc {
          *   there was an entry with the same subpath in the map, and
          *   it was not replaced.
          */
-        bool add_old_entry(const paths::string &path, int type);
+        bool add_old_entry(const paths::pathname &path, int type);
 
         /**
          * Sets the type of the new archive to the same type as the
@@ -187,7 +187,7 @@ namespace nuc {
          *
          * @param path Path to the entry.
          */
-        void check_exists(paths::string path);
+        void check_exists(paths::pathname path);
 
         /**
          * Removes the entry at subpath @a path. If it is a directory
@@ -195,7 +195,7 @@ namespace nuc {
          *
          * @param path Subpath to the entry.
          */
-        void remove_old_entry(paths::string path);
+        void remove_old_entry(paths::pathname path);
 
         /**
          * Closes the two archive handles and deletes the new archive
@@ -213,7 +213,7 @@ namespace nuc {
          * @param plugin Plugin for writing to the archive.
          * @param subpath Subpath within the archive.
          */
-        archive_dir_writer(paths::string path, archive_plugin *plugin, paths::string subpath = paths::string());
+        archive_dir_writer(paths::pathname path, archive_plugin *plugin, paths::pathname subpath = paths::pathname());
 
         /**
          * Closes any open archive handles, and deletes the new file
@@ -240,17 +240,17 @@ namespace nuc {
         virtual void close();
 
 
-        virtual outstream *create(const paths::string &path, const struct stat *st = nullptr, int flags = 0);
+        virtual outstream *create(const paths::pathname &path, const struct stat *st = nullptr, int flags = 0);
 
-        virtual void mkdir(const paths::string &path, bool defer);
+        virtual void mkdir(const paths::pathname &path, bool defer);
 
-        virtual void symlink(const paths::string &path, const paths::string &target, const struct stat *st);
+        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st);
 
-        virtual void set_attributes(const paths::string &path, const struct stat *st);
+        virtual void set_attributes(const paths::pathname &path, const struct stat *st);
 
-        virtual void rename(const paths::string &src, const paths::string &dest);
+        virtual void rename(const paths::pathname &src, const paths::pathname &dest);
 
-        virtual void remove(const paths::string &path, bool relative);
+        virtual void remove(const paths::pathname &path, bool relative);
 
     private:
 
