@@ -256,8 +256,13 @@ nuc::dir_writer * nuc::dir_type::get_writer(const paths::pathname &path) {
     paths::pathname cpath = path.expand_tilde();
     std::pair<paths::string, paths::string> parts = find_dir(cpath);
 
-    if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(parts.first))
-        return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
+    struct stat st;
+
+    if (!stat(parts.first.c_str(), &st) && S_ISREG(st.st_mode)) {
+        if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(parts.first)) {
+            return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
+        }
+    }
 
     return new reg_dir_writer(cpath.path().c_str());
 }
