@@ -155,7 +155,7 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dest_dialog *dialog = window->dest_dialog();
 
             dialog->set_query_label("Copy to:");
-            dialog->dest_path(src->next_file_view->path().path());
+            dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
             dialog->set_exec_button_label("Copy");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
@@ -201,7 +201,7 @@ void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dest_dialog *dialog = window->dest_dialog();
 
             dialog->set_query_label("Move/Rename to:");
-            dialog->dest_path(src->next_file_view->path().path());
+            dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
             dialog->set_exec_button_label("Move");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {

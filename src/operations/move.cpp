@@ -109,50 +109,52 @@ void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vect
 }
 
 void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, const paths::pathname &dest, dir_writer &dir) {
-    determine_dest(items, dest, [&] (const paths::pathname &dest, const map_name_fn &map_name, bool &copied) {
-        for (const paths::pathname &item : items) {
-            global_restart skip(skip_exception::restart);
+    paths::pathname dest_dir;
+    map_name_fn map_name;
 
-            paths::string name = map_name(item.basename());
+    std::tie(dest_dir, map_name) = determine_dest_dir(dest, items);
 
-            try {
-                dir.rename(item, dest.append(name));
-            }
-            catch (const skip_exception &) {
-                // Do nothing to skip the current file
-            }
+    for (const paths::pathname &item : items) {
+        global_restart skip(skip_exception::restart);
 
-            copied = true;
+        paths::string name = map_name(item.basename());
+
+        try {
+            dir.rename(item, dest_dir.append(name));
         }
-    });
+        catch (const skip_exception &) {
+            // Do nothing to skip the current file
+        }
+    }
 }
 
 void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+    paths::pathname dest_dir;
+    map_name_fn map_name;
+
+    std::tie(dest_dir, map_name) = determine_dest_dir(dest, paths);
+
     std::unique_ptr<dir_writer> src_writer{dir_type::get_writer(src_type.logical_path())};
 
-    determine_dest(paths, dest, [&] (const paths::pathname &dest, const map_name_fn &map_name, bool &copied) {
-        std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
-        std::unique_ptr<dir_writer> dest_writer{dir_type::get_writer(dest)};
+    std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
+    std::unique_ptr<dir_writer> dest_writer{dir_type::get_writer(dest_dir)};
 
-        lister->add_list_callback([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
-            global_restart skip(skip_exception::restart);
+    lister->add_list_callback([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
+        global_restart skip(skip_exception::restart);
 
-            copied = true;
-
-            try {
-                if (ent.type != DT_DIR || info == tree_lister::visit_postorder) {
-                    src_writer->remove(ent.name);
-                }
+         try {
+            if (ent.type != DT_DIR || info == tree_lister::visit_postorder) {
+                src_writer->remove(ent.name);
             }
-            catch (const skip_exception &) {
-                // Do nothing to skip file.
-            }
+        }
+        catch (const skip_exception &) {
+            // Do nothing to skip file.
+        }
 
-            return true;
-        });
-
-        nuc::copy(state, *lister, *dest_writer, map_name);
-
-        src_writer->close();
+        return true;
     });
+
+    nuc::copy(state, *lister, *dest_writer, map_name);
+
+    src_writer->close();
 }

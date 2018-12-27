@@ -105,86 +105,35 @@ std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &en
 
 
 void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
-    determine_dest(paths, dest, [&] (const paths::pathname &dest, const map_name_fn &map_name, bool &copied) {
-        std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
-        std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
-
-        lister->add_list_callback([&copied] (const lister::entry &, const struct stat *, tree_lister::visit_info) {
-            copied = true;
-            return true;
-        });
-
-        copy(state, *lister, *writer, map_name);
-    });
-}
-
-
-/// Determining the destination directory
-
-void nuc::determine_dest(const std::vector<paths::pathname> &paths, const paths::pathname &dest, const copy_op_fn &op) {
     using namespace std::placeholders;
 
-    // Destination directory to copy files to. Only used if a single
-    // file is being copied.
-    paths::pathname dest_dir;
-    // The new name of the file to which the original file should be
-    // copied to. Only used if a single file is being copied.
-    paths::string new_name;
+    try {
+        paths::pathname dest_dir;
+        map_name_fn map_name;
 
-    // Exception type thrown to begin copying within the destination
-    // directory, when it is determined that the destination directory
-    // exists.
-    struct copy_within {};
+        std::tie(dest_dir, map_name) = determine_dest_dir(dest, paths);
 
-    // Save previous error handler
-    auto old_handler = global_error_handler;
+        std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(paths));
+        std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest_dir));
 
-    // Flag indicating whether at least one file was copied
-    // succesfully.
-    bool copied = false;
-
-    // Function which returns the destination file name.
-    map_name_fn map_name = identity();
-
-    // If only a single entry is being copied.
-    if (paths.size() == 1) {
-        dest_dir = dest.remove_last_component();
-        new_name = dest.basename();
-
-        global_error_handler = [&] (const error &e) {
-            if (e.code() == EEXIST && !copied) {
-                dest_dir = dest;
-                new_name.clear();
-                map_name = identity();
-
-                global_error_handler = old_handler;
-
-                throw copy_within();
-            }
-
-            return old_handler(e);
-        };
-
-        const paths::string &old_name = paths[0].basename();
-        map_name = std::bind(replace_initial_dir, old_name.length(), new_name, _1);
+        copy(state, *lister, *writer, map_name);
     }
-    else {
-        dest_dir = dest;
+    catch (const error &e) {
+        // Catch error to abort operation.
+    }
+}
+
+std::pair<paths::string, map_name_fn> nuc::determine_dest_dir(const paths::pathname &dest, const std::vector<paths::pathname> &paths) {
+    using namespace std::placeholders;
+
+    if (paths.size() == 1 && !dest.is_dir()) {
+        return std::make_pair(
+            dest.remove_last_component(),
+            std::bind(replace_initial_dir, paths[0].basename().length(), dest.basename(), _1)
+        );
     }
 
-    while(true) {
-        try {
-            op(dest_dir, map_name, copied);
-            break;
-        }
-        catch (const error &e) {
-            // Catch error to abort operation.
-            break;
-        }
-        catch (const copy_within &) {
-            // Retry copy operation with new destination
-        }
-    }
+    return std::make_pair(dest, identity());
 }
 
 paths::string replace_initial_dir(size_t len, const paths::string &replacement, const paths::string &path) {

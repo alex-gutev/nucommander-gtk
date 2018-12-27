@@ -33,7 +33,6 @@
  */
 
 namespace nuc {
-
     /**
      * Creates a copy task.
      *
@@ -76,34 +75,19 @@ namespace nuc {
     typedef std::function<paths::string(const paths::string &)> map_name_fn;
 
     /**
-     * Copy/Move operation function type.
+     * Determines whether the destination path is the path to the
+     * destination directory where the source files should be
+     * copied/moved or, in the case of a single file, the name of the
+     * file to which the source file should be copied/moved.
      *
-     * Called with the following parameters.
-     *
-     * @param dest The directory to which the source files should be
-     *   copied/moved.
-     *
-     * @param map_name A function which returns the destination file
-     *   name of each source file.
-     *
-     * @param copied Reference to a flag which should be set to true
-     *   if at least one file was copied successfully.
-     *
-     */
-    typedef std::function<void(const paths::pathname &, const map_name_fn &, bool &copied)> copy_op_fn;
-
-    /**
-     * Determines whether the destination directory @a dest refers to
-     * either the directory in which the source file(s) @a path should
-     * be copied/moved to or the name of the destination file to which
-     * the source file, if there is only a single file in @a paths,
-     * should be copied/moved to.
-     *
-     * @param paths The source files.
      * @param dest The destination path.
-     * @param op The operation to run on the source files.
+     * @param paths Paths of the files being copied/moved.
+     *
+     * @return A pair where the first element is the path to the
+     *   destination directory and the second element is the function
+     *   which maps source file names to destination file names.
      */
-    void determine_dest(const std::vector<paths::pathname> &paths, const paths::pathname &dest, const copy_op_fn &op);
+    std::pair<paths::string, map_name_fn> determine_dest_dir(const paths::pathname &dest, const std::vector<paths::pathname> &paths);
 
     /**
      * Copies the files returned by the tree lister @a lister to the
