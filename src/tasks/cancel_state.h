@@ -24,6 +24,8 @@
 #include <exception>
 #include <functional>
 
+#include "progress.h"
+
 namespace nuc {
     /**
      * Cancellation state.
@@ -40,6 +42,11 @@ namespace nuc {
          * @param cancelled  true if the operation was cancelled.
          */
         typedef std::function<void(bool)> finish_fn;
+
+        /**
+         * Progress callback function.
+         */
+        progress_event::callback progress;
         
         /**
          * Operation cancelled exception.
@@ -81,7 +88,7 @@ namespace nuc {
         
         /**
          * Executes the callable 'f' in the "no cancel" state,
-         * effectively the call to 'f' is preceeded by
+         * effectively the call to 'f' is preceded by
          * 'enter_no_cancel()', and followed by 'exit_no_cancel()'.
          */
         template <typename F>
@@ -128,6 +135,17 @@ namespace nuc {
          *
          */
         void add_finish_callback(finish_fn fn, bool after = true);
+
+        /**
+         * Calls the progress callback function, if any, with a
+         * progress event.
+         *
+         * The call to the progress function is done in the no cancel
+         * state.
+         *
+         * @param event The progress event.
+         */
+        void call_progress(const progress_event &event);
         
     private:
         /**

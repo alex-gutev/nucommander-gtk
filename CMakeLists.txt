@@ -54,6 +54,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c
     DEPENDS src/resources/window.glade src/resources/fileview.glade
     src/resources/error_dialog.glade
     src/resources/dest_dialog.glade
+    src/resources/progress_dialog.glade
     src/resources/nucommander.gresource.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/resources)
 

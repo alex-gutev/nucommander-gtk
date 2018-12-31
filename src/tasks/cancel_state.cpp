@@ -76,3 +76,11 @@ void cancel_state::add_finish_callback(finish_fn fn, bool after) {
         };
     }
 }
+
+void cancel_state::call_progress(const progress_event &event) {
+    if (progress) {
+        no_cancel([&] {
+            progress(event);
+        });
+    }
+}

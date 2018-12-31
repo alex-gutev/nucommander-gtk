@@ -8,4 +8,6 @@ add_sources(NUC_SRCS
 
   task_queue.h
   task_queue.cpp
+
+  progress.h
 )
