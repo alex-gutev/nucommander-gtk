@@ -107,6 +107,8 @@ std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &en
 void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
     using namespace std::placeholders;
 
+    state.call_progress(progress_event(progress_event::type_begin));
+
     try {
         paths::pathname dest_dir;
         map_name_fn map_name;
@@ -121,6 +123,8 @@ void copy_task_fn(cancel_state &state, const dir_type &src_type, const std::vect
     catch (const error &e) {
         // Catch error to abort operation.
     }
+
+    state.call_progress(progress_event(progress_event::type_finish));
 }
 
 std::pair<paths::string, map_name_fn> nuc::determine_dest_dir(const paths::pathname &dest, const std::vector<paths::pathname> &paths) {
@@ -164,21 +168,29 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
         try {
             switch (ent.type) {
             case DT_DIR:
-                if (info == nuc::tree_lister::visit_preorder)
+                if (info == nuc::tree_lister::visit_preorder) {
+                    state.call_progress(progress_event(progress_event::type_enter_dir, ent.name));
                     out.mkdir(ent_name);
-                else if (info == nuc::tree_lister::visit_postorder)
+                }
+                else if (info == nuc::tree_lister::visit_postorder) {
+                    state.call_progress(progress_event(progress_event::type_exit_dir, ent.name));
                     out.set_attributes(ent_name, st);
+                }
                 break;
 
             case DT_REG:{
                 std::unique_ptr<instream> src(in.open_entry());
                 std::unique_ptr<outstream> dest(out.create(ent_name, st));
 
+                state.call_progress(progress_event(progress_event::type_enter_file, ent.name, st ? st->st_size : 0));
                 copy_file(state, *src, *dest);
+                state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
             } break;
 
             case DT_LNK:
+                state.call_progress(progress_event(progress_event::type_enter_file, ent.name));
                 out.symlink(ent_name, in.symlink_path(), st);
+                state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
                 break;
             }
         }
@@ -201,6 +213,8 @@ static void copy_file(cancel_state &state, instream &in, outstream &out) {
         state.test_cancel();
 
         out.write(block, size, offset);
+
+        state.call_progress(progress_event(progress_event::type_process_data, size));
     }
 }
 

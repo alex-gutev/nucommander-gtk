@@ -142,7 +142,15 @@ void app_window::open_file(const char *cpath) {
 }
 
 void app_window::add_operation(task_queue::task_type op) {
-    operations->add(with_error_handler(std::move(op), error_handler(this)));
+    using namespace std::placeholders;
+
+    auto new_op = [=] (cancel_state &state) {
+        set_progress_fn(state);
+        op(state);
+    };
+
+    operations->add(with_error_handler(std::move(new_op), error_handler(this)),
+                    std::bind(&app_window::on_operation_finish, this, _1));
 }
 
 
@@ -213,4 +221,64 @@ nuc::dest_dialog *app_window::dest_dialog() {
     }
 
     return m_dest_dialog;
+}
+
+
+//// Progress
+
+void app_window::set_progress_fn(nuc::cancel_state &state) {
+    using namespace std::placeholders;
+
+    state.no_cancel([&] {
+        state.progress = std::bind(&app_window::on_progress, this, _1);
+    });
+}
+
+nuc::progress_dialog *app_window::progress_dialog() {
+    if (!m_progress_dialog) {
+        m_progress_dialog = progress_dialog::create();
+        m_progress_dialog->set_transient_for(*this);
+        m_progress_dialog->signal_response().connect(sigc::mem_fun(this, &app_window::on_prog_dialog_response));
+    }
+
+    return m_progress_dialog;
+}
+
+void app_window::on_progress(const progress_event &e) {
+    dispatch_main([=] {
+        auto dialog = progress_dialog();
+
+        switch (e.type) {
+        case progress_event::type_begin:
+            dialog->show();
+            dialog->present();
+            break;
+
+        case progress_event::type_finish:
+            dialog->hide();
+            break;
+
+        case progress_event::type_enter_file:
+            dialog->set_file_label(e.file.path());
+            dialog->set_file_size(e.bytes);
+            dialog->file_progress(0);
+            break;
+
+        case progress_event::type_process_data:
+            dialog->file_progress(dialog->file_progress() + e.bytes);
+            break;
+        }
+    });
+}
+
+void app_window::on_prog_dialog_response(int id) {
+    if (id == Gtk::RESPONSE_CANCEL) {
+        operations->cancel();
+    }
+}
+
+void app_window::on_operation_finish(bool cancelled) {
+    dispatch_main([this] {
+        progress_dialog()->hide();
+    });
 }

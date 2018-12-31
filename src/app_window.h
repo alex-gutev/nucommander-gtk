@@ -39,6 +39,9 @@
 #include "errors/error_dialog.h"
 
 #include "interface/dest_dialog.h"
+#include "interface/progress_dialog.h"
+
+#include "tasks/progress.h"
 
 namespace nuc {
     /**
@@ -80,6 +83,11 @@ namespace nuc {
          * path.
          */
         nuc::dest_dialog *m_dest_dialog = nullptr;
+
+        /**
+         * Operation progress dialog.
+         */
+        nuc::progress_dialog *m_progress_dialog = nullptr;
 
         /**
          * Operation task queue, onto which file operations are
@@ -219,6 +227,39 @@ namespace nuc {
          */
         std::pair<const restart *, bool> choose_action(const error &e);
 
+
+        /* Displaying Progress */
+
+        /**
+         * Sets the progress callback function in the cancellation
+         * state.
+         *
+         * @param state The cancellation state.
+         */
+        void set_progress_fn(cancel_state &state);
+
+        /**
+         * Progress callback function.
+         *
+         * @param e The progress event.
+         */
+        void on_progress(const progress_event &e);
+
+        /**
+         * Progress dialog response signal handler.
+         *
+         * @param id Response id.
+         */
+        void on_prog_dialog_response(int id);
+
+        /**
+         * Operation finish callback.
+         *
+         * @param cancelled True if the operation was cancelled, false
+         *   if it finished normally.
+         */
+        void on_operation_finish(bool cancelled);
+
     public:
         /* Constructor. */
         app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
@@ -244,6 +285,13 @@ namespace nuc {
          * @return Pointer to the destination dialog.
          */
         nuc::dest_dialog *dest_dialog();
+
+        /**
+         * Returns a pointer to the progress dialog.
+         *
+         * @return Pointer to the progress dialog.
+         */
+        nuc::progress_dialog *progress_dialog();
 
         /**
          * Asynchronous cleanup method.
