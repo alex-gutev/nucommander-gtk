@@ -309,10 +309,15 @@ namespace nuc {
 
 template <typename F>
 void nuc::app_window::cleanup(F fn) {
-    auto cleanup_fn = cleanup_n_fn(2, fn);
+    auto cleanup_fn = cleanup_n_fn(3, fn);
 
     left_view->cleanup(cleanup_fn);
     right_view->cleanup(cleanup_fn);
+
+    operations->cancel();
+    operations->add([cleanup_fn] (cancel_state &) {
+        dispatch_main(cleanup_fn);
+    });
 }
 
 #endif // APP_WINDOW_H
