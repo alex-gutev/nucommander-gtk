@@ -97,7 +97,7 @@ void task_queue::cancel() {
         std::lock_guard<mutex_type> lock(mutex);
         
         queue.swap(old_queue);
-        state->cancel();
+        if (state) state->cancel();
     }
 }
 
