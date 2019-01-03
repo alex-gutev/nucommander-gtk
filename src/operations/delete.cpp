@@ -39,6 +39,8 @@ static void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc:
 
 nuc::task_queue::task_type nuc::make_delete_task(dir_type src_type, const std::vector<dir_entry*> &entries) {
     return [=] (cancel_state &state) {
+        state.call_progress(progress_event(progress_event::type_begin));
+
         try {
             std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(lister_paths(entries)));
             std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.logical_path()));
@@ -48,6 +50,8 @@ nuc::task_queue::task_type nuc::make_delete_task(dir_type src_type, const std::v
         catch (const error &) {
             // Catch to abort operation
         }
+
+        state.call_progress(progress_event(progress_event::type_finish));
     };
 }
 
@@ -57,6 +61,8 @@ void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc::dir_wr
     lister.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
         global_restart skip(skip_exception::restart);
 
+        state.call_progress(progress_event(progress_event::type_enter_file, ent.name, 1));
+
         try {
             if (ent.type != DT_DIR || info == tree_lister::visit_postorder) {
                 writer.remove(ent.name);
@@ -65,6 +71,8 @@ void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc::dir_wr
         catch (const skip_exception &) {
             // Do nothing to skip file
         }
+
+        state.call_progress(progress_event(progress_event::type_exit_file, ent.name, 1));
 
         return true;
     });

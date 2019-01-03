@@ -73,12 +73,16 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
     std::vector<paths::pathname> paths = lister_paths(entries);
 
     return [=] (cancel_state &state) {
+        state.call_progress(progress_event(progress_event::type_begin));
+
         try {
             move_or_copy(state, src_type, paths, dest);
         }
         catch (const error &e) {
             // Catch error to abort operation.
         }
+
+        state.call_progress(progress_event(progress_event::type_finish));
     };
 }
 
@@ -119,12 +123,16 @@ void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, c
 
         paths::string name = map_name(item.basename());
 
+        state.call_progress(progress_event(progress_event::type_enter_file, item, 1));
+
         try {
             dir.rename(item, dest_dir.append(name));
         }
         catch (const skip_exception &) {
             // Do nothing to skip the current file
         }
+
+        state.call_progress(progress_event(progress_event::type_exit_file, item, 1));
     }
 }
 
