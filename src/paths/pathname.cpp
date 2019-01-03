@@ -95,15 +95,20 @@ pathname pathname::append(const nuc::paths::pathname &path) const & {
 
 
 pathname& pathname::remove_last_component() && {
-    bool dir = is_dir();
-    size_t pos = m_path.rfind('/', m_path.size() - (dir ? 2 : 0));
+    if (m_path.size() > 1) {
+        bool dir = is_dir();
+        size_t pos = m_path.rfind('/', m_path.size() - (dir ? 2 : 0));
 
-    if (pos == string::npos) {
-        pos = 0;
-        dir = false;
+        if (pos == string::npos) {
+            pos = 0;
+            dir = false;
+        }
+
+        m_path.resize(pos + ((!pos || dir) ? 1 : 0));
     }
-
-    m_path.resize(pos + (dir ? 1 : 0));
+    else {
+        m_path.clear();
+    }
 
     return *this;
 }
