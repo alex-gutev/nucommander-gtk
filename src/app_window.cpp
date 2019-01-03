@@ -156,7 +156,7 @@ void app_window::add_operation(task_queue::task_type op) {
 
 /// Error Handlers
 
-void app_window::error_handler::operator()(const nuc::error &e) {
+void app_window::error_handler::operator()(cancel_state &state, const nuc::error &e) {
     auto it = chosen_actions.find(e);
     auto &actions = restarts();
 
@@ -172,7 +172,9 @@ void app_window::error_handler::operator()(const nuc::error &e) {
     const restart *r;
     bool all;
 
-    std::tie(r, all) = window->choose_action(e);
+    state.no_cancel([&] {
+        std::tie(r, all) = window->choose_action(e);
+    });
 
     if (all) {
         chosen_actions[e] = r->name;

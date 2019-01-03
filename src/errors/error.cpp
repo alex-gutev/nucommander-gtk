@@ -29,7 +29,9 @@
  */
 static thread_local nuc::restart_map global_restart_map = nuc::restart_map({ std::make_pair("abort", nuc::restart_abort) });
 
-thread_local nuc::error_handler_fn nuc::global_error_handler = nuc::error_handler_fn();
+thread_local nuc::error_handler_fn nuc::global_error_handler = [] (const error &e) {
+    restart_abort(e);
+};
 
 
 nuc::restart_map &nuc::restarts() {

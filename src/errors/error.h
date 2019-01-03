@@ -343,13 +343,55 @@ namespace nuc {
     extern thread_local error_handler_fn global_error_handler;
 
     /**
+     * Establishes a scoped thread local global error handler.
+     */
+    struct error_handler {
+        /* The previous global error handler */
+        error_handler_fn old_handler;
+
+        /**
+         * Constructor.
+         *
+         * @param handler The handler to set as the global error
+         *    handler for the lifetime of this object.
+         */
+        template <typename F>
+        error_handler(F&& handler) {
+            old_handler = global_error_handler;
+            global_error_handler = std::forward<F>(handler);
+        }
+
+        /**
+         * Restores global_error_handler to its previous value.
+         */
+        ~error_handler() {
+            global_error_handler = std::move(old_handler);
+        }
+    };
+
+    /**
+     * Cancellable error handler function type.
+     *
+     * Arguments:
+     *
+     *  - Cancellation state.
+     *  - The error exception.
+     */
+    typedef std::function<void(cancel_state &, const error &)> cancellable_handler;
+
+    /**
      * Creates a new task which runs the task @a task with the error
      * handler function @a handler as the global error handler.
      */
     template<typename F>
-    task_queue::task_type with_error_handler(F task, error_handler_fn handler) {
+    task_queue::task_type with_error_handler(F task, cancellable_handler handler) {
+        using namespace std::placeholders;
+
         return [=] (cancel_state &state) {
-            global_error_handler = handler;
+            error_handler e([&state, handler] (const error &e) {
+                handler(state, e);
+            });
+
             task(state);
         };
     }

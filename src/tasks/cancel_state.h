@@ -90,11 +90,25 @@ namespace nuc {
          * Executes the callable 'f' in the "no cancel" state,
          * effectively the call to 'f' is preceded by
          * 'enter_no_cancel()', and followed by 'exit_no_cancel()'.
+         *
+         * If @a f throws an exception, it is caught,
+         * 'exit_no_cancel()' is called to switch back to the "can
+         * cancel" state and then the exception is rethrown. If
+         * 'exit_no_cancel' throws a cancelled exception, the
+         * exception thrown by @a f is not rethrown.
+         *
+         * @param f The function to execute in the "no cancel" state.
          */
         template <typename F>
         void no_cancel(F f) {
             enter_no_cancel();
-            f();
+            try {
+                f();
+            }
+            catch (...) {
+                exit_no_cancel();
+                throw;
+            }
             exit_no_cancel();
         }
         

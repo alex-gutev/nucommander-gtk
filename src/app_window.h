@@ -186,9 +186,10 @@ namespace nuc {
             /**
              * Error handler function.
              *
+             * @param state The cancellation state.
              * @param e The error.
              */
-            void operator()(const error &e);
+            void operator()(cancel_state &state, const error &e);
         };
 
 
