@@ -92,6 +92,11 @@ BOOST_AUTO_TEST_CASE(remove_last5) {
 
     BOOST_CHECK_EQUAL(path.path(), "");
 }
+BOOST_AUTO_TEST_CASE(remove_last6) {
+    pathname path = pathname("foo").remove_last_component();
+
+    BOOST_CHECK_EQUAL(path.path(), "");
+}
 
 BOOST_AUTO_TEST_CASE(merge1) {
     pathname path1 = pathname("/foo/bar");

@@ -103,8 +103,11 @@ pathname& pathname::remove_last_component() && {
             pos = 0;
             dir = false;
         }
+        else if (!pos || dir) {
+            pos++;
+        }
 
-        m_path.resize(pos + ((!pos || dir) ? 1 : 0));
+        m_path.resize(pos);
     }
     else {
         m_path.clear();
@@ -185,7 +188,7 @@ pathname pathname::expand_tilde() const {
         }
 
         if (home) {
-            return pathname(home).append(*this);
+            return pos != string::npos ? pathname(home).append(m_path.substr(pos+1)) : pathname(home);
         }
     }
 
