@@ -159,10 +159,11 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dialog->set_exec_button_label("Copy");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
+                auto type = src->file_list().dir_vfs()->directory_type();
+
                 window->add_operation(
-                    make_copy_task(src->file_list().dir_vfs()->directory_type(),
-                                   entries,
-                                   expand_dest_path(src->path(), dialog->dest_path())));
+                    make_copy_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
+                    window->get_progress_fn(type));
             }
         }
     }

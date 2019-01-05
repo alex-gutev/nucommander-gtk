@@ -29,6 +29,8 @@
 #include "commands/commands.h"
 #include "operations/copy.h"
 
+#include "operations/dir_size.h"
+
 using namespace nuc;
 
 app_window* app_window::create() {
@@ -144,15 +146,19 @@ void app_window::open_file(const char *cpath) {
 void app_window::add_operation(task_queue::task_type op) {
     using namespace std::placeholders;
 
-    auto new_op = [=] (cancel_state &state) {
-        set_progress_fn(state);
-        op(state);
-    };
-
-    operations->add(with_error_handler(std::move(new_op), error_handler(this)),
+    operations->add(with_error_handler(std::move(op), error_handler(this)),
                     std::bind(&app_window::on_operation_finish, this, _1));
 }
 
+void app_window::add_operation(const task_queue::task_type &op, const progress_event::callback &progress) {
+    add_operation([=] (cancel_state &state) {
+        state.no_cancel([&] {
+            state.progress = progress;
+        });
+
+        op(state);
+    });
+}
 
 /// Error Handlers
 
@@ -228,14 +234,6 @@ nuc::dest_dialog *app_window::dest_dialog() {
 
 //// Progress
 
-void app_window::set_progress_fn(nuc::cancel_state &state) {
-    using namespace std::placeholders;
-
-    state.no_cancel([&] {
-        state.progress = std::bind(&app_window::on_progress, this, _1);
-    });
-}
-
 nuc::progress_dialog *app_window::progress_dialog() {
     if (!m_progress_dialog) {
         m_progress_dialog = progress_dialog::create();
@@ -245,11 +243,21 @@ nuc::progress_dialog *app_window::progress_dialog() {
 
     return m_progress_dialog;
 }
+void app_window::on_prog_dialog_response(int id) {
+    if (id == Gtk::RESPONSE_CANCEL) {
+        operations->cancel();
+    }
+}
 
-void app_window::on_progress(const progress_event &e) {
+void app_window::on_operation_finish(bool cancelled) {
+    dispatch_main([this] {
+        progress_dialog()->hide();
+    });
+}
+
+
+void app_window::progress_fn::operator()(const nuc::progress_event &e) {
     dispatch_main([=] {
-        auto dialog = progress_dialog();
-
         switch (e.type) {
         case progress_event::type_begin:
             dialog->show();
@@ -269,18 +277,45 @@ void app_window::on_progress(const progress_event &e) {
         case progress_event::type_process_data:
             dialog->file_progress(dialog->file_progress() + e.bytes);
             break;
+
+        case progress_event::type_exit_file:
+            dialog->dir_progress(dialog->dir_progress() + 1);
+            break;
+
+        case progress_event::type_enter_dir:
+            if (!depth) {
+                dialog->dir_progress(0);
+                dialog->set_dir_label(e.file.path());
+
+                get_dir_size(e.file);
+            }
+            depth++;
+            break;
+
+        case progress_event::type_exit_dir:
+            if (!--depth) {
+                dir_size_state->cancel();
+            }
+            break;
         }
     });
 }
 
-void app_window::on_prog_dialog_response(int id) {
-    if (id == Gtk::RESPONSE_CANCEL) {
-        operations->cancel();
-    }
+void app_window::progress_fn::get_dir_size(const paths::pathname &dir) {
+    using namespace std::placeholders;
+
+    dir_size_state = std::make_shared<cancel_state>();
+
+    dir_size(dir_size_state, type, dir, std::bind(&app_window::progress_fn::got_dir_size, this, _1));
 }
 
-void app_window::on_operation_finish(bool cancelled) {
-    dispatch_main([this] {
-        progress_dialog()->hide();
-    });
+void app_window::progress_fn::got_dir_size(size_t size) {
+    nfiles = size;
+
+    dialog->set_dir_size(size);
+}
+
+
+progress_event::callback app_window::get_progress_fn(const dir_type &type) {
+    return progress_fn(progress_dialog(), type);
 }

@@ -232,19 +232,64 @@ namespace nuc {
         /* Displaying Progress */
 
         /**
-         * Sets the progress callback function in the cancellation
-         * state.
-         *
-         * @param state The cancellation state.
+         * Progress Reporting Functor.
          */
-        void set_progress_fn(cancel_state &state);
+        class progress_fn {
+            /**
+             * Type of the directory containing the files being
+             * processed.
+             */
+            dir_type type;
 
-        /**
-         * Progress callback function.
-         *
-         * @param e The progress event.
-         */
-        void on_progress(const progress_event &e);
+            /**
+             * Current file hierarchy depth.
+             */
+            size_t depth = 0;
+            /**
+             * The number of files in the current directory
+             */
+            size_t nfiles = 0;
+
+            /**
+             * The progress dialog.
+             */
+            progress_dialog *dialog;
+
+            /**
+             * Cancellation state of the get directory size operation.
+             */
+            std::shared_ptr<cancel_state> dir_size_state;
+
+            /**
+             * Begins a get directory size operation for the directory
+             * at path @a dir.
+             */
+            void get_dir_size(const paths::pathname &dir);
+            /**
+             * Called when the size of the directory has been obtained.
+             */
+            void got_dir_size(size_t nfile);
+
+        public:
+
+            /**
+             * Constructor.
+             *
+             * @param dialog The progress dialog.
+             *
+             * @param type The type of the parent directory of the
+             *   files being processed.
+             */
+            progress_fn(progress_dialog *dialog, const dir_type &type) : type(type), dialog(dialog) {}
+            progress_fn(progress_dialog *dialog) : dialog(dialog) {}
+
+            /**
+             * Progress callback function.
+             *
+             * @param e The progress event.
+             */
+            void operator()(const progress_event &e);
+        };
 
         /**
          * Progress dialog response signal handler.
@@ -281,6 +326,16 @@ namespace nuc {
         void add_operation(task_queue::task_type op);
 
         /**
+         * Adds an operation to the operations task queue and assigns
+         * the progress callback @a progress to the progress callback
+         * of its cancellation state.
+         *
+         * @param op The operation to add
+         * @param progress Progress callback
+         */
+        void add_operation(const task_queue::task_type &op, const progress_event::callback &progress);
+
+        /**
          * Returns a pointer to the destination dialog.
          *
          * @return Pointer to the destination dialog.
@@ -293,6 +348,16 @@ namespace nuc {
          * @return Pointer to the progress dialog.
          */
         nuc::progress_dialog *progress_dialog();
+
+        /**
+         * Creates a progress reporting callback function.
+         *
+         * @param type Type of the directory containing the files
+         *   which are being processed.
+         *
+         * @return The callback function.
+         */
+        progress_event::callback get_progress_fn(const dir_type &type);
 
         /**
          * Asynchronous cleanup method.
