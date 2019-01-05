@@ -23,7 +23,8 @@ using namespace nuc;
 
 void cancel_state::call_finish(bool cancelled) {
     if (!finished.test_and_set()) {
-        m_finish(cancelled);
+        if (m_finish)
+            m_finish(cancelled);
     }
 }
 
