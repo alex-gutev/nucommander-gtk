@@ -211,10 +211,11 @@ void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dialog->set_exec_button_label("Move");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
+                auto type = src->file_list().dir_vfs()->directory_type();
+
                 window->add_operation(
-                    make_move_task(src->file_list().dir_vfs()->directory_type(),
-                                   entries,
-                                   expand_dest_path(src->path(), dialog->dest_path())));
+                    make_move_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
+                    window->get_progress_fn(type));
             }
         }
     }
@@ -235,7 +236,10 @@ void delete_command_fn(nuc::app_window *window, nuc::file_view *src) {
             // Add delete operation if response was OK
 
             if (result == Gtk::RESPONSE_OK) {
-                window->add_operation(make_delete_task(src->file_list().dir_vfs()->directory_type(), entries));
+                auto type = src->file_list().dir_vfs()->directory_type();
+
+                window->add_operation(make_delete_task(type, entries),
+                                      window->get_progress_fn(type));
             }
         }
     }
