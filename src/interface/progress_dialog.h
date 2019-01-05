@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include <gtkmm/builder.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
-#include <gtkmm/levelbar.h>
+#include <gtkmm/progressbar.h>
 
 #include "paths/utils.h"
 
@@ -40,6 +40,22 @@ namespace nuc {
         Gtk::Label *file_label;
 
         /**
+         * Progress bar showing progress on the current file.
+         */
+        Gtk::ProgressBar *file_progressbar;
+
+        /**
+         * Label displaying the name of the directory currently being
+         * copied.
+         */
+        Gtk::Label *dir_label;
+        /**
+         * Progress bar showing progress on the current directory.
+         */
+        Gtk::ProgressBar *dir_progressbar;
+
+
+        /**
          * The cancel button.
          */
         Gtk::Button *cancel_button;
@@ -50,9 +66,22 @@ namespace nuc {
         Gtk::Button *hide_button;
 
         /**
-         * Level bar showing progress on the current file.
+         * File progress.
          */
-        Gtk::LevelBar *file_levelbar;
+        size_t file_prog = 0;
+        /**
+         * File Size;
+         */
+        size_t file_size = 0;
+
+        /**
+         * Directory Progress
+         */
+        size_t dir_prog = 0;
+        /**
+         * Directory Size
+         */
+        size_t dir_size = 0;
 
 
         /* Initialization Methods */
@@ -102,12 +131,13 @@ namespace nuc {
         }
 
         /**
-         * Set the maximum value of the file level bar.
+         * Set the size of the file, the progress on which is
+         * currently being displayed.
          *
-         * @param value The maximum value i.e. the file's size.
+         * @param value The file size.
          */
-        void set_file_size(double value) {
-            file_levelbar->set_max_value(value);
+        void set_file_size(size_t value) {
+            file_size = value;
         }
 
         /**
@@ -115,17 +145,64 @@ namespace nuc {
          *
          * @param value The number of bytes copied.
          */
-        void file_progress(double value) {
-            file_levelbar->set_value(value);
+        void file_progress(size_t value) {
+            file_prog = value;
+
+            if (file_size)
+                file_progressbar->set_fraction(value / double(file_size));
+            else
+                file_progressbar->set_fraction(value ? 1 : 0);
         }
 
         /**
-         * Returns the current value of the file level bar.
+         * Returns the file progress value.
          *
-         * @return The level bar's value.
+         * @return File progress value.
          */
-        double file_progress() const {
-            return file_levelbar->get_value();
+        size_t file_progress() const {
+            return file_prog;
+        }
+
+        /**
+         * Sets the directory label.
+         *
+         * @param dir Name of the directory being copied.
+         */
+        void set_dir_label(const Glib::ustring &dir) {
+            dir_label->set_text(dir);
+        }
+
+        /**
+         * Sets the size of the directory, the progress on which is
+         * currently being displayed.
+         *
+         * @param value Directory size.
+         */
+        void set_dir_size(size_t value) {
+            dir_size = value;
+        }
+
+        /**
+         * Sets the directory progress.
+         *
+         * @param value Directory progress value.
+         */
+        void dir_progress(size_t value) {
+            dir_prog = value;
+
+            if (dir_size)
+                dir_progressbar->set_fraction(value / double(dir_size));
+            else
+                dir_progressbar->set_fraction(0);
+        }
+
+        /**
+         * Returns the directory progress.
+         *
+         * @return Directory progress value.
+         */
+        size_t dir_progress() const {
+            return dir_prog;
         }
     };
 }

@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,9 +40,13 @@ progress_dialog *progress_dialog::create() {
 
 progress_dialog::progress_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) : Gtk::Dialog(cobject) {
     builder->get_widget("file_label", file_label);
+    builder->get_widget("file_progressbar", file_progressbar);
+
+    builder->get_widget("dir_label", dir_label);
+    builder->get_widget("dir_progressbar", dir_progressbar);
+
     builder->get_widget("cancel_button", cancel_button);
     builder->get_widget("hide_button", hide_button);
-    builder->get_widget("file_levelbar", file_levelbar);
 
     cancel_button->signal_clicked().connect(sigc::mem_fun(this, &progress_dialog::cancel_clicked));
     hide_button->signal_clicked().connect(sigc::mem_fun(this, &progress_dialog::hide_clicked));
