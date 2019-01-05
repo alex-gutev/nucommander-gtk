@@ -269,6 +269,9 @@ void app_window::progress_fn::operator()(const nuc::progress_event &e) {
             break;
 
         case progress_event::type_enter_file:
+            if (!depth)
+                dialog->hide_dir();
+
             dialog->set_file_label(e.file.path());
             dialog->set_file_size(e.bytes);
             dialog->file_progress(0);
@@ -284,6 +287,7 @@ void app_window::progress_fn::operator()(const nuc::progress_event &e) {
 
         case progress_event::type_enter_dir:
             if (!depth) {
+                dialog->show_dir();
                 dialog->dir_progress(0);
                 dialog->set_dir_label(e.file.path());
 

@@ -48,6 +48,8 @@ progress_dialog::progress_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk
     builder->get_widget("cancel_button", cancel_button);
     builder->get_widget("hide_button", hide_button);
 
+    builder->get_widget("box", box);
+
     cancel_button->signal_clicked().connect(sigc::mem_fun(this, &progress_dialog::cancel_clicked));
     hide_button->signal_clicked().connect(sigc::mem_fun(this, &progress_dialog::hide_clicked));
 
@@ -77,4 +79,19 @@ void progress_dialog::on_show() {
 bool progress_dialog::on_delete(const GdkEventAny *e) {
     gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
     return true;
+}
+
+void progress_dialog::hide_dir() {
+    dir_label->hide();
+    dir_progressbar->hide();
+
+    int min, max;
+
+    box->get_preferred_height(min, max);
+    resize(get_width(), min);
+}
+
+void progress_dialog::show_dir() {
+    dir_label->show();
+    dir_progressbar->show();
 }

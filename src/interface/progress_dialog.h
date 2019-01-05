@@ -22,6 +22,7 @@
 
 #include <gtkmm/dialog.h>
 #include <gtkmm/builder.h>
+#include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/progressbar.h>
@@ -54,6 +55,10 @@ namespace nuc {
          */
         Gtk::ProgressBar *dir_progressbar;
 
+        /**
+         * Box containing the widgets in the dialog.
+         */
+        Gtk::Box *box;
 
         /**
          * The cancel button.
@@ -162,6 +167,16 @@ namespace nuc {
         size_t file_progress() const {
             return file_prog;
         }
+
+        /**
+         * Hides the directory progress bar and label.
+         */
+        void hide_dir();
+
+        /**
+         * Show the directory progress bar and label
+         */
+        void show_dir();
 
         /**
          * Sets the directory label.
