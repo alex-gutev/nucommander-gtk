@@ -7,4 +7,7 @@ add_sources(NUC_SRCS
 
   delete.h
   delete.cpp
+
+  dir_size.h
+  dir_size.cpp
 )
