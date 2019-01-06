@@ -289,6 +289,7 @@ void app_window::progress_fn::operator()(const nuc::progress_event &e) {
             if (!depth) {
                 dialog->show_dir();
                 dialog->dir_progress(0);
+                dialog->set_dir_size(0);
                 dialog->set_dir_label(e.file.path());
 
                 get_dir_size(e.file);

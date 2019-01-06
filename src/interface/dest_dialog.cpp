@@ -54,7 +54,7 @@ dest_dialog::dest_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builde
 }
 
 int dest_dialog::run() {
-    int response = Gtk::Dialog::run();;
+    int response = Gtk::Dialog::run();
     hide();
 
     return response;
@@ -90,7 +90,9 @@ void dest_dialog::on_show() {
     geom.min_width = 0;
     geom.max_width = get_screen()->get_width();
 
-    set_geometry_hints(*this, geom, Gdk::HINT_MAX_SIZE | Gdk::HINT_MAX_SIZE);
+    set_geometry_hints(*this, geom, Gdk::HINT_MAX_SIZE);
+
+    dest_entry->grab_focus();
 }
 
 bool dest_dialog::on_delete(const GdkEventAny *e) {

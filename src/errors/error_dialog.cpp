@@ -93,6 +93,8 @@ void error_dialog::show(const error &e, const restart_map &restarts, chose_actio
 
     Gtk::Dialog::show();
     present();
+
+    actions_view->grab_focus();
 }
 
 void error_dialog::show(action_promise &promise, const error &e, const restart_map &restarts) {

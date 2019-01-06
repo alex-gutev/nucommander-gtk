@@ -132,7 +132,7 @@ namespace nuc {
          * @param file Path to the current file.
          */
         void set_file_label(const Glib::ustring &file) {
-            file_label->set_text(std::move(file));
+            file_label->set_text(file);
         }
 
         /**
