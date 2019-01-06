@@ -257,53 +257,51 @@ void app_window::on_operation_finish(bool cancelled) {
 
 
 void app_window::progress_fn::operator()(const nuc::progress_event &e) {
-    dispatch_main([=] {
-        switch (e.type) {
-        case progress_event::type_begin:
-            dialog->show();
-            dialog->present();
-            break;
+    switch (e.type) {
+    case progress_event::type_begin:
+        dialog->show();
+        dialog->present();
+        break;
 
-        case progress_event::type_finish:
-            dialog->hide();
-            break;
+    case progress_event::type_finish:
+        dialog->hide();
+        break;
 
-        case progress_event::type_enter_file:
-            if (!depth)
-                dialog->hide_dir();
+    case progress_event::type_enter_file:
+        if (!depth)
+            dialog->hide_dir();
 
-            dialog->set_file_label(e.file.path());
-            dialog->set_file_size(e.bytes);
-            dialog->file_progress(0);
-            break;
+        dialog->set_file_label(e.file.path());
+        dialog->set_file_size(e.bytes);
+        dialog->file_progress(0);
+        break;
 
-        case progress_event::type_process_data:
-            dialog->file_progress(dialog->file_progress() + e.bytes);
-            break;
+    case progress_event::type_process_data:
+        dialog->file_progress(dialog->file_progress() + e.bytes);
+        break;
 
-        case progress_event::type_exit_file:
-            dialog->dir_progress(dialog->dir_progress() + 1);
-            break;
+    case progress_event::type_exit_file:
+        dialog->dir_progress(dialog->dir_progress() + 1);
+        break;
 
-        case progress_event::type_enter_dir:
-            if (!depth) {
-                dialog->show_dir();
-                dialog->dir_progress(0);
-                dialog->set_dir_size(0);
-                dialog->set_dir_label(e.file.path());
+    case progress_event::type_enter_dir:
+        if (!depth) {
+            dialog->show_dir();
+            dialog->dir_progress(0);
+            dialog->set_dir_size(0);
+            dialog->set_dir_label(e.file.path());
 
-                get_dir_size(e.file);
-            }
-            depth++;
-            break;
-
-        case progress_event::type_exit_dir:
-            if (!--depth) {
-                dir_size_state->cancel();
-            }
-            break;
+            get_dir_size(e.file);
         }
-    });
+        depth++;
+        break;
+
+    case progress_event::type_exit_dir:
+        if (!--depth) {
+            dir_size_state->cancel();
+        }
+        break;
+    }
 }
 
 void app_window::progress_fn::get_dir_size(const paths::pathname &dir) {
@@ -322,5 +320,11 @@ void app_window::progress_fn::got_dir_size(size_t size) {
 
 
 progress_event::callback app_window::get_progress_fn(const dir_type &type) {
-    return progress_fn(progress_dialog(), type);
+    std::shared_ptr<progress_fn> fn = std::make_shared<progress_fn>(progress_dialog(), type);
+
+    return [=] (const progress_event &e) {
+        dispatch_main([=] {
+            (*fn)(e);
+        });
+    };
 }
