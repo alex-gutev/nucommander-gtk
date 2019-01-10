@@ -179,10 +179,11 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
                 break;
 
             case DT_REG:{
+                state.call_progress(progress_event(progress_event::type_enter_file, ent.name, st ? st->st_size : 0));
+
                 std::unique_ptr<instream> src(in.open_entry());
                 std::unique_ptr<outstream> dest(out.create(ent_name, st));
 
-                state.call_progress(progress_event(progress_event::type_enter_file, ent.name, st ? st->st_size : 0));
                 copy_file(state, *src, *dest);
                 state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
             } break;
@@ -195,7 +196,9 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
             }
         }
         catch (const skip_exception &) {
-            // Do nothing in order to skip the current file.
+            if (ent.type != DT_DIR) {
+                state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
+            }
             return copy_dir;
         }
 

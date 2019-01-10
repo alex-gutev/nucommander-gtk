@@ -128,7 +128,7 @@ void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, c
             dir.rename(item, dest_dir.append(name));
         }
         catch (const skip_exception &) {
-            // Do nothing to skip the current file
+            state.call_progress(progress_event(progress_event::type_exit_file, item));
         }
 
         state.call_progress(progress_event(progress_event::type_exit_file, item, 1));

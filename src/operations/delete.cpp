@@ -69,7 +69,9 @@ void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc::dir_wr
             }
         }
         catch (const skip_exception &) {
-            // Do nothing to skip file
+            if (ent.type != DT_DIR) {
+                state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
+            }
         }
 
         state.call_progress(progress_event(progress_event::type_exit_file, ent.name, 1));
