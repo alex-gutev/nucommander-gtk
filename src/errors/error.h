@@ -354,11 +354,23 @@ namespace nuc {
          *
          * @param handler The handler to set as the global error
          *    handler for the lifetime of this object.
+         *
+         * @param call_old If true the previous error handler is
+         *   called if @a handler returns normally.
          */
         template <typename F>
-        error_handler(F&& handler) {
+        error_handler(F&& handler, bool call_old = false) {
             old_handler = global_error_handler;
-            global_error_handler = std::forward<F>(handler);
+
+            if (call_old && old_handler) {
+                global_error_handler = [=] (const error &e) {
+                    handler(e);
+                    old_handler(e);
+                };
+            }
+            else {
+                global_error_handler = std::forward<F>(handler);
+            }
         }
 
         /**

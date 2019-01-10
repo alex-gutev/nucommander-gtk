@@ -92,12 +92,11 @@ void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vect
     if (auto fs_type = dir_type::on_same_fs(src_type.path(), dest)) {
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
 
-        global_restart copy(restart("copy", [] (const error &e, boost::any) {
-            throw begin_copy_exception();
-        },
-        [] (const error &e) {
-            return e.code() == EXDEV;
-        }));
+        error_handler handler([=] (const error &e) {
+            if (e.code() == EXDEV) {
+                throw begin_copy_exception();
+            }
+        }, true);
 
         try {
             move(state, paths, fs_type == dir_type::fs_type_dir ? dest : dir_type::get_subpath(dest), *writer);
