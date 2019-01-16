@@ -19,7 +19,7 @@
 
 #include "archive_tree.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 
 using namespace nuc;

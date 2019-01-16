@@ -32,7 +32,7 @@
 
 #include <gtkmm/liststore.h>
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 /**
  * Contains type aliases used throughout the project.

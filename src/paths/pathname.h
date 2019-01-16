@@ -24,14 +24,17 @@
 #include <vector>
 #include <set>
 
-#include "utils.h"
-
 /**
  * Path utility functions.
  */
 
 namespace nuc {
     namespace paths {
+        /**
+         * Path string type.
+         */
+        typedef std::string string;
+
         /**
          * Pathname class.
          *

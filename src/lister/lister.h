@@ -26,7 +26,7 @@
 #include <atomic>
 #include <exception>
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 #include "stream/instream.h"
 
 namespace nuc {

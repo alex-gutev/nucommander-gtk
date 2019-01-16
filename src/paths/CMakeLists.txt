@@ -1,10 +1,4 @@
 add_sources(PATHS_SRCS
-  components.h
-  components.cpp
-
-  utils.h
-  utils.cpp
-
   pathname.h
   pathname.cpp
 )

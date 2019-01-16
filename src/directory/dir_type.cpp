@@ -37,8 +37,6 @@
 #include "stream/reg_dir_writer.h"
 #include "stream/archive_dir_writer.h"
 
-#include "paths/utils.h"
-
 
 /**
  * Creates a dir_lister object.

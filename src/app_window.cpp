@@ -131,7 +131,7 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
             add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));
         }
         else {
-            std::string full_path = paths::appended_component(flist->path(), ent->orig_subpath());
+            paths::pathname full_path = flist->path().append(ent->orig_subpath());
             add_operation([=] (cancel_state &) {
                 open_file(full_path.c_str());
             });

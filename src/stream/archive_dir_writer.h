@@ -24,7 +24,7 @@
 
 #include "dir_writer.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 #include "plugins/archive_plugin.h"
 
 namespace nuc {

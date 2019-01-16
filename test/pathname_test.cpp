@@ -17,6 +17,7 @@
  *
  */
 
+#define BOOST_TEST_MODULE path_utils
 #include <boost/test/unit_test.hpp>
 
 #include <string>

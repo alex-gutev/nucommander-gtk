@@ -22,7 +22,7 @@
 
 #include "file_error.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 #include <utility>
 

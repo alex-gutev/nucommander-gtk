@@ -22,7 +22,7 @@
 
 #include "instream.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 namespace nuc {
     /**

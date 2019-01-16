@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 #include "errors/errors.h"
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 namespace nuc {
     /**

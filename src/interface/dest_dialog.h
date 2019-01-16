@@ -26,7 +26,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/entry.h>
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 namespace nuc {
     /**

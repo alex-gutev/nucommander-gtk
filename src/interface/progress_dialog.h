@@ -27,7 +27,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/progressbar.h>
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 namespace nuc {
     /**

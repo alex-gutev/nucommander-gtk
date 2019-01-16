@@ -19,7 +19,7 @@
 
 #include "dir_entry.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 
 using namespace nuc;
 

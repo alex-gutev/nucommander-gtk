@@ -23,7 +23,7 @@
 #include "types.h"
 #include "lister/lister.h"
 
-#include "paths/utils.h"
+#include "paths/pathname.h"
 #include "paths/pathname.h"
 
 namespace nuc {
