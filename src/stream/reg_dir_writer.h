@@ -76,6 +76,8 @@ namespace nuc {
         virtual void rename(const paths::pathname &src, const paths::pathname &dest);
 
         virtual void remove(const paths::pathname &path, bool relative);
+
+        virtual file_id get_file_id(const paths::pathname &path);
     };
 }
 

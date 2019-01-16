@@ -68,7 +68,7 @@ void reg_dir_writer::symlink(const paths::pathname &path, const paths::pathname 
 }
 
 
-/// Setting Attributes
+/// Attributes
 
 void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct stat *st) {
     if (st) {
@@ -126,6 +126,15 @@ void with_skip_attrib(F op) {
     }
 }
 
+nuc::file_id reg_dir_writer::get_file_id(const paths::pathname &path) {
+    struct stat st;
+
+    if (!fstatat(fd, path.c_str(), &st, AT_SYMLINK_NOFOLLOW)) {
+        return file_id(st);
+    }
+
+    return file_id();
+}
 
 /// Renaming Files
 

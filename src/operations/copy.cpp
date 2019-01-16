@@ -20,6 +20,7 @@
 #include "copy.h"
 
 #include <memory>
+#include <unordered_set>
 
 #include "errors/restarts.h"
 
@@ -148,6 +149,9 @@ paths::string replace_initial_dir(size_t len, const paths::string &replacement, 
 /// Actual copying of files
 
 void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, const map_name_fn &map_name) {
+    // Set of all directories created during the copy operation.
+    std::unordered_set<file_id> created_dirs;
+
     in.list_entries([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {
         // Flag for whether the directory's contents should be copied
         // if the directory itself could not be copied.
@@ -169,8 +173,17 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
             switch (ent.type) {
             case DT_DIR:
                 if (info == nuc::tree_lister::visit_preorder) {
+                    // If directory was created by the copy operation itself, skip it.
+                    if (st && created_dirs.count(file_id(*st))) {
+                        return false;
+                    }
+
                     state.call_progress(progress_event(progress_event::type_enter_dir, ent.name));
                     out.mkdir(ent_name);
+
+                    if (file_id fid = out.get_file_id(ent_name)) {
+                        created_dirs.insert(fid);
+                    }
                 }
                 else if (info == nuc::tree_lister::visit_postorder) {
                     state.call_progress(progress_event(progress_event::type_exit_dir, ent.name));

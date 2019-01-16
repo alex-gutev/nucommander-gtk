@@ -26,6 +26,10 @@
 
 #include <stdint.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <gtkmm/liststore.h>
 
 #include "paths/utils.h"
@@ -46,6 +50,57 @@ namespace nuc {
      */
     struct dir_entry_context {
         Gtk::TreeRow row;
+    };
+
+    /**
+     * File Identifier.
+     *
+     * Uniquely identifies a file by inode and device id.
+     */
+    struct file_id {
+        /**
+         * Device id.
+         */
+        const dev_t dev = 0;
+        /**
+         * Inode.
+         */
+        const ino_t ino = 0;
+
+        /** Constructors */
+
+        file_id() {}
+        file_id(dev_t dev, ino_t ino) : dev(dev), ino(ino) {}
+
+        file_id(const struct stat &st) : dev(st.st_dev), ino(st.st_ino) {}
+
+        /**
+         * Checks whether the file_id is a valid file identifier.
+         *
+         * @return True if the file_id is a valid file identifier.
+         */
+        operator bool() const {
+            return dev != 0 && ino != 0;
+        }
+    };
+
+    /* file_id equality comparison operators. */
+
+    inline bool operator==(const file_id &id1, const file_id &id2) {
+        return id1.dev == id2.dev && id1.ino == id2.ino;
+    }
+    inline bool operator!=(const file_id &id1, const file_id &id2) {
+        return !(id1 == id2);
+    }
+}
+
+/* file_id hash function */
+namespace std {
+    template <> struct hash<nuc::file_id> {
+        size_t operator()(const nuc::file_id &fid) const noexcept {
+            hash<size_t> h{};
+            return h((fid.dev * 2654435761U) ^ fid.ino);
+        }
     };
 }
 

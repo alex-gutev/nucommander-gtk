@@ -272,6 +272,15 @@ namespace nuc {
                 return m_path;
             }
 
+            /**
+             * Returns a C string representation of the path.
+             *
+             * @return C string representation of the path.
+             */
+            const char *c_str() const {
+                return m_path.c_str();
+            }
+
 
             /* Utility Functions */
 

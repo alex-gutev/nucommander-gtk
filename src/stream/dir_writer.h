@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "types.h"
 #include "paths/pathname.h"
 
 #include "errors/errors.h"
@@ -111,6 +112,24 @@ namespace nuc {
          *   relative to the base path of the writer.
          */
         virtual void remove(const paths::pathname &path, bool relative = true) = 0;
+
+        /**
+         * Returns a `file_id` for a file.
+         *
+         * Used to prevent infinite loops when the destination
+         * directory is a subpath of the source directory in a copy
+         * operation.
+         *
+         * The default method implementation returns an invalid
+         * `file_id`.
+         *
+         * @param path Path to the file.
+         *
+         * @return A file_id for the file at subpath @a path.
+         */
+        virtual file_id get_file_id(const paths::pathname &path) {
+            return file_id();
+        }
 
     protected:
         /**
