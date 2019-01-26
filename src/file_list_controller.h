@@ -72,9 +72,21 @@ namespace nuc {
          */
         typedef void(file_list_controller::*finish_method)(bool, int, bool);
 
+        /** Column Identifiers */
+        enum column_id {
+            /** Name and Icon */
+            column_name = 0,
+            /* File Size */
+            column_size,
+            /* Last Modified Date */
+            column_date,
+
+            /* 1 + the index of the last column */
+            column_last
+        };
 
         /* Paths */
-        
+
         /**
          * The current path.
          */
@@ -200,6 +212,40 @@ namespace nuc {
          * Returns the list store model.
          */
         Glib::RefPtr<Gtk::ListStore> create_model();
+
+        /**
+         * Creates a new tree view column.
+         *
+         * @param title Column Heading Title.
+         *
+         * @return The column.
+         */
+        Gtk::TreeView::Column *create_column(const Glib::ustring &title);
+
+        /**
+         * Adds a text cell to a tree view column, binds its
+         * foreground_rgba attribute to the color model column, and
+         * binds its text property to the tree model column @a data.
+         *
+         * @param col The Column.
+         *
+         * @param data The model column to bind to the text property
+         *   of the cell.
+         *
+         * @return The text cell.
+         */
+        Gtk::CellRendererText * add_text_cell(Gtk::TreeView::Column *col, Gtk::TreeModelColumn<Glib::ustring> data);
+
+        /**
+         * Adds a text cell to a tree view column, and binds its
+         * foreground_rgba attribute to the color model column.
+         *
+         * @param col The Column.
+         *
+         * @return The text cell.
+         */
+        Gtk::CellRendererText * add_text_cell(Gtk::TreeView::Column *col);
+
 
         /**
          * Initializes the VFS, sets the operation callbacks.
@@ -488,9 +534,41 @@ namespace nuc {
          */
         void load_icon(Gtk::TreeRow row);
 
+
+        /** Sorting */
+
+        /**
+         * Called when the sort order changes.
+         *
+         * @param list_store The list store of which the sort order
+         *   changed.
+         */
+        static void sort_changed(Gtk::ListStore *list_store);
+
+        /**
+         * Creates the sort function for a column.
+         *
+         * @param id Id of the column.
+         * @param order The order in which to sort the entries.
+         *
+         * @return The sort function.
+         */
+        static Gtk::TreeSortable::SlotCompare make_sort_func(int id, Gtk::SortType order = Gtk::SortType::SORT_ASCENDING);
+
+
+        /** Formatting Functions */
+
+        /**
+         * Sets the text property of @a cell to the file size of the
+         * entry corresponding to the row with iterator @a iter. The
+         * file size is displayed in the appropriate unit.
+         *
+         * @param cell The text cell.
+         * @param iter The row's iterator.
+         */
+        void on_size_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+
     public:
-
-
 
         /** Constructor */
         file_list_controller();

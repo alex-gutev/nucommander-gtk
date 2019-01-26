@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include "file_list/sort_func.h"
+
 #include "tasks/async_task.h"
 #include "directory/icon_loader.h"
 
@@ -62,32 +64,73 @@ void file_list_controller::init_model() {
 
     view->set_model(cur_list);
 
-    // TODO: Move creation of columns and cells into seperate function
-    
     // Icon and Text
 
-    Gtk::TreeView::Column *column = Gtk::manage(new Gtk::TreeView::Column("Name"));
+    auto *column = create_column("Name");
 
     column->pack_start(columns.icon, false);
+    add_text_cell(column, columns.name);
 
-    auto cell = Gtk::manage(new Gtk::CellRendererText);
-    column->pack_start(*cell);
+    column->set_expand(true);
 
-    column->add_attribute(cell->property_text(), columns.name);
-    column->add_attribute(cell->property_foreground_rgba(), columns.color);
-    column->set_sort_column(columns.name);
+    // Size
 
-    view->append_column(*column);
+    auto *size = create_column("Size");
+    auto *cell = add_text_cell(size);
+
+    size->set_cell_data_func(*cell, sigc::mem_fun(this, &file_list_controller::on_size_data));
+    size->set_expand(false);
+    size->set_sort_column(1);
 }
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
+    using namespace std::placeholders;
 
     auto list_store = Gtk::ListStore::create(file_model_columns::instance());
 
     // Set "Name" as the default sort column
     list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
-    
+
+    list_store->set_sort_func(column_name, make_sort_func(column_name));
+    list_store->set_sort_func(column_size, make_sort_func(column_size));
+
+    // The operator->() hack is necessary to get a raw pointer to the
+    // ListStore object.
+    //
+    // A raw pointer is necessary, as using the Glib::RefPtr instead,
+    // will result in a reference cycle. The list_store object holds a
+    // strong reference to itself and will thus never be deallocated.
+
+    list_store->signal_sort_column_changed().connect(sigc::bind(&file_list_controller::sort_changed, list_store.operator->()));
+
     return list_store;
+}
+
+Gtk::TreeView::Column *file_list_controller::create_column(const Glib::ustring &title) {
+    Gtk::TreeView::Column *col = Gtk::manage(new Gtk::TreeView::Column(title));
+
+    col->set_resizable();
+    view->append_column(*col);
+
+    return col;
+}
+
+Gtk::CellRendererText * file_list_controller::add_text_cell(Gtk::TreeView::Column *col, Gtk::TreeModelColumn<Glib::ustring> data) {
+    auto cell = add_text_cell(col);
+
+    col->add_attribute(cell->property_text(), data);
+    col->set_sort_column(data);
+
+    return cell;
+}
+
+Gtk::CellRendererText * file_list_controller::add_text_cell(Gtk::TreeView::Column *col) {
+    auto cell = Gtk::manage(new Gtk::CellRendererText());
+
+    col->pack_start(*cell);
+    col->add_attribute(cell->property_foreground_rgba(), file_model_columns::instance().color);
+
+    return cell;
 }
 
 
@@ -282,6 +325,84 @@ void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
     row[columns.marked] = false;
 
     ent.context.row = row;
+}
+
+
+//// Sorting
+
+void file_list_controller::sort_changed(Gtk::ListStore *list_store) {
+    int id;
+    Gtk::SortType order;
+
+    list_store->get_sort_column_id(id, order);
+
+    // Reset sort function making sure the order of the invariant sort
+    // functions is preserved.
+    if (id >= 0 && id < column_last)
+        list_store->set_sort_func(id, make_sort_func(id, order));
+}
+
+Gtk::TreeSortable::SlotCompare file_list_controller::make_sort_func(int id, Gtk::SortType order) {
+    switch (id) {
+    case column_size:
+        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_size, sort_name);
+
+    case column_name:
+    default:
+        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
+    }
+}
+
+
+/// Column Formatting
+
+void file_list_controller::on_size_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
+    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+
+    auto row = *iter;
+    dir_entry *ent = row[file_model_columns::instance().ent];
+
+    switch (ent->type()) {
+    case dir_entry::type_reg: {
+        const char *unit = "";
+
+        size_t size = ent->attr().st_size;
+        float rem = 0;
+
+        if (size >= 1073741824) {
+            unit = "GB";
+
+            rem = (size % 1073741824) / 1073741824.0;
+            size /= 1073741824;
+        }
+        else if (size >= 1048576) {
+            unit = "MB";
+
+            rem = (size % 1048576) / 1048576.0;
+            size /= 1048576;
+        }
+        else if (size >= 1024) {
+            unit = "KB";
+
+            rem = (size % 1024) / 1024.0;
+            size /= 1024;
+        }
+
+        if (rem) {
+            text_cell.property_text().set_value(Glib::ustring::compose("%1.%2 %3", size, (int)roundf(rem * 10), unit));
+        }
+        else {
+            text_cell.property_text().set_value(Glib::ustring::compose("%1 %2", size, unit));
+        }
+    } break;
+
+    case dir_entry::type_dir:
+        text_cell.property_text().set_value("<DIR>");
+        break;
+
+    default:
+        text_cell.property_text().set_value("");
+    }
 }
 
 
