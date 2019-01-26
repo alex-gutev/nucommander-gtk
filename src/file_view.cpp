@@ -40,7 +40,7 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     builder->get_widget("path_entry", path_entry);
     builder->get_widget("file_list", file_list_view);
     builder->get_widget("scroll_window", scroll_window);
-    
+
     init_file_list();
     init_path_entry();
 
@@ -56,20 +56,20 @@ void file_view::init_file_list() {
     flist.tree_view(file_list_view);
 
     flist.signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
-    
+
     // Create a seperate vertical adjustment object for the tree view
     // in order to disable "smooth scrolling" when navigating using
     // the arrow keys.
-        
+
     auto adj = Gtk::Adjustment::create(0,0,0);
-    
+
     // Signal handlers are added to the change events of both
     // adjustment objects in order to propagate the changes to the
     // other adjustment object. Currently GTK compares the new values
     // set to the previous values and fires change signals only if
     // they are different, thus no flag is needed to determine which
     // adjustment object fired the initial change signal.
-    
+
     adj->signal_changed().connect([this] {
         auto adj = file_list_view->get_vadjustment();
         scroll_window->get_vadjustment()->configure(
@@ -81,22 +81,22 @@ void file_view::init_file_list() {
             adj->get_page_size()
         );
     });
-    
+
     adj->signal_value_changed().connect([this] {
         scroll_window->get_vadjustment()->set_value(file_list_view->get_vadjustment()->get_value());
     });
-    
+
     file_list_view->set_vadjustment(adj);
 
     // Scroll window adjustment signals
-    
+
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
         file_list_view->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
 
 
     // Add tree view signal handlers
-    
+
     file_list_view->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
 }
 
@@ -116,7 +116,7 @@ void file_view::on_path_entry_activate() {
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
     auto row = flist.list()->children()[row_path[0]];
 
-    dir_entry &ent = *row[flist.columns.ent];
+    dir_entry &ent = *row[file_model_columns::instance().ent];
 
     m_signal_activate_entry.emit(this, &flist, &ent);
 }

@@ -47,7 +47,7 @@ namespace nuc {
          * Row index type. Matches the Gtk type.
          */
         typedef Gtk::TreeNodeChildren::size_type index_type;
-        
+
         /**
          * Path changed signal type.
          *
@@ -84,10 +84,10 @@ namespace nuc {
          * Path changed signal.
          */
         signal_path_type m_signal_path;
-        
-        
+
+
         /* Background operation state */
-        
+
         /**
          * VFS object - performs the actual reading of the directory.
          */
@@ -99,14 +99,14 @@ namespace nuc {
          * Should only be accessed/modified on the main thread.
          */
         bool reading = false;
-        
+
         /**
          * Flag: If true the selection should be moved to the entry
          * corresponding to the previous directory, after reading the
          * new directory list.
          */
         bool move_to_old = false;
-        
+
         /**
          * Parent directory pseudo entry.
          */
@@ -114,15 +114,15 @@ namespace nuc {
 
 
         /* Widgets */
-        
+
         /**
          * File list tree view widget.
          */
         Gtk::TreeView *view;
 
-        
+
         /* Tree View Model */
-        
+
         /**
          * Current list store model. Stores the entries currently
          * visible in the tree view widget.
@@ -130,39 +130,39 @@ namespace nuc {
         Glib::RefPtr<Gtk::ListStore> cur_list;
         /**
          * New list store model. Stores the new entires, currently
-         * being read. 
+         * being read.
          *
          * After the operation completes successfully, this list store
          * is set as the tree view's model, 'cur_list' is cleared and
          * 'new_list' and 'cur_list' are swapped.
          */
         Glib::RefPtr<Gtk::ListStore> new_list;
-        
+
         /**
          * Empty list store.
-         * 
+         *
          * The list store model is used to display an empty tree view,
          * while reading the new directory list, without discarding
          * the old list.
          */
         Glib::RefPtr<Gtk::ListStore> empty_list;
-        
+
 
         /* Tree view state */
-        
+
         /**
          * The previously selected row, prior to beginning the read
          * operation.
          */
         size_t selected_row = 0;
-        
+
         /**
          * True if the rows between the previous selection and current
          * selection should be marked. Used to mark a range of rows in
          * response to the Home/End/Page Up/Down key press event.
          */
         bool mark_rows = false;
-        
+
         /**
          * The offset, from the current selected row, of the last row
          * to mark. If 0, the current selected row is marked. Used in
@@ -179,7 +179,7 @@ namespace nuc {
          *
          */
         entry_set marked_set;
-        
+
 
         /* Private Methods */
 
@@ -196,7 +196,7 @@ namespace nuc {
         /**
          * Creates a list store model, with the column model record
          * 'columns'.
-         * 
+         *
          * Returns the list store model.
          */
         Glib::RefPtr<Gtk::ListStore> create_model();
@@ -245,13 +245,13 @@ namespace nuc {
          * @return The finish callback for the update operation.
          */
         vfs::finish_fn vfs_dir_changed();
-        
+
         /**
          * Directory deleted signal handler.
          */
         void vfs_dir_deleted(paths::pathname new_path);
 
-        
+
         /* Reading new directories */
 
         /**
@@ -287,7 +287,7 @@ namespace nuc {
          */
         vfs::finish_fn read_finish_callback();
 
-        
+
         /**
          * Initiates a read operation for the parent directory of the
          * current directory, if it is not the root directory.
@@ -299,10 +299,10 @@ namespace nuc {
          *    directory to read.
          */
         void read_parent_dir(paths::pathname path);
-        
+
 
         /* Resetting/Setting the treeview model */
-        
+
         /**
          * Restores the old file list and path.
          */
@@ -332,14 +332,14 @@ namespace nuc {
          * @param new_path The path of the directory being read.
          */
         void add_parent_entry(const paths::pathname &new_path);
-        
+
         /**
          * Sets the tree view's model to the new list, sets the
          * selection, sets cur_path to the value of 'vfs->path()' and
          * emits a path changed signal.
          */
         void finish_read();
-        
+
         /**
          * Switches the tree view's model to 'new_list', clears
          * 'cur_list' and swaps the two models.
@@ -353,7 +353,7 @@ namespace nuc {
          * the entry 'ent'.
          */
         void create_row(Gtk::TreeRow row, dir_entry &ent);
-        
+
         /**
          * Sets the sort column (and sort order) of 'new_list' to be
          * the same as 'old_list'.
@@ -362,12 +362,12 @@ namespace nuc {
 
 
         /* Selection */
-        
+
         /**
          * Returns the index of the current selected row.
          */
         size_t selected_row_index() const;
-        
+
         /**
          * Selects the row at index 'row'.
          */
@@ -378,7 +378,7 @@ namespace nuc {
          * if 'move_to_old' is true. Otherwise simply selects entry 0.
          */
         void restore_selection();
-        
+
         /**
          * Moves the selection to the entry corresponding to the
          * previous directory (the entry with the same name as the
@@ -392,7 +392,7 @@ namespace nuc {
          */
         void select_named(const paths::string &name, index_type row = 0);
 
-        
+
         /* Marking */
 
         /**
@@ -408,7 +408,7 @@ namespace nuc {
         void mark_row(Gtk::TreeRow row);
 
         /**
-         * Marks/Unmarks a row. 
+         * Marks/Unmarks a row.
          *
          * The marked attributes (marked flag, colour, etc) of the row
          * are changed however the marked set is not modified.
@@ -418,7 +418,7 @@ namespace nuc {
          */
         void mark_row(Gtk::TreeRow row, bool marked);
 
-        
+
         /** Signal Handlers */
 
         /**
@@ -431,12 +431,12 @@ namespace nuc {
          * 'mark_end_offset' rows from the selected row).
          */
         void on_selection_changed();
-        
+
         /**
          * Treeview keypress event handler.
          */
         bool on_keypress(const GdkEventKey *e);
-        
+
 
         /** Keypress handlers */
 
@@ -451,20 +451,20 @@ namespace nuc {
 
         /**
          * Handler for the up/down arrow key press event.
-         * 
+         *
          * e: The keyboard event.
          */
         bool keypress_arrow(const GdkEventKey *e);
-      
+
         /**
          * Handler for a keypress which changes the current selection:
          * Home/End/Page Up/Down.
-         * 
+         *
          * Sets 'mark_rows' to true in order for all rows between the
          * current selection and the new selection to be marked (when
          * the selection changed signal is emitted), if the shift
          * modifier key was held down.
-         * 
+         *
          * e:        The keyboard event.
          *
          * mark_sel: True if the new selected row should also be
@@ -490,10 +490,6 @@ namespace nuc {
 
     public:
 
-        /**
-         * Tree view column model.
-         */
-        file_model_columns columns;
 
 
         /** Constructor */
@@ -507,7 +503,7 @@ namespace nuc {
          */
         void tree_view(Gtk::TreeView *view);
 
-        
+
         /**
          * Changes the current path of the file view, this changes the
          * path displayed and begins a background read operation for
@@ -546,7 +542,7 @@ namespace nuc {
          *         listed, false otherwise.
          */
         bool descend(const dir_entry &ent);
-        
+
         /**
          * Path changed signal.
          *

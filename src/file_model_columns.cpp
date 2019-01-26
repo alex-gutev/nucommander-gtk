@@ -18,3 +18,10 @@
  */
 
 #include "file_model_columns.h"
+
+using namespace nuc;
+
+file_model_columns &file_model_columns::instance() {
+    static file_model_columns inst;
+    return inst;
+}

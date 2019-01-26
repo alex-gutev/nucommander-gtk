@@ -65,6 +65,11 @@ namespace nuc {
             add(color);
             add(icon);
         }
+
+        /**
+         * Returns the singleton instance.
+         */
+        static file_model_columns &instance();
     };    
 }
 
