@@ -20,6 +20,7 @@
 #include "file_list_controller.h"
 
 #include <algorithm>
+#include <time.h>
 
 #include "file_list/sort_func.h"
 
@@ -78,14 +79,21 @@ void file_list_controller::init_model() {
     auto *size = create_column("Size");
     auto *cell = add_text_cell(size);
 
-    size->set_cell_data_func(*cell, sigc::mem_fun(this, &file_list_controller::on_size_data));
+    size->set_cell_data_func(*cell, sigc::ptr_fun(on_size_data));
     size->set_expand(false);
-    size->set_sort_column(1);
+    size->set_sort_column(column_size);
+
+    // Date Modified
+
+    auto *date = create_column("Date Modified");
+    auto *date_cell = add_text_cell(date);
+
+    date->set_cell_data_func(*date_cell, sigc::ptr_fun(on_date_data));
+    date->set_expand(false);
+    date->set_sort_column(column_date);
 }
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
-    using namespace std::placeholders;
-
     auto list_store = Gtk::ListStore::create(file_model_columns::instance());
 
     // Set "Name" as the default sort column
@@ -93,6 +101,7 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
 
     list_store->set_sort_func(column_name, make_sort_func(column_name));
     list_store->set_sort_func(column_size, make_sort_func(column_size));
+    list_store->set_sort_func(column_date, make_sort_func(column_date));
 
     // The operator->() hack is necessary to get a raw pointer to the
     // ListStore object.
@@ -345,7 +354,10 @@ void file_list_controller::sort_changed(Gtk::ListStore *list_store) {
 Gtk::TreeSortable::SlotCompare file_list_controller::make_sort_func(int id, Gtk::SortType order) {
     switch (id) {
     case column_size:
-        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_size, sort_name);
+        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_size, make_invariant_sort(sort_name, order));
+
+    case column_date:
+        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_mtime, make_invariant_sort(sort_name, order));
 
     case column_name:
     default:
@@ -405,6 +417,26 @@ void file_list_controller::on_size_data(Gtk::CellRenderer *cell, const Gtk::Tree
     }
 }
 
+void file_list_controller::on_date_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
+    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+
+    auto row = *iter;
+    dir_entry *ent = row[file_model_columns::instance().ent];
+
+    if (ent->ent_type() != dir_entry::type_parent) {
+        // localtime is NOT THREAD SAFE
+        auto tm = localtime(&ent->attr().st_mtim.tv_sec);
+
+        const size_t buf_size = 17;
+        char buf[buf_size]  = {0};
+
+        strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
+        text_cell.property_text().set_value(buf);
+    }
+    else {
+        text_cell.property_text().set_value("");
+    }
+}
 
 //// Marking Rows
 

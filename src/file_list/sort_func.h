@@ -49,6 +49,10 @@ namespace nuc  {
      */
     int sort_size(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b);
 
+    /**
+     * Sort by last modified time.
+     */
+    int sort_mtime(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b);
 
     /* Sort Utilities */
 

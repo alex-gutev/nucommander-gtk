@@ -566,7 +566,16 @@ namespace nuc {
          * @param cell The text cell.
          * @param iter The row's iterator.
          */
-        void on_size_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+        static void on_size_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+
+        /**
+         * Sets the text property of @a cell to the last modified date
+         * of the entry.
+         *
+         * @param cell The text cell.
+         * @param iter The row's iterator.
+         */
+        static void on_date_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
 
     public:
 
