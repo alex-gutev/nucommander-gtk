@@ -33,7 +33,7 @@
 
 #include "paths/pathname.h"
 
-#include "file_list_controller.h"
+#include "file_list/file_list_controller.h"
 
 namespace nuc {
     /**

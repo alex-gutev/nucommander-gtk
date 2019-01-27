@@ -10,12 +10,6 @@ add_sources(NUC_SRCS
     file_view.h
     file_view.cpp
     
-    file_list_controller.h
-    file_list_controller.cpp
-    
-    file_model_columns.h
-    file_model_columns.cpp
-    
     types.h
     
     cleanup_n.h
