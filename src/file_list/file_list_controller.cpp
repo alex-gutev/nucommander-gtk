@@ -29,6 +29,8 @@
 
 #include "operations/copy.h"
 
+#include "columns.h"
+
 using namespace nuc;
 
 file_list_controller::file_list_controller() {
@@ -57,40 +59,23 @@ void file_list_controller::init_file_list() {
 }
 
 void file_list_controller::init_model() {
-    auto &columns = file_model_columns::instance();
-
     cur_list = create_model();
     new_list = create_model();
     empty_list = create_model();
 
     view->set_model(cur_list);
 
-    // Icon and Text
+    // Name and Icon
 
-    auto *column = create_column("Name");
+    view->append_column(*file_column_descriptors[0]->create());
 
-    column->pack_start(columns.icon, false);
-    add_text_cell(column, columns.name);
+    // File Size
 
-    column->set_expand(true);
+    view->append_column(*file_column_descriptors[1]->create());
 
-    // Size
+    // Last Modified Date
 
-    auto *size = create_column("Size");
-    auto *cell = add_text_cell(size);
-
-    size->set_cell_data_func(*cell, sigc::ptr_fun(on_size_data));
-    size->set_expand(false);
-    size->set_sort_column(column_size);
-
-    // Date Modified
-
-    auto *date = create_column("Date Modified");
-    auto *date_cell = add_text_cell(date);
-
-    date->set_cell_data_func(*date_cell, sigc::ptr_fun(on_date_data));
-    date->set_expand(false);
-    date->set_sort_column(column_date);
+    view->append_column(*file_column_descriptors[2]->create());
 }
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
@@ -99,9 +84,9 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     // Set "Name" as the default sort column
     list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
 
-    list_store->set_sort_func(column_name, make_sort_func(column_name));
-    list_store->set_sort_func(column_size, make_sort_func(column_size));
-    list_store->set_sort_func(column_date, make_sort_func(column_date));
+    for (auto &col : file_column_descriptors) {
+        list_store->set_sort_func(col->id, col->sort_func());
+    }
 
     // The operator->() hack is necessary to get a raw pointer to the
     // ListStore object.
@@ -113,33 +98,6 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     list_store->signal_sort_column_changed().connect(sigc::bind(&file_list_controller::sort_changed, list_store.operator->()));
 
     return list_store;
-}
-
-Gtk::TreeView::Column *file_list_controller::create_column(const Glib::ustring &title) {
-    Gtk::TreeView::Column *col = Gtk::manage(new Gtk::TreeView::Column(title));
-
-    col->set_resizable();
-    view->append_column(*col);
-
-    return col;
-}
-
-Gtk::CellRendererText * file_list_controller::add_text_cell(Gtk::TreeView::Column *col, Gtk::TreeModelColumn<Glib::ustring> data) {
-    auto cell = add_text_cell(col);
-
-    col->add_attribute(cell->property_text(), data);
-    col->set_sort_column(data);
-
-    return cell;
-}
-
-Gtk::CellRendererText * file_list_controller::add_text_cell(Gtk::TreeView::Column *col) {
-    auto cell = Gtk::manage(new Gtk::CellRendererText());
-
-    col->pack_start(*cell);
-    col->add_attribute(cell->property_foreground_rgba(), file_model_columns::instance().color);
-
-    return cell;
 }
 
 
@@ -347,96 +305,10 @@ void file_list_controller::sort_changed(Gtk::ListStore *list_store) {
 
     // Reset sort function making sure the order of the invariant sort
     // functions is preserved.
-    if (id >= 0 && id < column_last)
-        list_store->set_sort_func(id, make_sort_func(id, order));
+    if (id >= 0 && id < file_column_descriptors.size())
+        list_store->set_sort_func(id, file_column_descriptors[id]->sort_func(order));
 }
 
-Gtk::TreeSortable::SlotCompare file_list_controller::make_sort_func(int id, Gtk::SortType order) {
-    switch (id) {
-    case column_size:
-        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_size, make_invariant_sort(sort_name, order));
-
-    case column_date:
-        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_mtime, make_invariant_sort(sort_name, order));
-
-    case column_name:
-    default:
-        return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
-    }
-}
-
-
-/// Column Formatting
-
-void file_list_controller::on_size_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
-
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
-
-    switch (ent->type()) {
-    case dir_entry::type_reg: {
-        const char *unit = "";
-
-        size_t size = ent->attr().st_size;
-        float rem = 0;
-
-        if (size >= 1073741824) {
-            unit = "GB";
-
-            rem = (size % 1073741824) / 1073741824.0;
-            size /= 1073741824;
-        }
-        else if (size >= 1048576) {
-            unit = "MB";
-
-            rem = (size % 1048576) / 1048576.0;
-            size /= 1048576;
-        }
-        else if (size >= 1024) {
-            unit = "KB";
-
-            rem = (size % 1024) / 1024.0;
-            size /= 1024;
-        }
-
-        if (rem) {
-            text_cell.property_text().set_value(Glib::ustring::compose("%1.%2 %3", size, (int)roundf(rem * 10), unit));
-        }
-        else {
-            text_cell.property_text().set_value(Glib::ustring::compose("%1 %2", size, unit));
-        }
-    } break;
-
-    case dir_entry::type_dir:
-        text_cell.property_text().set_value("<DIR>");
-        break;
-
-    default:
-        text_cell.property_text().set_value("");
-    }
-}
-
-void file_list_controller::on_date_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
-
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
-
-    if (ent->ent_type() != dir_entry::type_parent) {
-        // localtime is NOT THREAD SAFE
-        auto tm = localtime(&ent->attr().st_mtim.tv_sec);
-
-        const size_t buf_size = 17;
-        char buf[buf_size]  = {0};
-
-        strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
-        text_cell.property_text().set_value(buf);
-    }
-    else {
-        text_cell.property_text().set_value("");
-    }
-}
 
 //// Marking Rows
 

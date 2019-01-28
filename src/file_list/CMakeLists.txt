@@ -5,6 +5,9 @@ add_sources(NUC_SRCS
   file_model_columns.h
   file_model_columns.cpp
 
+  columns.h
+  columns.cpp
+
   sort_func.h
   sort_func.cpp
 )

@@ -72,18 +72,6 @@ namespace nuc {
          */
         typedef void(file_list_controller::*finish_method)(bool, int, bool);
 
-        /** Column Identifiers */
-        enum column_id {
-            /** Name and Icon */
-            column_name = 0,
-            /* File Size */
-            column_size,
-            /* Last Modified Date */
-            column_date,
-
-            /* 1 + the index of the last column */
-            column_last
-        };
 
         /* Paths */
 
@@ -212,40 +200,6 @@ namespace nuc {
          * Returns the list store model.
          */
         Glib::RefPtr<Gtk::ListStore> create_model();
-
-        /**
-         * Creates a new tree view column.
-         *
-         * @param title Column Heading Title.
-         *
-         * @return The column.
-         */
-        Gtk::TreeView::Column *create_column(const Glib::ustring &title);
-
-        /**
-         * Adds a text cell to a tree view column, binds its
-         * foreground_rgba attribute to the color model column, and
-         * binds its text property to the tree model column @a data.
-         *
-         * @param col The Column.
-         *
-         * @param data The model column to bind to the text property
-         *   of the cell.
-         *
-         * @return The text cell.
-         */
-        Gtk::CellRendererText * add_text_cell(Gtk::TreeView::Column *col, Gtk::TreeModelColumn<Glib::ustring> data);
-
-        /**
-         * Adds a text cell to a tree view column, and binds its
-         * foreground_rgba attribute to the color model column.
-         *
-         * @param col The Column.
-         *
-         * @return The text cell.
-         */
-        Gtk::CellRendererText * add_text_cell(Gtk::TreeView::Column *col);
-
 
         /**
          * Initializes the VFS, sets the operation callbacks.
