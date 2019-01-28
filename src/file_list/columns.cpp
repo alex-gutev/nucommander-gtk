@@ -148,6 +148,32 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col) {
 }
 
 
+/* Column Descriptors Implementations */
+
+/**
+ * Returns either a cached formatted display string of an attribute
+ * or, if there is no cached value, calls @a fn to generate the
+ * formatted display string and saves into in the entry's formatted
+ * value cache.
+ *
+ * @param ent The entry.
+ *
+ * @param key The attribute's key within the cache.
+ *
+ * @param fn A function of 0 arguments which should return a
+ *   formatted display string of the attribute.
+ *
+ * @return The display string of the attribute.
+ */
+template<typename F>
+Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
+    auto &cache = ent->context.format_cache;
+    auto cit = cache.find(key);
+
+    return cit == cache.end() ? (cache[key] = fn()) : cit->second;
+}
+
+
 /* Name and Icon Column */
 
 Gtk::TreeView::Column *name_column::create() {
@@ -191,47 +217,49 @@ void size_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
     auto row = *iter;
     dir_entry *ent = row[file_model_columns::instance().ent];
 
-    switch (ent->type()) {
-    case dir_entry::type_reg: {
-        const char *unit = "";
+    text_cell.property_text().set_value(cached_value(ent, "size", [=] () -> Glib::ustring {
+        switch (ent->type()) {
+        case dir_entry::type_reg: {
+            const char *unit = "";
 
-        size_t size = ent->attr().st_size;
-        float rem = 0;
+            size_t size = ent->attr().st_size;
+            float rem = 0;
 
-        if (size >= 1073741824) {
-            unit = "GB";
+            if (size >= 1073741824) {
+                unit = "GB";
 
-            rem = (size % 1073741824) / 1073741824.0;
-            size /= 1073741824;
+                rem = (size % 1073741824) / 1073741824.0;
+                size /= 1073741824;
+            }
+            else if (size >= 1048576) {
+                unit = "MB";
+
+                rem = (size % 1048576) / 1048576.0;
+                size /= 1048576;
+            }
+            else if (size >= 1024) {
+                unit = "KB";
+
+                rem = (size % 1024) / 1024.0;
+                size /= 1024;
+            }
+
+            if (rem) {
+                return Glib::ustring::compose("%1.%2 %3", size, (int)roundf(rem * 10), unit);
+            }
+            else {
+                return Glib::ustring::compose("%1 %2", size, unit);
+            }
+        } break;
+
+        case dir_entry::type_dir:
+            return "<DIR>";
+            break;
+
+        default:
+            return "";
         }
-        else if (size >= 1048576) {
-            unit = "MB";
-
-            rem = (size % 1048576) / 1048576.0;
-            size /= 1048576;
-        }
-        else if (size >= 1024) {
-            unit = "KB";
-
-            rem = (size % 1024) / 1024.0;
-            size /= 1024;
-        }
-
-        if (rem) {
-            text_cell.property_text().set_value(Glib::ustring::compose("%1.%2 %3", size, (int)roundf(rem * 10), unit));
-        }
-        else {
-            text_cell.property_text().set_value(Glib::ustring::compose("%1 %2", size, unit));
-        }
-    } break;
-
-    case dir_entry::type_dir:
-        text_cell.property_text().set_value("<DIR>");
-        break;
-
-    default:
-        text_cell.property_text().set_value("");
-    }
+    }));
 }
 
 
@@ -258,17 +286,18 @@ void date_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
     auto row = *iter;
     dir_entry *ent = row[file_model_columns::instance().ent];
 
-    if (ent->ent_type() != dir_entry::type_parent) {
-        // localtime is NOT THREAD SAFE
-        auto tm = localtime(&ent->attr().st_mtim.tv_sec);
+    text_cell.property_text().set_value(cached_value(ent, "mtime", [=] () -> Glib::ustring {
+        if (ent->ent_type() != dir_entry::type_parent) {
+            // localtime is NOT THREAD SAFE
+            auto tm = localtime(&ent->attr().st_mtim.tv_sec);
 
-        const size_t buf_size = 17;
-        char buf[buf_size]  = {0};
+            const size_t buf_size = 17;
+            char buf[buf_size]  = {0};
 
-        strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
-        text_cell.property_text().set_value(buf);
-    }
-    else {
-        text_cell.property_text().set_value("");
-    }
+            strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
+            return buf;
+        }
+
+        return "";
+    }));
 }
