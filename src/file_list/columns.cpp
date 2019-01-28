@@ -223,29 +223,29 @@ void size_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
             const char *unit = "";
 
             size_t size = ent->attr().st_size;
-            float rem = 0;
+            float frac = 0;
 
             if (size >= 1073741824) {
                 unit = "GB";
 
-                rem = (size % 1073741824) / 1073741824.0;
+                frac = (size % 1073741824) / 1073741824.0;
                 size /= 1073741824;
             }
             else if (size >= 1048576) {
                 unit = "MB";
 
-                rem = (size % 1048576) / 1048576.0;
+                frac = (size % 1048576) / 1048576.0;
                 size /= 1048576;
             }
             else if (size >= 1024) {
                 unit = "KB";
 
-                rem = (size % 1024) / 1024.0;
+                frac = (size % 1024) / 1024.0;
                 size /= 1024;
             }
 
-            if (rem) {
-                return Glib::ustring::compose("%1.%2 %3", size, (int)roundf(rem * 10), unit);
+            if (int rem = (int)floorf(frac * 10)) {
+                return Glib::ustring::compose("%1.%2 %3", size, rem, unit);
             }
             else {
                 return Glib::ustring::compose("%1 %2", size, unit);
