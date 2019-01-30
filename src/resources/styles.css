@@ -17,7 +17,11 @@
  *
  */
 
-GtkTreeView:not(:focus):selected {
+/**
+ * Class added to the file list tree view which is not in the focused
+ * pane.
+ */
+.file-list-unfocus:selected {
     background: gray;
     border: gray;
 }

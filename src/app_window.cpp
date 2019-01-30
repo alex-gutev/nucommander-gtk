@@ -50,6 +50,8 @@ app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject,
                        const Glib::RefPtr<Gtk::Builder> &builder)
     : Gtk::ApplicationWindow(cobject), builder(builder) {
 
+    add_events(Gdk::FOCUS_CHANGE_MASK);
+
     // TODO: Add error checking
 
     set_default_size(800, 600);

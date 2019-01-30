@@ -98,6 +98,21 @@ void file_view::init_file_list() {
     // Add tree view signal handlers
 
     file_list_view->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
+
+
+    // Add classes for indicating focus and focus event handlers
+
+    file_list_view->get_style_context()->add_class("file-list-unfocus");
+
+    file_list_view->signal_focus_in_event().connect([=] (GdkEventFocus *e) {
+        file_list_view->get_style_context()->remove_class("file-list-unfocus");
+        return false;
+    });
+
+    file_list_view->signal_focus_out_event().connect([=] (GdkEventFocus *e) {
+        file_list_view->get_style_context()->add_class("file-list-unfocus");
+        return false;
+   });
 }
 
 void file_view::init_path_entry() {
