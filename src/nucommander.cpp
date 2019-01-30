@@ -24,28 +24,39 @@
 #include "tasks/async_task.h"
 
 #include <sigc++/sigc++.h>
+#include <gtkmm/styleprovider.h>
+#include <gtkmm/cssprovider.h>
 
 nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {}
 
 Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::create() {
-    return Glib::RefPtr<NuCommander>(new NuCommander());
+    auto app = Glib::RefPtr<NuCommander>(new NuCommander());
+
+    // Add stylesheet
+
+    auto provider = Gtk::CssProvider::create();
+    provider->load_from_resource("/org/agware/nucommander/styles.css");
+
+    Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(), provider, 600);
+
+    return app;
 }
 
 nuc::app_window *nuc::NuCommander::create_app_window() {
     auto window = app_window::create();
-    
+
     add_window(*window);
-    
+
     window->signal_hide().connect(sigc::bind<app_window*>(sigc::mem_fun(*this, &NuCommander::on_hide_window), window));
-    
+
     return window;
 }
 
 void nuc::NuCommander::on_activate() {
     //TODO: Add exception handling
-    
+
     init_threads();
-    
+
     auto window = create_app_window();
     window->present();
 }

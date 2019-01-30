@@ -56,13 +56,14 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c
     src/resources/dest_dialog.glade
     src/resources/progress_dialog.glade
     src/resources/nucommander.gresource.xml
+    src/resources/styles.css
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/resources)
 
 add_sources(NUC_SRCS src/resources.c)
 
 
 # Compile schemas and move to target directory
-  
+
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gschemas.compiled
     COMMAND glib-compile-schemas --strict --targetdir=${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src
     DEPENDS src/nucommander.gschema.xml)
