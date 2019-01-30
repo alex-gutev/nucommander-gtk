@@ -164,11 +164,11 @@ void reg_dir_writer::rename(const paths::pathname &src, const paths::pathname &d
 
 void reg_dir_writer::remove(const paths::pathname &path, bool relative) {
     try_op([=] {
-        if (unlinkat(fd, path.path().c_str(), 0)) {
+        if (unlinkat(fd, path.path().c_str(), AT_REMOVEDIR)) {
             int err = errno;
 
-            if (err == EISDIR) {
-                if (unlinkat(fd, path.path().c_str(), AT_REMOVEDIR))
+            if (err == ENOTDIR) {
+                if (unlinkat(fd, path.path().c_str(), 0))
                     throw file_error(errno, error::type_delete_file, true, path);
             }
             else {
