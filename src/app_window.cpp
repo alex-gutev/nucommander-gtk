@@ -140,7 +140,13 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
 }
 
 void app_window::open_file(const char *cpath) {
-    Gio::AppInfo::launch_default_for_uri("file://" + std::string(cpath));
+    try {
+        Gio::AppInfo::launch_default_for_uri("file://" + std::string(cpath));
+    }
+    catch (Gio::Error) {
+        // For now do nothing as there isn't much that can be done
+        // other than letting the user manually retry.
+    }
 }
 
 void app_window::add_operation(task_queue::task_type op) {
