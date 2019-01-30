@@ -141,6 +141,8 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col, Gtk::Tre
 static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col) {
     auto cell = Gtk::manage(new Gtk::CellRendererText());
 
+    cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
+
     col->pack_start(*cell);
     col->add_attribute(cell->property_foreground_rgba(), file_model_columns::instance().color);
 
