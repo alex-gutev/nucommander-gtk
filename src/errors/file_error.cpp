@@ -19,8 +19,6 @@
 
 #include "file_error.h"
 
-#include <error.h>
-
 using namespace nuc;
 
 Glib::ustring file_error::type_explanation() const noexcept {

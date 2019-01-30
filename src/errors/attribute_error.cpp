@@ -19,8 +19,6 @@
 
 #include "attribute_error.h"
 
-#include <error.h>
-
 using namespace nuc;
 
 Glib::ustring attribute_error::type_explanation() const noexcept {
