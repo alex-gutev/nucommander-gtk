@@ -141,9 +141,9 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
     }
 }
 
-void app_window::open_file(const char *cpath) {
+void app_window::open_file(const std::string &path) {
     try {
-        Gio::AppInfo::launch_default_for_uri("file://" + std::string(cpath));
+        Gio::AppInfo::launch_default_for_uri(Gio::File::create_for_path(path)->get_uri());
     }
     catch (Gio::Error) {
         // For now do nothing as there isn't much that can be done

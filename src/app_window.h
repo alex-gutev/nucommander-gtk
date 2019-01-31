@@ -150,7 +150,7 @@ namespace nuc {
          *
          * @param path Path to the file.
          */
-        void open_file(const char *path);
+        void open_file(const std::string &path);
 
 
         /* Error handling */
