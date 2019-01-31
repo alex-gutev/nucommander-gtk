@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <functional>
 #include <exception>
@@ -195,6 +196,20 @@ namespace nuc {
         return e1.code() == e2.code() && e1.error_type() == e2.error_type();
     }
 
+    /**
+     * Error comparison operator.
+     *
+     * @a e1 is considered less than @a e2 if its error_type is less
+     * than the error_type of @a e2 and its error code is less than
+     * the error code of @a e2.
+     *
+     * If either @a e1, @a e2, have an error code of zero, the error
+     * code is not taken into consideration in the comparison.
+     */
+    inline bool operator<(const error &e1, const error &e2) {
+        return e1.error_type() < e2.error_type() && e1.code() && e2.code() && e1.code() < e2.code();
+    }
+
 
     /* Restarts */
 
@@ -328,6 +343,20 @@ namespace nuc {
         throw;
     });
 
+
+    /* Automatic Error Handlers */
+
+    /**
+     * Returns the map of default automatic error handlers, retrieved
+     * from settings.
+     *
+     * The map keys are error objects with the error_type and code
+     * set, and the corresponding values are the string identifiers of
+     * the restarts.
+     *
+     * @return Error handler map.
+     */
+    std::map<error, std::string> auto_error_handlers();
 
     /* Error handler functions */
 

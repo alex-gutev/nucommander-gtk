@@ -20,7 +20,7 @@
 #ifndef APP_WINDOW_H
 #define APP_WINDOW_H
 
-#include <unordered_map>
+#include <map>
 
 #include <gtkmm/applicationwindow.h>
 #include <gtkmm/builder.h>
@@ -169,7 +169,7 @@ namespace nuc {
              * The keys are the error objects and the corresponding
              * values are the identifier names of the chosen restarts.
              */
-            std::unordered_map<error, std::string> chosen_actions;
+            std::map<error, std::string> chosen_actions;
 
             /**
              * The dialog window.
@@ -181,7 +181,7 @@ namespace nuc {
              *
              * @param window The dialog window.
              */
-            error_handler(app_window *window) : window(window) {}
+            error_handler(app_window *window) : chosen_actions(auto_error_handlers()), window(window) {}
 
             /**
              * Error handler function.
