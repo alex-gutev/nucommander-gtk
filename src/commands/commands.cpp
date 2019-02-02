@@ -130,6 +130,18 @@ static void delete_command_fn(nuc::app_window *window, nuc::file_view *src);
  */
 static Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents);
 
+/**
+ * Change path command function.
+ *
+ * Moves the keyboard focus to the current path entry.
+ *
+ * @param window Pointer to the app_window, in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src);
 
 // Initialize Builtin command table.
 
@@ -137,7 +149,8 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("copy", copy_command_fn),
     std::make_pair("make-directory", make_dir_command_fn),
     std::make_pair("move", move_command_fn),
-    std::make_pair("delete", delete_command_fn)
+    std::make_pair("delete", delete_command_fn),
+    std::make_pair("jump-path", jump_path_command_fn)
 };
 
 
@@ -251,6 +264,13 @@ Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents) {
     }
     else {
         return Glib::ustring::compose("Are you sure you want to delete %1 selected files?", ents.size());
+    }
+}
+
+
+void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    if (src) {
+        src->focus_path();
     }
 }
 

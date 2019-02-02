@@ -179,6 +179,11 @@ namespace nuc {
          */
         void path(const paths::pathname &path, bool move_to_old = false);
 
+        /**
+         * Moves the keyboard focus to the path entry widget.
+         */
+        void focus_path();
+
 
         /* Copy Tasks */
 

@@ -157,6 +157,12 @@ void file_view::entry_path(const std::string &path) {
 }
 
 
+//// Changing Keyboard Focus
+
+void file_view::focus_path() {
+    path_entry->grab_focus();
+}
+
 //// Getting a tree lister
 
 tree_lister * file_view::get_tree_lister() {
