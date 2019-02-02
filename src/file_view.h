@@ -59,14 +59,19 @@ namespace nuc {
         typedef sigc::signal<void, file_view *, file_list_controller *, dir_entry *> signal_activate_entry_type;
 
         /**
+         * Key press event signal type.
+         */
+        typedef decltype(((Gtk::Frame*)nullptr)->signal_key_press_event()) signal_key_press_event_type;
+
+        /**
          * File list controller. Populates the tree view's model with
          * the directory's contents.
          */
         file_list_controller flist;
-        
+
 
         /* Widgets */
-        
+
         /**
          * Path text entry widget.
          */
@@ -86,16 +91,16 @@ namespace nuc {
          * Activate entry signal.
          */
         signal_activate_entry_type m_signal_activate_entry;
-        
+
 
         /* Private Methods */
-        
+
         /**
          * Initializes the file list tree view widget: sets the model
          * and connects the signal handlers.
          */
-        void init_file_list();        
-        
+        void init_file_list();
+
         /**
          * Initializes the path text entry. Connects a signal handler,
          * to the activate signal, which begins a background read
@@ -105,15 +110,15 @@ namespace nuc {
 
 
         /* Setting the path */
-        
+
         /**
          * Sets the contents of the path text entry widget, to 'path'.
          */
         void entry_path(const std::string &path);
-                
-        
+
+
         /** Signal Handlers */
-        
+
         /**
          * Path entry "activate" signal handler. Called when the text
          * in the path entry is changed and the enter key is pressed.
@@ -122,7 +127,7 @@ namespace nuc {
          * focus to the tree view.
          */
         void on_path_entry_activate();
-        
+
         /**
          * Signal handler for the row activate signal of the tree
          * view.  The signal is emitted when a row is "double clicked"
@@ -139,7 +144,7 @@ namespace nuc {
          */
         void on_path_changed(const paths::pathname &path);
 
-        
+
     public:
         /**
          * The opposite file_view, i.e. the destination pane.
@@ -217,6 +222,14 @@ namespace nuc {
          */
         signal_activate_entry_type signal_activate_entry() {
             return m_signal_activate_entry;
+        }
+
+        /**
+         * Key press event signal, which is emitted for all keypress
+         * events emitted while the tree view has the keyboard focus.
+         */
+        signal_key_press_event_type signal_key_press() {
+            return file_list_view->signal_key_press_event();
         }
 
 

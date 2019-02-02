@@ -99,6 +99,9 @@ void file_view::init_file_list() {
 
     file_list_view->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
 
+    // Add X Events
+
+    file_list_view->add_events(Gdk::KEY_PRESS_MASK | Gdk::FOCUS_CHANGE_MASK);
 
     // Add classes for indicating focus and focus event handlers
 
@@ -112,7 +115,7 @@ void file_view::init_file_list() {
     file_list_view->signal_focus_out_event().connect([=] (GdkEventFocus *e) {
         file_list_view->get_style_context()->add_class("file-list-unfocus");
         return false;
-   });
+    });
 }
 
 void file_view::init_path_entry() {
