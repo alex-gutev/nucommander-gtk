@@ -141,8 +141,6 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col, Gtk::Tre
 static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col) {
     auto cell = Gtk::manage(new Gtk::CellRendererText());
 
-    cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
-
     col->pack_start(*cell);
     col->add_attribute(cell->property_foreground_rgba(), file_model_columns::instance().color);
 
@@ -183,7 +181,9 @@ Gtk::TreeView::Column *name_column::create() {
     auto *column = create_column("Name");
 
     column->pack_start(columns.icon, false);
-    add_text_cell(column, columns.name);
+    auto *cell = add_text_cell(column, columns.name);
+
+    cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
 
     column->set_expand(true);
     column->set_sort_column(id);
