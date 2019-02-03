@@ -4,4 +4,7 @@ add_sources(NUC_SRCS
 
   progress_dialog.h
   progress_dialog.cpp
+
+  key_prefs_window.h
+  key_prefs_window.cpp
 )
