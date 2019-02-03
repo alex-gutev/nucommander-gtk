@@ -70,6 +70,15 @@ namespace nuc {
         void get_keymap();
 
         /**
+         * Default handler for the settings changed signal.
+         *
+         * Updates keymap.
+         *
+         * @param      key The changed key.
+         */
+        void keymap_changed(const Glib::ustring &key);
+
+        /**
          * Returns the key sequence string corresponding to a key
          * event.
          *

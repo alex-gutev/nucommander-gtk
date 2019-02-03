@@ -279,6 +279,8 @@ void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src) {
 
 command_keymap::command_keymap() {
     get_keymap();
+
+    app_settings::instance().settings()->signal_changed("keybindings").connect(sigc::mem_fun(this, &command_keymap::keymap_changed));
 };
 
 command_keymap &command_keymap::instance() {
@@ -294,6 +296,10 @@ void command_keymap::get_keymap() {
     auto map = gv_map.get();
 
     keymap = std::unordered_map<std::string, std::string>(map.begin(), map.end());
+}
+
+void command_keymap::keymap_changed(const Glib::ustring &key) {
+    get_keymap();
 }
 
 
