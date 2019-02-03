@@ -81,7 +81,7 @@ void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct 
 
         // TODO: Add OS X specific code here
 
-#elif
+#else
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
@@ -111,7 +111,7 @@ void reg_dir_writer::set_attributes(const paths::pathname &path, const struct st
 
         // TODO: Add OS X specific code here
 
-#elif
+#else
 
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
