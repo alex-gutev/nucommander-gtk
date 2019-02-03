@@ -24,6 +24,7 @@
 #include "app_window.h"
 #include "file_view.h"
 
+#include "interface/key_prefs_window.h"
 #include "interface/dest_dialog.h"
 
 #include "settings/app_settings.h"
@@ -143,6 +144,12 @@ static Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents);
  */
 static void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src);
 
+/**
+ * Open key binding preferences command function.
+ */
+static void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *);
+
+
 // Initialize Builtin command table.
 
 std::unordered_map<std::string, nuc::command_fn> nuc::commands{
@@ -150,7 +157,8 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("make-directory", make_dir_command_fn),
     std::make_pair("move", move_command_fn),
     std::make_pair("delete", delete_command_fn),
-    std::make_pair("jump-path", jump_path_command_fn)
+    std::make_pair("jump-path", jump_path_command_fn),
+    std::make_pair("open-key-prefs", open_key_prefs_command_fn)
 };
 
 
@@ -272,6 +280,13 @@ void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (src) {
         src->focus_path();
     }
+}
+
+void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *) {
+    auto *window = key_prefs_window::instance();
+
+    window->show();
+    window->present();
 }
 
 
