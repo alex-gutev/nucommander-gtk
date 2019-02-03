@@ -71,8 +71,8 @@ int nuc::sort_mtime(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::ite
     dir_entry *ent1 = (*a)[columns.ent];
     dir_entry *ent2 = (*b)[columns.ent];
 
-    auto tm1 = ent1->attr().st_mtim.tv_sec;
-    auto tm2 = ent2->attr().st_mtim.tv_sec;
+    auto tm1 = ent1->attr().st_mtime;
+    auto tm2 = ent2->attr().st_mtime;
 
     return tm1 > tm2 ? 1 : (tm1 < tm2 ? -1 : 0);
 }

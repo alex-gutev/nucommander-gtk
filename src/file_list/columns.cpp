@@ -291,7 +291,7 @@ void date_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
     text_cell.property_text().set_value(cached_value(ent, "mtime", [=] () -> Glib::ustring {
         if (ent->ent_type() != dir_entry::type_parent) {
             // localtime is NOT THREAD SAFE
-            auto tm = localtime(&ent->attr().st_mtim.tv_sec);
+            auto tm = localtime(&ent->attr().st_mtime);
 
             const size_t buf_size = 17;
             char buf[buf_size]  = {0};

@@ -77,12 +77,20 @@ void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct 
                     throw attribute_error(errno, error::type_set_mode, true, path));
         });
 
+#ifdef __APPLE__
+
+        // TODO: Add OS X specific code here
+
+#elif
+
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
         with_skip_attrib([&] {
             TRY_OP_(futimens(fd, times),
                     throw attribute_error(errno, error::type_set_times, true, path));
         });
+
+#endif
 
         with_skip_attrib([=] {
             TRY_OP_(fchown(fd, st->st_uid, st->st_gid),
@@ -99,12 +107,20 @@ void reg_dir_writer::set_attributes(const paths::pathname &path, const struct st
                         throw attribute_error(errno, error::type_set_mode, true, path));
             });
 
+#ifdef __APPLE__
+
+        // TODO: Add OS X specific code here
+
+#elif
+
         struct timespec times[] = { st->st_atim, st->st_mtim };
 
         with_skip_attrib([&] {
             TRY_OP_(utimensat(fd, path.path().c_str(), times, AT_SYMLINK_NOFOLLOW),
                     throw attribute_error(errno, error::type_set_times, true, path));
         });
+
+#endif
 
         with_skip_attrib([=] {
             TRY_OP_(fchownat(fd, path.path().c_str(), st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW),
