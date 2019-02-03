@@ -229,7 +229,7 @@ namespace nuc {
 template <typename T, typename F>
 void nuc::task_queue::add(T task, F finish) {
     add([=] (cancel_state &state) {
-        state.no_cancel([&state, &finish] {
+        state.no_cancel([&state, finish] {
             state.add_finish_callback(finish, false);
         });
 
