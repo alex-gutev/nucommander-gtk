@@ -157,18 +157,22 @@ void file_view::file_list(file_list_controller *new_flist) {
         flist->signal_path().clear();
     }
 
-    flist = new_flist;
+    if (new_flist) {
+        // Temporarily set flist to NULL to prevent so as to not
+        // forward the selection change event to the old flist.
+        flist = nullptr;
 
-    if (flist) {
-        flist->signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
-        flist->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
-        flist->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
+        change_model(new_flist->list());
+        select_row(new_flist->selected());
 
-        path_entry->set_text(flist->path().path());
+        new_flist->signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
+        new_flist->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
+        new_flist->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
 
-        change_model(flist->list());
-        select_row(flist->selected());
+        path_entry->set_text(new_flist->path().path());
     }
+
+    flist = new_flist;
 }
 
 
@@ -189,9 +193,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
 void file_view::on_selection_changed() {
     if (flist) {
-        if (auto row = file_list_view->get_selection()->get_selected()) {
-            flist->on_selection_changed(file_list_view->get_model()->get_path(row)[0]);
-        }
+        flist->on_selection_changed(*file_list_view->get_selection()->get_selected());
     }
 }
 
@@ -221,10 +223,10 @@ void file_view::change_model(Glib::RefPtr<Gtk::ListStore> model) {
 }
 
 void file_view::select_row(Gtk::TreeRow row) {
-   if (row) {
-       file_list_view->get_selection()->select(row);
-       file_list_view->scroll_to_row(file_list_view->get_model()->get_path(row));
-   }
+    if (row) {
+        file_list_view->get_selection()->select(row);
+        file_list_view->scroll_to_row(file_list_view->get_model()->get_path(row));
+    }
 }
 
 //// Changing the current path

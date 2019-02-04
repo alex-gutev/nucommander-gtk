@@ -159,7 +159,7 @@ void file_list_controller::reset_list(bool refresh) {
         m_signal_change_model.emit(cur_list);
 
         // Select previously selected row
-        select_row(selected_row);
+        select_row(cur_list->get_path(selected_row)[0]);
 
         // Reset move to old flag
         move_to_old = false;
@@ -169,13 +169,15 @@ void file_list_controller::reset_list(bool refresh) {
 void file_list_controller::set_updated_list() {
     bool selection = false;
     paths::string name;
+    index_type index = 0;
 
-    if (auto row = cur_list->children()[selected_row]) {
+    if (selected_row) {
         // Get name of selected row's entry
-        dir_entry *ent = row[file_model_columns::instance().ent];
+        dir_entry *ent = selected_row[file_model_columns::instance().ent];
         name = ent->file_name();
 
         selection = true;
+        index = cur_list->get_path(selected_row)[0];
     }
 
     set_new_list(false);
@@ -183,7 +185,7 @@ void file_list_controller::set_updated_list() {
     update_marked_set();
 
     if (selection)
-        select_named(name, selected_row);
+        select_named(name, index);
 }
 
 void file_list_controller::update_marked_set() {
@@ -351,28 +353,32 @@ void file_list_controller::select_named(const paths::string &name, index_type ro
     }
 }
 
+void file_list_controller::on_selection_changed(Gtk::TreeRow row) {
+    if (!reading) {
+        if (mark_rows) {
+            index_type prev_index = cur_list->get_path(selected_row)[0];
+            index_type row_index = cur_list->get_path(row)[0];
 
-void file_list_controller::on_selection_changed(index_type row_index) {
-    if (mark_rows) {
-        size_t start, end;
+            size_t start, end;
 
-        if (row_index > selected_row) {
-            start = selected_row;
-            end = row_index - mark_end_offset;
+            if (row_index > prev_index) {
+                start = prev_index;
+                end = row_index - mark_end_offset;
+            }
+            else {
+                start = row_index + mark_end_offset;
+                end = prev_index;
+            }
+
+            for (size_t i = start; i <= end; i++) {
+                mark_row(cur_list->children()[i]);
+            }
+
+            mark_rows = false;
         }
-        else {
-            start = row_index + mark_end_offset;
-            end = selected_row;
-        }
 
-        for (size_t i = start; i <= end; i++) {
-            mark_row(cur_list->children()[i]);
-        }
-
-        mark_rows = false;
+        selected_row = row;
     }
-
-    selected_row = row_index;
 }
 
 
@@ -407,8 +413,8 @@ bool file_list_controller::keypress_escape() {
 
 bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
     if (e->state & GDK_SHIFT_MASK) {
-        if (auto row = cur_list->children()[selected_row]) {
-            mark_row(*row);
+        if (selected_row) {
+            mark_row(selected_row);
         }
     }
     return false;
@@ -511,8 +517,8 @@ std::vector<dir_entry*> file_list_controller::selected_entries() {
         }
     }
     else {
-        if (auto row = cur_list->children()[selected_row]) {
-            dir_entry *ent = (*row)[columns.ent];
+        if (selected_row) {
+            dir_entry *ent = selected_row[columns.ent];
 
             if (ent->ent_type() != dir_entry::type_parent)
                 entries.push_back(ent);

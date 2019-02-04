@@ -177,9 +177,9 @@ namespace nuc {
         /* Selection and Marked Entry State */
 
         /**
-         * Index of the currently selected row.
+         * The selected row.
          */
-        index_type selected_row = 0;
+        Gtk::TreeRow selected_row;
 
         /**
          * True if the rows between the previous selection and current
@@ -610,7 +610,7 @@ namespace nuc {
          * @return The row.
          */
         Gtk::TreeRow selected() const {
-            return cur_list->children()[selected_row];
+            return selected_row;
         }
 
         /**
@@ -629,9 +629,9 @@ namespace nuc {
          * changed. Should be called for both external and internal,
          * in response to the 'select_row' signal, changes.
          *
-         * @param index Index of the selected row.
+         * @param row The selected row.
          */
-        void on_selection_changed(index_type row_index);
+        void on_selection_changed(Gtk::TreeRow row);
 
         /**
          * Should be called in response to a keypress event within the
