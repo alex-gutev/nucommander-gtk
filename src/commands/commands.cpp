@@ -149,6 +149,19 @@ static void jump_path_command_fn(nuc::app_window *window, nuc::file_view *src);
  */
 static void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *);
 
+/**
+ * Swap panes command function.
+ *
+ * Swaps the left and right file list panes.
+ *
+ * @param window Pointer to the window in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *);
+
 
 // Initialize Builtin command table.
 
@@ -158,13 +171,15 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("move", move_command_fn),
     std::make_pair("delete", delete_command_fn),
     std::make_pair("jump-path", jump_path_command_fn),
-    std::make_pair("open-key-prefs", open_key_prefs_command_fn)
+    std::make_pair("open-key-prefs", open_key_prefs_command_fn),
+    std::make_pair("swap-panes", swap_panes_command_fn)
 };
 
 
 paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathname &dest) {
     return paths::pathname(path, true).merge(dest);
 }
+
 
 /// Builtin Command Implementations
 
@@ -287,6 +302,20 @@ void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *) {
 
     window->show();
     window->present();
+}
+
+
+void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    nuc::file_view *dest = src->next_file_view;
+
+    auto *fl_src = &src->file_list();
+    auto *fl_dest = &dest->file_list();
+
+    src->file_list(nullptr);
+    dest->file_list(nullptr);
+
+    src->file_list(fl_dest);
+    dest->file_list(fl_src);
 }
 
 

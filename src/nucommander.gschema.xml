@@ -18,7 +18,8 @@
         "F7": "make-directory",
         "F8": "delete",
         "/": "jump-path",
-        "C-,": "open-key-prefs"
+        "C-,": "open-key-prefs",
+        "C-u": "swap-panes"
         }
       </default>
       <description>
