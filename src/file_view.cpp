@@ -20,6 +20,7 @@
 #include "file_view.h"
 
 #include "tasks/async_task.h"
+#include "file_list/columns.h"
 
 #include <gdk/gdkkeysyms.h>
 
@@ -52,11 +53,26 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
 //// Initialization
 
 void file_view::init_file_list() {
-    // Associate file list controller with tree view widget
-    flist.tree_view(file_list_view);
+    init_columns();
+    init_scroll_adjustments();
+    init_file_list_events();
+}
 
-    flist.signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
+void file_view::init_columns() {
+    // Name and Icon
 
+    file_list_view->append_column(*file_column_descriptors[0]->create());
+
+    // File Size
+
+    file_list_view->append_column(*file_column_descriptors[1]->create());
+
+    // Last Modified Date
+
+    file_list_view->append_column(*file_column_descriptors[2]->create());
+}
+
+void file_view::init_scroll_adjustments() {
     // Create a seperate vertical adjustment object for the tree view
     // in order to disable "smooth scrolling" when navigating using
     // the arrow keys.
@@ -93,8 +109,9 @@ void file_view::init_file_list() {
     scroll_window->get_vadjustment()->signal_value_changed().connect([=] {
         file_list_view->get_vadjustment()->set_value(scroll_window->get_vadjustment()->get_value());
     });
+}
 
-
+void file_view::init_file_list_events() {
     // Add tree view signal handlers
 
     file_list_view->signal_row_activated().connect(sigc::mem_fun(this, &file_view::on_row_activate));
@@ -116,40 +133,105 @@ void file_view::init_file_list() {
         file_list_view->get_style_context()->add_class("file-list-unfocus");
         return false;
     });
+
+
+    // Add Event Signal Handlers
+
+    file_list_view->get_selection()->signal_changed().connect(sigc::mem_fun(this, &file_view::on_selection_changed));
+
+    file_list_view->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_file_list_keypress), false);
 }
+
 
 void file_view::init_path_entry() {
     path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
 }
 
 
+//// Changing the File List
+
+void file_view::file_list(file_list_controller *new_flist) {
+    if (flist) {
+        flist->signal_change_model().clear();
+        flist->signal_select().clear();
+        flist->signal_path().clear();
+    }
+
+    flist = new_flist;
+
+    if (flist) {
+        flist->signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
+        flist->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
+        flist->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
+
+        path_entry->set_text(flist->path().path());
+
+        change_model(flist->list());
+        select_row(flist->selected());
+    }
+}
+
 
 //// Signal Handlers
 
 void file_view::on_path_entry_activate() {
-    flist.path(path_entry->get_text());
+    flist->path(path_entry->get_text());
     file_list_view->grab_focus();
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = flist.list()->children()[row_path[0]];
+    auto row = flist->list()->children()[row_path[0]];
 
     dir_entry &ent = *row[file_model_columns::instance().ent];
 
-    m_signal_activate_entry.emit(this, &flist, &ent);
+    m_signal_activate_entry.emit(this, flist, &ent);
 }
+
+void file_view::on_selection_changed() {
+    if (flist) {
+        if (auto row = file_list_view->get_selection()->get_selected()) {
+            flist->on_selection_changed(file_list_view->get_model()->get_path(row)[0]);
+        }
+    }
+}
+
+bool file_view::on_file_list_keypress(GdkEventKey *e) {
+    switch (e->keyval) {
+    case GDK_KEY_Return:
+        if (auto row = *file_list_view->get_selection()->get_selected()) {
+            // Emit activate signal. This should be emitted automatically
+            // by the widget however the signal is not emitted if the
+            // selection was changed programmatically.
+            file_list_view->row_activated(file_list_view->get_model()->get_path(row), *file_list_view->get_column(0));
+        }
+        return true;
+
+    default:
+        return flist ? flist->on_keypress(e) : false;
+    }
+}
+
 
 void file_view::on_path_changed(const paths::pathname &path) {
     entry_path(path);
 }
 
+void file_view::change_model(Glib::RefPtr<Gtk::ListStore> model) {
+    file_list_view->set_model(model);
+}
 
+void file_view::select_row(Gtk::TreeRow row) {
+   if (row) {
+       file_list_view->get_selection()->select(row);
+       file_list_view->scroll_to_row(file_list_view->get_model()->get_path(row));
+   }
+}
 
 //// Changing the current path
 
 void file_view::path(const paths::pathname &path, bool move_to_old) {
     entry_path(path);
-    flist.path(path, move_to_old);
+    flist->path(path, move_to_old);
 }
 
 void file_view::entry_path(const std::string &path) {
@@ -161,14 +243,4 @@ void file_view::entry_path(const std::string &path) {
 
 void file_view::focus_path() {
     path_entry->grab_focus();
-}
-
-//// Getting a tree lister
-
-tree_lister * file_view::get_tree_lister() {
-    return flist.get_tree_lister();
-}
-
-dir_writer * file_view::get_dir_writer() {
-    return dir_type::get_writer(flist.path());
 }

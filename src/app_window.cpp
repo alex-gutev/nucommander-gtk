@@ -75,6 +75,15 @@ void app_window::init_pane_view() {
     left_view->next_file_view = right_view;
     right_view->next_file_view = left_view;
 
+
+    // Create file_list_controllers for both panes
+
+    directories.emplace_back(new file_list_controller());
+    directories.emplace_back(new file_list_controller());
+
+    left_view->file_list(directories[0].get());
+    right_view->file_list(directories[1].get());
+
     left_view->path("/");
     right_view->path("/");
 

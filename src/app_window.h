@@ -73,6 +73,12 @@ namespace nuc {
 
 
         /**
+         * List of file_list_controllers of all open directories.
+         */
+        std::vector<std::unique_ptr<file_list_controller>> directories;
+
+
+        /**
          * Error dialog: displays error details and a list of recovery
          * options.
          */

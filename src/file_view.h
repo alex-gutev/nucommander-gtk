@@ -64,10 +64,9 @@ namespace nuc {
         typedef decltype(((Gtk::Frame*)nullptr)->signal_key_press_event()) signal_key_press_event_type;
 
         /**
-         * File list controller. Populates the tree view's model with
-         * the directory's contents.
+         * File list controller of the file view.
          */
-        file_list_controller flist;
+        file_list_controller* flist = nullptr;
 
 
         /* Widgets */
@@ -93,13 +92,29 @@ namespace nuc {
         signal_activate_entry_type m_signal_activate_entry;
 
 
-        /* Private Methods */
+        /* Initialization */
 
         /**
-         * Initializes the file list tree view widget: sets the model
-         * and connects the signal handlers.
+         * Initializes the file list tree view widget.
          */
         void init_file_list();
+
+        /**
+         * Adds the columns of the file list tree view widget.
+         */
+        void init_columns();
+
+        /**
+         * Initializes the scroll adjustments of the tree view and
+         * scrolled window.
+         */
+        void init_scroll_adjustments();
+
+        /**
+         * Adds signal handlers for the tree view's event signals.
+         */
+        void init_file_list_events();
+
 
         /**
          * Initializes the path text entry. Connects a signal handler,
@@ -139,10 +154,41 @@ namespace nuc {
         void on_row_activate(const Gtk::TreeModel::Path &path, Gtk::TreeViewColumn *column);
 
         /**
+         * Signal handler for the selection changed event of the tree
+         * view.
+         *
+         * Calls the on_selection_changed method of the file list
+         * controller.
+         */
+        void on_selection_changed();
+
+        /**
+         * Signal handler for the key press event of the tree view.
+         *
+         * Calls the on_keypress method of the file list controller.
+         */
+        bool on_file_list_keypress(GdkEventKey *e);
+
+
+        /* File List Controller Signal Handlers */
+
+        /**
          * Signal handler for the file list controller's path changed
          * signal.
          */
         void on_path_changed(const paths::pathname &path);
+
+        /**
+         * Signal handler for the file list controller's change model
+         * signal.
+         */
+        void change_model(Glib::RefPtr<Gtk::ListStore> model);
+
+        /**
+         * Signal handler for the file list controller's select row
+         * signal.
+         */
+        void select_row(Gtk::TreeRow row);
 
 
     public:
@@ -150,6 +196,7 @@ namespace nuc {
          * The opposite file_view, i.e. the destination pane.
          */
         file_view * next_file_view;
+
 
         /**
          * Derived widget constructor.
@@ -162,14 +209,21 @@ namespace nuc {
          * @return The file list controller.
          */
         file_list_controller &file_list() {
-            return flist;
+            return *flist;
         }
+
+        /**
+         * Sets the file view's file list controller.
+         *
+         * @param flist The new file list controller.
+         */
+        void file_list(file_list_controller *flist);
 
         /**
          * Returns the path to the file view's current directory.
          */
         const paths::pathname &path() const {
-            return flist.path();
+            return flist->path();
         }
 
         /**
@@ -183,37 +237,6 @@ namespace nuc {
          * Moves the keyboard focus to the path entry widget.
          */
         void focus_path();
-
-
-        /* Copy Tasks */
-
-        /**
-         * Creates a task which copies the selected/marked files to a
-         * destination directory.
-         *
-         * @param dest Path to the destination directory.
-         *
-         * @return The copy task.
-         */
-        task_queue::task_type make_copy_task(const paths::pathname &dest) {
-            return flist.make_copy_task(dest);
-        }
-
-        /**
-         * Creates a tree lister for listing the marked/selected files
-         * and the contents of any marked/selected directories.
-         *
-         * @return The tree lister.
-         */
-        tree_lister *get_tree_lister();
-
-        /**
-         * Returns a directory writer for modifying files in the
-         * file_view's directory.
-         *
-         * @return The directory writer.
-         */
-        dir_writer *get_dir_writer();
 
 
         /* Signals */
@@ -251,7 +274,7 @@ namespace nuc {
          */
         template <typename F>
         void cleanup(F fn) {
-            flist.cleanup(fn);
+            flist->cleanup(fn);
         }
     };
 }

@@ -33,50 +33,17 @@
 
 using namespace nuc;
 
-file_list_controller::file_list_controller() {
-    init_vfs();
-}
-
 
 //// Initialization
 
-void file_list_controller::tree_view(Gtk::TreeView *view) {
-    this->view = view;
-    init_file_list();
-}
+file_list_controller::file_list_controller() {
+    init_vfs();
 
-void file_list_controller::init_file_list() {
-    init_model();
-
-    // Connect tree view signal handlers
-
-    view->get_selection()->signal_changed().connect(sigc::mem_fun(this, &file_list_controller::on_selection_changed));
-
-    // Connect X event signal handlers
-
-    view->add_events(Gdk::KEY_PRESS_MASK);
-    view->signal_key_press_event().connect(sigc::mem_fun(this, &file_list_controller::on_keypress), false);
-}
-
-void file_list_controller::init_model() {
     cur_list = create_model();
     new_list = create_model();
     empty_list = create_model();
-
-    view->set_model(cur_list);
-
-    // Name and Icon
-
-    view->append_column(*file_column_descriptors[0]->create());
-
-    // File Size
-
-    view->append_column(*file_column_descriptors[1]->create());
-
-    // Last Modified Date
-
-    view->append_column(*file_column_descriptors[2]->create());
 }
+
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     auto list_store = Gtk::ListStore::create(file_model_columns::instance());
@@ -100,9 +67,6 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     return list_store;
 }
 
-
-/// VFS Initialization
-
 void file_list_controller::init_vfs() {
     using namespace std::placeholders;
 
@@ -116,6 +80,8 @@ void file_list_controller::init_vfs() {
     vfs->signal_deleted().connect(sigc::mem_fun(this, &file_list_controller::vfs_dir_deleted));
 }
 
+
+//// VFS Callbacks
 
 void file_list_controller::vfs_begin(bool refresh) {
     // Disable sorting while adding new entries to improve performance.
@@ -155,7 +121,6 @@ vfs::finish_fn file_list_controller::vfs_dir_changed() {
 }
 
 void file_list_controller::vfs_dir_deleted(paths::pathname new_path) {
-    // TODO: Check that a read task has not been initiated
     if (!reading)
         read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
@@ -174,6 +139,14 @@ void file_list_controller::read_parent_dir(paths::pathname path) {
     }
 }
 
+vfs::finish_fn file_list_controller::read_finish_callback() {
+    using namespace std::placeholders;
+
+    return std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3);
+}
+
+
+//// Setting New List
 
 void file_list_controller::reset_list(bool refresh) {
     // Clear new list
@@ -183,7 +156,7 @@ void file_list_controller::reset_list(bool refresh) {
         m_signal_path.emit(cur_path);
 
         // Reset to old list
-        view->set_model(cur_list);
+        m_signal_change_model.emit(cur_list);
 
         // Select previously selected row
         select_row(selected_row);
@@ -194,19 +167,13 @@ void file_list_controller::reset_list(bool refresh) {
 }
 
 void file_list_controller::set_updated_list() {
-    auto row = *view->get_selection()->get_selected();
-
     bool selection = false;
     paths::string name;
-    index_type index;
 
-    if (row) {
+    if (auto row = cur_list->children()[selected_row]) {
         // Get name of selected row's entry
         dir_entry *ent = row[file_model_columns::instance().ent];
         name = ent->file_name();
-
-        // Get index of selected row
-        index = view->get_model()->get_path(row)[0];
 
         selection = true;
     }
@@ -216,7 +183,7 @@ void file_list_controller::set_updated_list() {
     update_marked_set();
 
     if (selection)
-        select_named(name, index);
+        select_named(name, selected_row);
 }
 
 void file_list_controller::update_marked_set() {
@@ -269,7 +236,9 @@ void file_list_controller::set_new_list(bool clear_marked) {
 
     // Swap models and switch model to 'new_list'
     cur_list.swap(new_list);
-    view->set_model(cur_list);
+
+    // Emit 'model_changed' signal with new list
+    m_signal_change_model.emit(cur_list);
 
     // Clear old list
     new_list->clear();
@@ -341,23 +310,8 @@ void file_list_controller::mark_row(Gtk::TreeRow row, bool marked) {
 
 //// Selection
 
-size_t file_list_controller::selected_row_index() const {
-    auto row = view->get_selection()->get_selected();
-    if (row) {
-        auto path = view->get_model()->get_path(row);
-        return path[0];
-    }
-
-    return 0;
-}
-
-void file_list_controller::select_row(size_t index) {
-    auto row = cur_list->children()[index];
-
-    if (row) {
-        view->get_selection()->select(row);
-        view->scroll_to_row(cur_list->get_path(row));
-    }
+void file_list_controller::select_row(index_type index) {
+    m_signal_select.emit(cur_list->children()[index]);
 }
 
 
@@ -378,18 +332,19 @@ void file_list_controller::select_old() {
 void file_list_controller::select_named(const paths::string &name, index_type row_ind) {
     index_type selection = 0;
 
-    if (view->get_model()->children().size()) {
+    if (cur_list->children().size()) {
         auto rows = cur_list->children();
+
         auto row = std::find_if(rows.begin(), rows.end(), [&] (const Gtk::TreeRow &row) {
             dir_entry *ent = row[file_model_columns::instance().ent];
             return ent->file_name() == name;
         });
 
         if (row) {
-            selection = view->get_model()->get_path(row)[0];
+            selection = cur_list->get_path(row)[0];
         }
         else {
-            selection = std::min(view->get_model()->children().size() - 1, row_ind);
+            selection = std::min(cur_list->children().size() - 1, row_ind);
         }
 
         select_row(selection);
@@ -397,17 +352,16 @@ void file_list_controller::select_named(const paths::string &name, index_type ro
 }
 
 
-void file_list_controller::on_selection_changed() {
+void file_list_controller::on_selection_changed(index_type row_index) {
     if (mark_rows) {
-        size_t selection = selected_row_index();
         size_t start, end;
 
-        if (selection > selected_row) {
+        if (row_index > selected_row) {
             start = selected_row;
-            end = selection - mark_end_offset;
+            end = row_index - mark_end_offset;
         }
         else {
-            start = selection + mark_end_offset;
+            start = row_index + mark_end_offset;
             end = selected_row;
         }
 
@@ -417,18 +371,17 @@ void file_list_controller::on_selection_changed() {
 
         mark_rows = false;
     }
+
+    selected_row = row_index;
 }
 
 
-// Keypress event handlers
+//// Keypress event handlers
 
 bool file_list_controller::on_keypress(const GdkEventKey *e) {
     switch (e->keyval) {
         case GDK_KEY_Escape:
             return keypress_escape();
-
-        case GDK_KEY_Return:
-            return keypress_return();
 
         case GDK_KEY_Up:
         case GDK_KEY_Down:
@@ -448,29 +401,13 @@ bool file_list_controller::on_keypress(const GdkEventKey *e) {
     return false;
 }
 
-
-bool file_list_controller::keypress_return() {
-    auto row = *view->get_selection()->get_selected();
-
-    if (row) {
-        // Emit activate signal. This should be emitted automatically
-        // by the widget however the signal is not emitted if the
-        // selection was changed programmatically.
-        view->row_activated(cur_list->get_path(row), *view->get_column(0));
-        return true;
-    }
-
-    return false;
-}
-
 bool file_list_controller::keypress_escape() {
     return vfs->cancel();
 }
 
 bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
     if (e->state & GDK_SHIFT_MASK) {
-        auto row = view->get_selection()->get_selected();
-        if (row) {
+        if (auto row = cur_list->children()[selected_row]) {
             mark_row(*row);
         }
     }
@@ -479,14 +416,13 @@ bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
 
 void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool mark_sel) {
     if (e->state & GDK_SHIFT_MASK) {
-        selected_row = selected_row_index();
         mark_rows = true;
         mark_end_offset = mark_sel ? 0 : 1;
     }
 }
 
 
-/// Icons
+//// Icons
 
 void file_list_controller::load_icons() {
     using namespace std::placeholders;
@@ -505,12 +441,10 @@ void file_list_controller::load_icon(Gtk::TreeRow row) {
 }
 
 
-// Changing the path
+//// Beginning Read Operations
 
 void file_list_controller::prepare_read(bool move_to_old) {
-    selected_row = selected_row_index();
     this->move_to_old = move_to_old;
-
     reading = true;
 
     clear_view();
@@ -523,13 +457,7 @@ paths::pathname file_list_controller::expand_path(const paths::pathname &path) {
 void file_list_controller::clear_view() {
     // Set model to empty list to display an empty tree view without
     // discarding the old list
-    view->set_model(empty_list);
-}
-
-vfs::finish_fn file_list_controller::read_finish_callback() {
-    using namespace std::placeholders;
-
-    return std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3);
+    m_signal_change_model.emit(empty_list);
 }
 
 void file_list_controller::path(const paths::pathname &path, bool move_to_old) {
@@ -570,20 +498,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
 }
 
 
-//// Getting a tree lister
-
-tree_lister * file_list_controller::get_tree_lister() {
-    return vfs->get_tree_lister(selected_entries());
-}
-
-task_queue::task_type file_list_controller::make_copy_task(const paths::pathname &dest) {
-    auto entries = selected_entries();
-
-    if (entries.size())
-        return ::make_copy_task(vfs->directory_type(), std::move(entries), expand_path(dest));
-    else
-        return task_queue::task_type();
-}
+//// Getting Selected and Marked Entries
 
 std::vector<dir_entry*> file_list_controller::selected_entries() {
     auto &columns = file_model_columns::instance();
@@ -596,8 +511,7 @@ std::vector<dir_entry*> file_list_controller::selected_entries() {
         }
     }
     else {
-        auto row = view->get_selection()->get_selected();
-        if (row) {
+        if (auto row = cur_list->children()[selected_row]) {
             dir_entry *ent = (*row)[columns.ent];
 
             if (ent->ent_type() != dir_entry::type_parent)
