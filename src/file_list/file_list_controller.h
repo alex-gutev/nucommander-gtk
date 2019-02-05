@@ -592,6 +592,15 @@ namespace nuc {
             return m_signal_select;
         }
 
+        /**
+         * Returns true if the file_list_controller is attached to a file_view.
+         *
+         * @return     bool
+         */
+        bool attached() const {
+            return m_signal_change_model.size();
+        }
+
 
         /* Retrieving the model and selection */
 

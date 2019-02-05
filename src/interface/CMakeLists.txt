@@ -7,4 +7,7 @@ add_sources(NUC_SRCS
 
   key_prefs_window.h
   key_prefs_window.cpp
+
+  open_dirs_popup.h
+  open_dirs_popup.cpp
 )

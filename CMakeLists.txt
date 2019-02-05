@@ -56,6 +56,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/resources.c
     src/resources/dest_dialog.glade
     src/resources/progress_dialog.glade
     src/resources/key_prefs_window.glade
+    src/resources/open_dirs_popup.glade
     src/resources/nucommander.gresource.xml
     src/resources/styles.css
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/resources)
