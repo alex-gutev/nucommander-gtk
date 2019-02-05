@@ -345,3 +345,22 @@ progress_event::callback app_window::get_progress_fn(const dir_type &type) {
         });
     };
 }
+
+//// Open Directories Popup
+
+nuc::open_dirs_popup *app_window::open_dirs_popup() {
+    if (!m_open_dirs_popup) {
+        m_open_dirs_popup = open_dirs_popup::create();
+        m_open_dirs_popup->set_transient_for(*this);
+    }
+
+    m_open_dirs_popup->set_dirs(directories);
+
+    return m_open_dirs_popup;
+}
+
+file_list_controller *app_window::open_new_dir() {
+    directories.emplace_back(new file_list_controller());
+
+    return directories.back().get();
+}

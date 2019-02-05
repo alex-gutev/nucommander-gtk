@@ -19,7 +19,9 @@
         "F8": "delete",
         "/": "jump-path",
         "C-,": "open-key-prefs",
-        "C-u": "swap-panes"
+        "C-u": "swap-panes",
+        "C-b": "change-directory",
+        "C-t": "open-new-directory"
         }
       </default>
       <description>

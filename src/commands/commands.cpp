@@ -160,7 +160,34 @@ static void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *);
  * @param src Pointer to the source pane (file_view), in which the
  *   command was triggered.
  */
-static void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *);
+static void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *src);
+
+/**
+ * Change directory command function.
+ *
+ * Displays the open directory list popup.
+ *
+ * @param window Pointer to the window in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
+
+/**
+ * Create new open directory command function.
+ *
+ * Creates a new file_list_controller and sets it as the
+ * file_list_controller of the source pane.
+ *
+ * @param window Pointer to the window in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
 
 
 // Initialize Builtin command table.
@@ -172,7 +199,9 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("delete", delete_command_fn),
     std::make_pair("jump-path", jump_path_command_fn),
     std::make_pair("open-key-prefs", open_key_prefs_command_fn),
-    std::make_pair("swap-panes", swap_panes_command_fn)
+    std::make_pair("swap-panes", swap_panes_command_fn),
+    std::make_pair("change-directory", change_dir_command_fn),
+    std::make_pair("open-new-directory", open_dir_command_fn)
 };
 
 
@@ -318,6 +347,24 @@ void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *src) {
     dest->file_list(fl_src);
 }
 
+void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    auto *popup = window->open_dirs_popup();
+
+    popup->dir_chosen([=] (file_list_controller *flist) {
+        src->file_list(flist);
+    });
+
+    popup->show();
+    popup->present();
+}
+
+void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    auto *flist = window->open_new_dir();
+    auto old_path = src->file_list().path();
+
+    src->file_list(flist);
+    src->path(old_path);
+}
 
 /// command_keymap Implementation
 

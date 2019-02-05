@@ -40,6 +40,7 @@
 
 #include "interface/dest_dialog.h"
 #include "interface/progress_dialog.h"
+#include "interface/open_dirs_popup.h"
 
 #include "tasks/progress.h"
 
@@ -94,6 +95,11 @@ namespace nuc {
          * Operation progress dialog.
          */
         nuc::progress_dialog *m_progress_dialog = nullptr;
+
+        /**
+         * Change directory (list open directories) popup.
+         */
+        nuc::open_dirs_popup *m_open_dirs_popup = nullptr;
 
         /**
          * Operation task queue, onto which file operations are
@@ -364,6 +370,19 @@ namespace nuc {
          * @return The callback function.
          */
         progress_event::callback get_progress_fn(const dir_type &type);
+
+        /**
+         * Returns a pointer to the open directory list popup.
+         *
+         * @return     open_dirs_popup *
+         */
+        nuc::open_dirs_popup *open_dirs_popup();
+
+        /**
+         * Creates a new file_list_controller and adds it to the list
+         * of file_list_controllers of all open directories.
+         */
+        file_list_controller *open_new_dir();
 
         /**
          * Asynchronous cleanup method.
