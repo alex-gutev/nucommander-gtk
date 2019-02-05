@@ -36,9 +36,18 @@ using namespace nuc;
 
 //// Initialization
 
-file_list_controller::file_list_controller() {
-    init_vfs();
+std::shared_ptr<file_list_controller> file_list_controller::create() {
+    struct enable_make_shared : public file_list_controller {
+        using file_list_controller::file_list_controller;
+    };
 
+    auto flist = std::make_shared<enable_make_shared>();
+
+    flist->init_vfs();
+    return flist;
+}
+
+file_list_controller::file_list_controller() {
     cur_list = create_model();
     new_list = create_model();
     empty_list = create_model();
@@ -72,12 +81,29 @@ void file_list_controller::init_vfs() {
 
     vfs = nuc::vfs::create();
 
-    vfs->callback_begin(std::bind(&file_list_controller::vfs_begin, this, _1));
-    vfs->callback_new_entry(std::bind(&file_list_controller::vfs_new_entry, this, _1, _2));
+    auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
 
-    vfs->callback_changed(std::bind(&file_list_controller::vfs_dir_changed, this));
+    vfs->callback_begin([=] (bool refresh) {
+        if (auto self = ptr.lock())
+            self->vfs_begin(refresh);
+    });
 
-    vfs->signal_deleted().connect(sigc::mem_fun(this, &file_list_controller::vfs_dir_deleted));
+    vfs->callback_new_entry([=] (dir_entry &ent, bool refresh) {
+        if (auto self = ptr.lock())
+            self->vfs_new_entry(ent, refresh);
+    });
+
+    vfs->callback_changed([=] {
+        if (auto self = ptr.lock())
+            return self->vfs_dir_changed();
+
+        return vfs::finish_fn();
+    });
+
+    vfs->signal_deleted().connect([=] (paths::pathname path) {
+        if (auto self = ptr.lock())
+            self->vfs_dir_deleted(path);
+    });
 }
 
 
@@ -132,7 +158,12 @@ void file_list_controller::read_parent_dir(paths::pathname path) {
     if (!path.is_root()) {
         path = path.remove_last_component();
 
-        vfs::finish_fn finish = std::bind(&file_list_controller::vfs_finish_move_up, this, path, _1, _2, _3);
+        auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
+
+        vfs::finish_fn finish = [=] (bool cancelled, int error, bool refresh) {
+            if (auto self = ptr.lock())
+                self->vfs_finish_move_up(path, cancelled, error, refresh);
+        };
 
         if (!vfs->ascend(finish))
             vfs->read(path, finish);
@@ -140,9 +171,12 @@ void file_list_controller::read_parent_dir(paths::pathname path) {
 }
 
 vfs::finish_fn file_list_controller::read_finish_callback() {
-    using namespace std::placeholders;
+    auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
 
-    return std::bind(&file_list_controller::vfs_finish, this, _1, _2, _3);
+    return [=] (bool cancelled, int error, bool refresh) {
+        if (auto self = ptr.lock())
+            self->vfs_finish(cancelled, error, refresh);
+    };
 }
 
 

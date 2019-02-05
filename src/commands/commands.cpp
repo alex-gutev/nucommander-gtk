@@ -214,7 +214,7 @@ paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathn
 
 void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        auto entries = src->file_list().selected_entries();
+        auto entries = src->file_list()->selected_entries();
 
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
@@ -224,7 +224,7 @@ void copy_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dialog->set_exec_button_label("Copy");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->file_list().dir_vfs()->directory_type();
+                auto type = src->file_list()->dir_vfs()->directory_type();
 
                 window->add_operation(
                     make_copy_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
@@ -266,7 +266,7 @@ void make_dir_task(cancel_state &state, const paths::string &dest, const paths::
 
 void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        auto entries = src->file_list().selected_entries();
+        auto entries = src->file_list()->selected_entries();
 
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
@@ -276,7 +276,7 @@ void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
             dialog->set_exec_button_label("Move");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->file_list().dir_vfs()->directory_type();
+                auto type = src->file_list()->dir_vfs()->directory_type();
 
                 window->add_operation(
                     make_move_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
@@ -288,7 +288,7 @@ void move_command_fn(nuc::app_window *window, nuc::file_view *src) {
 
 void delete_command_fn(nuc::app_window *window, nuc::file_view *src) {
     if (window && src) {
-        auto entries = src->file_list().selected_entries();
+        auto entries = src->file_list()->selected_entries();
 
         if (!entries.empty()) {
             // Query for confirmation
@@ -301,7 +301,7 @@ void delete_command_fn(nuc::app_window *window, nuc::file_view *src) {
             // Add delete operation if response was OK
 
             if (result == Gtk::RESPONSE_OK) {
-                auto type = src->file_list().dir_vfs()->directory_type();
+                auto type = src->file_list()->dir_vfs()->directory_type();
 
                 window->add_operation(make_delete_task(type, entries),
                                       window->get_progress_fn(type));
@@ -337,8 +337,8 @@ void open_key_prefs_command_fn(nuc::app_window *, nuc::file_view *) {
 void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *src) {
     nuc::file_view *dest = src->next_file_view;
 
-    auto *fl_src = &src->file_list();
-    auto *fl_dest = &dest->file_list();
+    auto fl_src = src->file_list();
+    auto fl_dest = dest->file_list();
 
     src->file_list(nullptr);
     dest->file_list(nullptr);
@@ -350,7 +350,7 @@ void swap_panes_command_fn(nuc::app_window *window, nuc::file_view *src) {
 void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
     auto *popup = window->open_dirs_popup();
 
-    popup->dir_chosen([=] (file_list_controller *flist) {
+    popup->dir_chosen([=] (std::shared_ptr<file_list_controller> flist) {
         src->file_list(flist);
     });
 
@@ -359,8 +359,8 @@ void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
 }
 
 void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
-    auto *flist = window->open_new_dir();
-    auto old_path = src->file_list().path();
+    auto flist = window->open_new_dir();
+    auto old_path = src->file_list()->path();
 
     src->file_list(flist);
     src->path(old_path);

@@ -66,7 +66,7 @@ namespace nuc {
         /**
          * File list controller of the file view.
          */
-        file_list_controller* flist = nullptr;
+        std::shared_ptr<file_list_controller> flist;
 
 
         /* Widgets */
@@ -208,8 +208,8 @@ namespace nuc {
          *
          * @return The file list controller.
          */
-        file_list_controller &file_list() {
-            return *flist;
+        std::shared_ptr<file_list_controller> file_list() {
+            return flist;
         }
 
         /**
@@ -217,7 +217,7 @@ namespace nuc {
          *
          * @param flist The new file list controller.
          */
-        void file_list(file_list_controller *flist);
+        void file_list(std::shared_ptr<file_list_controller> flist);
 
         /**
          * Returns the path to the file view's current directory.
@@ -258,23 +258,6 @@ namespace nuc {
          */
         signal_key_press_event_type signal_key_press() {
             return file_list_view->signal_key_press_event();
-        }
-
-
-        /* Cleanup */
-
-        /**
-         * Asynchronous cleanup method.
-         *
-         * @param fn The cleanup function to call once it is safe to
-         *           deallocate the object.
-         *
-         * This method should only be called on the main thread. The
-         * function fn will be called on the main thread.
-         */
-        template <typename F>
-        void cleanup(F fn) {
-            flist->cleanup(fn);
         }
     };
 }

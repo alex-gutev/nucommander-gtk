@@ -27,6 +27,7 @@
 #include <gtkmm/treerowreference.h>
 
 #include <unordered_map>
+#include <memory>
 
 #include "paths/pathname.h"
 
@@ -42,7 +43,7 @@ namespace nuc {
      * storing the file list in a tree model. Also keeps track of the
      * marked and selected files.
      */
-    class file_list_controller {
+    class file_list_controller : public std::enable_shared_from_this<file_list_controller> {
         /* Types */
 
         /**
@@ -501,11 +502,15 @@ namespace nuc {
          */
         static void sort_changed(Gtk::ListStore *list_store);
 
-    public:
-
         /** Constructor */
         file_list_controller();
 
+    public:
+
+        /**
+         * Creates a file_list_controller.
+         */
+        static std::shared_ptr<file_list_controller> create();
 
         /* Changing the path */
 

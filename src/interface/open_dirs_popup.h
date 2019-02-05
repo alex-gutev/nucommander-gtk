@@ -42,7 +42,7 @@ namespace nuc {
          */
         struct model_columns : public Gtk::TreeModelColumnRecord {
             Gtk::TreeModelColumn<Glib::ustring> path;
-            Gtk::TreeModelColumn<file_list_controller *> file_list;
+            Gtk::TreeModelColumn<std::shared_ptr<file_list_controller>> file_list;
 
             model_columns();
         };
@@ -55,7 +55,7 @@ namespace nuc {
          * @param flist The file_list_controller of the chosen
          *   directory.
          */
-        typedef std::function<void(file_list_controller*)> dir_chosen_fn;
+        typedef std::function<void(std::shared_ptr<file_list_controller>)> dir_chosen_fn;
 
         /**
          * Column Model
@@ -118,7 +118,7 @@ namespace nuc {
          * @param dirs Vector of file_list_controller objects for each
          *   open directory.
          */
-        void set_dirs(const std::vector<std::unique_ptr<file_list_controller>> &dirs);
+        void set_dirs(const std::vector<std::shared_ptr<file_list_controller>> &dirs);
 
         /**
          * Sets the directory chosen callback function.

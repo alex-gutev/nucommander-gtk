@@ -60,7 +60,7 @@ open_dirs_popup::open_dirs_popup(BaseObjectType *cobject, const Glib::RefPtr<Gtk
     dirs_view->signal_row_activated().connect(sigc::mem_fun(this, &open_dirs_popup::dir_activated));
 }
 
-void open_dirs_popup::set_dirs(const std::vector<std::unique_ptr<file_list_controller> > &dirs) {
+void open_dirs_popup::set_dirs(const std::vector<std::shared_ptr<file_list_controller> > &dirs) {
     dirs_list->clear();
 
     for (const auto &flist : dirs) {
@@ -68,7 +68,7 @@ void open_dirs_popup::set_dirs(const std::vector<std::unique_ptr<file_list_contr
             auto row = *dirs_list->append();
 
             row[model.path] = flist->path().path();
-            row[model.file_list] = flist.get();
+            row[model.file_list] = flist;
         }
     }
 }

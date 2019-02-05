@@ -76,7 +76,7 @@ namespace nuc {
         /**
          * List of file_list_controllers of all open directories.
          */
-        std::vector<std::unique_ptr<file_list_controller>> directories;
+        std::vector<std::shared_ptr<file_list_controller>> directories;
 
 
         /**
@@ -382,7 +382,7 @@ namespace nuc {
          * Creates a new file_list_controller and adds it to the list
          * of file_list_controllers of all open directories.
          */
-        file_list_controller *open_new_dir();
+        std::shared_ptr<file_list_controller> open_new_dir();
 
         /**
          * Asynchronous cleanup method.
@@ -400,14 +400,9 @@ namespace nuc {
 
 template <typename F>
 void nuc::app_window::cleanup(F fn) {
-    auto cleanup_fn = cleanup_n_fn(3, fn);
-
-    left_view->cleanup(cleanup_fn);
-    right_view->cleanup(cleanup_fn);
-
     operations->cancel();
-    operations->add([cleanup_fn] (cancel_state &) {
-        dispatch_main(cleanup_fn);
+    operations->add([fn] (cancel_state &) {
+        dispatch_main(fn);
     });
 }
 

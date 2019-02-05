@@ -78,11 +78,11 @@ void app_window::init_pane_view() {
 
     // Create file_list_controllers for both panes
 
-    directories.emplace_back(new file_list_controller());
-    directories.emplace_back(new file_list_controller());
+    directories.push_back(file_list_controller::create());
+    directories.push_back(file_list_controller::create());
 
-    left_view->file_list(directories[0].get());
-    right_view->file_list(directories[1].get());
+    left_view->file_list(directories[0]);
+    right_view->file_list(directories[1]);
 
     left_view->path("/");
     right_view->path("/");
@@ -359,8 +359,8 @@ nuc::open_dirs_popup *app_window::open_dirs_popup() {
     return m_open_dirs_popup;
 }
 
-file_list_controller *app_window::open_new_dir() {
-    directories.emplace_back(new file_list_controller());
+std::shared_ptr<file_list_controller> app_window::open_new_dir() {
+    directories.emplace_back(file_list_controller::create());
 
-    return directories.back().get();
+    return directories.back();
 }

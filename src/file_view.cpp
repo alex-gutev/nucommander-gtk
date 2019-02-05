@@ -150,7 +150,7 @@ void file_view::init_path_entry() {
 
 //// Changing the File List
 
-void file_view::file_list(file_list_controller *new_flist) {
+void file_view::file_list(std::shared_ptr<file_list_controller> new_flist) {
     if (flist) {
         flist->signal_change_model().clear();
         flist->signal_select().clear();
@@ -188,7 +188,7 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
     dir_entry &ent = *row[file_model_columns::instance().ent];
 
-    m_signal_activate_entry.emit(this, flist, &ent);
+    m_signal_activate_entry.emit(this, flist.get(), &ent);
 }
 
 void file_view::on_selection_changed() {
