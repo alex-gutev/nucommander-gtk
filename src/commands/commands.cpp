@@ -191,6 +191,22 @@ static void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
  */
 static void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
 
+/**
+ * Close directory buffer command.
+ *
+ * Deletes the file_list_controller of the source pane and switches to
+ * the file_list_controller in the stack.
+ *
+ * @details    detailed description
+ *
+ * @param window Pointer to the window in which the command was
+ *   triggered.
+ *
+ * @param src Pointer to the source pane (file_view), in which the
+ *   command was triggered.
+ */
+static void close_dir_command_fn(nuc::app_window *window, nuc::file_view *src);
+
 
 // Initialize Builtin command table.
 
@@ -203,7 +219,8 @@ std::unordered_map<std::string, nuc::command_fn> nuc::commands{
     std::make_pair("open-key-prefs", open_key_prefs_command_fn),
     std::make_pair("swap-panes", swap_panes_command_fn),
     std::make_pair("change-directory", change_dir_command_fn),
-    std::make_pair("open-new-directory", open_dir_command_fn)
+    std::make_pair("open-new-directory", open_dir_command_fn),
+    std::make_pair("close-directory", close_dir_command_fn)
 };
 
 
@@ -367,6 +384,36 @@ void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
     src->file_list(flist);
     src->path(old_path);
 }
+
+static void close_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
+    auto &buffers = directory_buffers::instance();
+    std::shared_ptr<file_list_controller> flist;
+
+    while ((flist = src->pop_file_list()) && flist->attached());
+
+    if (!flist) {
+        auto it = buffers.buffers().begin(), end = buffers.buffers().end();
+
+        while (it != end) {
+            auto fl = *it;
+
+            if (!fl->attached()) {
+                flist = fl;
+                break;
+            }
+            ++it;
+        }
+    }
+
+    if (flist) {
+        auto old_flist = src->file_list();
+
+        src->file_list(flist, false);
+
+        directory_buffers::instance().close_buffer(old_flist);
+    }
+}
+
 
 /// command_keymap Implementation
 

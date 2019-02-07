@@ -30,6 +30,7 @@
 #include <gtkmm/liststore.h>
 
 #include <unordered_map>
+#include <vector>
 
 #include "paths/pathname.h"
 
@@ -67,6 +68,11 @@ namespace nuc {
          * File list controller of the file view.
          */
         std::shared_ptr<file_list_controller> flist;
+
+        /**
+         * Stack of previous file_list_controller's
+         */
+        std::vector<std::weak_ptr<file_list_controller>> flist_stack;
 
 
         /* Widgets */
@@ -216,8 +222,20 @@ namespace nuc {
          * Sets the file view's file list controller.
          *
          * @param flist The new file list controller.
+         *
+         * @param push_old If true the previous file list controller,
+         *   is pushed onto the file list controller stack.
          */
-        void file_list(std::shared_ptr<file_list_controller> flist);
+        void file_list(std::shared_ptr<file_list_controller> flist, bool push_old = true);
+
+        /**
+         * Pops a file list controller off the file list controller
+         * stack.
+         *
+         * @return Shared pointer to the file list controller or null
+         *   if the stack is empty.
+         */
+        std::shared_ptr<file_list_controller> pop_file_list();
 
         /**
          * Returns the path to the file view's current directory.

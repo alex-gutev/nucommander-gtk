@@ -150,8 +150,11 @@ void file_view::init_path_entry() {
 
 //// Changing the File List
 
-void file_view::file_list(std::shared_ptr<file_list_controller> new_flist) {
+void file_view::file_list(std::shared_ptr<file_list_controller> new_flist, bool push_old) {
     if (flist) {
+        if (push_old)
+            flist_stack.emplace_back(flist);
+
         flist->signal_change_model().clear();
         flist->signal_select().clear();
         flist->signal_path().clear();
@@ -173,6 +176,21 @@ void file_view::file_list(std::shared_ptr<file_list_controller> new_flist) {
     }
 
     flist = new_flist;
+}
+
+std::shared_ptr<file_list_controller> file_view::pop_file_list() {
+    auto it = flist_stack.end(), begin = flist_stack.begin();
+
+    while (it != begin) {
+        --it;
+        auto flist = it->lock();
+
+        it = flist_stack.erase(it);
+
+        if (flist) return flist;
+    }
+
+    return nullptr;
 }
 
 
