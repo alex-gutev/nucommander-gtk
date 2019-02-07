@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,11 @@ vfs::vfs() : queue(task_queue::create()) {
 }
 
 std::shared_ptr<vfs> vfs::create() {
-    return std::make_shared<vfs>();
+    struct enable_make_shared : public vfs {
+        using vfs::vfs;
+    };
+
+    return std::make_shared<enable_make_shared>();
 }
 
 
@@ -76,6 +80,13 @@ void vfs::queue_main(F fn) {
     });
 }
 
+template <typename F>
+void vfs::queue_main_wait(F fn) {
+    queue->pause();
+    queue_main(fn);
+}
+
+
 void vfs::finalize() {
     finalized = true;
 
@@ -93,22 +104,27 @@ void vfs::read(const paths::pathname& path, finish_fn finish) {
 void vfs::add_read_task(const paths::pathname &path, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
 
-    queue_task(std::bind(&vfs::read_path, _1, _2, path, refresh),
-               std::bind(&vfs::finish_read, _1, _2, refresh, finish));
+    auto tstate = std::make_shared<read_dir_state>(refresh, finish);
+
+    queue_task(std::bind(&vfs::read_path, _1, _2, tstate, path),
+               std::bind(&vfs::finish_read, _1, _2, tstate));
 }
 
 void vfs::add_read_task(dir_type type, bool refresh, finish_fn finish) {
     using namespace std::placeholders;
 
-    queue_task(std::bind(&vfs::list_dir, _1, _2, std::move(type), refresh),
-               std::bind(&vfs::finish_read, _1, _2, refresh, finish));
+    auto tstate = std::make_shared<read_dir_state>(refresh, finish);
+    tstate->type = std::move(type);
+
+    queue_task(std::bind(&vfs::list_dir, _1, _2, tstate),
+               std::bind(&vfs::finish_read, _1, _2, tstate));
 }
 
 void vfs::add_refresh_task() {
     using namespace std::placeholders;
 
     if (finish_fn fn = cb_changed())
-        add_read_task(cur_type, true, fn);
+        add_read_task(dtype, true, fn);
 }
 
 
@@ -120,7 +136,7 @@ bool vfs::descend(const dir_entry &ent, finish_fn finish) {
         return true;
     }
     else {
-        if (dir_type type = dir_type::get(cur_type.path(), ent)) {
+        if (dir_type type = dir_type::get(dtype.path(), ent)) {
             cancel_update();
             add_read_task(type, false, finish);
             return true;
@@ -144,44 +160,40 @@ void vfs::add_read_subdir(const paths::pathname &subpath, finish_fn finish) {
 
     monitor.pause();
 
-    queue_task(std::bind(&vfs::read_subdir, _1, _2, subpath),
-               std::bind(&vfs::finish_read_subdir, _1, _2, subpath, finish));
+    auto tstate = std::make_shared<read_subdir_state>(subpath, finish);
+
+    queue_task(std::bind(&vfs::read_subdir, _1, _2, tstate),
+               std::bind(&vfs::finish_read_subdir, _1, _2, tstate));
 }
 
-void vfs::read_subdir(cancel_state &state, const paths::pathname &subpath) {
+void vfs::read_subdir(cancel_state &state, std::shared_ptr<read_subdir_state> tstate) {
     call_begin(state, false);
 
-    if (const dir_tree::dir_map *dir = cur_tree->subpath_dir(subpath)) {
-        cur_type.subpath(subpath);
-
-        for (auto ent : *dir) {
-            state.no_cancel([=] {
+    state.no_cancel([=] {
+        if (const dir_tree::dir_map *dir = cur_tree->subpath_dir(tstate->subpath)) {
+            for (auto ent : *dir) {
                 call_new_entry(*ent.second, false);
-            });
+            }
         }
-
-        op_error = 0;
-    }
-    else {
-        op_error = ENOENT;
-    }
+        else {
+            tstate->error = ENOENT;
+        }
+    });
 }
 
-void vfs::finish_read_subdir(bool cancelled, const paths::pathname &subpath, finish_fn finish) {
-    queue->pause();
+void vfs::finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> tstate) {
+    queue_main_wait([=] (vfs *self) {
+        int error = tstate->error;
 
-    queue_main([=] (vfs *self) {
-        if (!cancelled && !self->op_error) {
-            self->cur_tree->subpath(subpath);
+        if (!cancelled && !error) {
+            self->dtype.subpath(tstate->subpath);
+            self->cur_tree->subpath(tstate->subpath);
         }
 
-        finish(cancelled, !cancelled ? op_error : 0, false);
+        tstate->finish(cancelled, error, false);
 
+        self->resume_monitor();
         self->queue->resume();
-
-        if (cancelled || self->op_error) {
-            self->resume_monitor();
-        }
     });
 }
 
@@ -199,10 +211,9 @@ void vfs::refresh_subdir() {
         }
 
         cur_tree->subpath(subpath);
-        sig_deleted.emit(cur_type.path().append(subpath));
+        sig_deleted.emit(dtype.path().append(subpath));
     }
 }
-
 
 
 /// Cancellation
@@ -229,104 +240,103 @@ bool vfs::cancel() {
 }
 
 
-/// Committing reads
-
-void vfs::commit_read() {
-    if (new_tree) {
-        cur_tree.swap(new_tree);
-        new_tree = nullptr;
-    }
-
-    if (reading) {
-        cur_type = std::move(new_type);
-        new_type = dir_type();
-
-        monitor_dir();
-    }
-    else {
-        resume_monitor();
-    }
-
-    reading = false;
-    updating = false;
-}
-
-
 /// Read task
 
-void vfs::read_path(cancel_state &state, const paths::pathname &path, bool refresh) {
-    list_dir(state, dir_type::get(path), refresh);
+void vfs::read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const paths::pathname &path) {
+    tstate->type = dir_type::get(path);
+    list_dir(state, tstate);
 }
 
-void vfs::list_dir(cancel_state& state, dir_type type, bool refresh) {
-    state.no_cancel([=] {
-        if (!refresh) reading = true;
-
-        new_tree.reset(type.create_tree());
-        new_type = std::move(type);
+void vfs::list_dir(cancel_state& state, std::shared_ptr<read_dir_state> tstate) {
+    state.no_cancel([&] {
+        if (!tstate->refresh) reading = true;
     });
 
-    op_error = 0;
-    call_begin(state, refresh);
+    tstate->tree.reset(tstate->type.create_tree());
+
+    call_begin(state, tstate->refresh);
 
     try {
-        std::unique_ptr<lister> listr(type.create_lister());
+        std::unique_ptr<lister> listr(tstate->type.create_lister());
 
         lister::entry ent;
         struct stat st;
 
         while (listr->read_entry(ent)) {
             if (listr->entry_stat(st)) {
-                add_entry(state, refresh, ent, st);
+                add_entry(state, *tstate, ent, st);
             }
         }
     }
     catch (lister::error &e) {
-        op_error = e.code();
+        tstate->error = e.code();
     }
 }
 
-void vfs::add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st) {
-    state.no_cancel([this, refresh, &ent, &st] {
-        if (dir_entry *new_ent = new_tree->add_entry(ent, st)) {
-            call_new_entry(*new_ent, refresh);
+void vfs::add_entry(cancel_state &state, read_dir_state &tstate, const lister::entry &ent, const struct stat &st) {
+    state.no_cancel([this, &tstate, &ent, &st] {
+        if (dir_entry *new_ent = tstate.tree->add_entry(ent, st)) {
+            call_new_entry(*new_ent, tstate.refresh);
+        }
+    });
+}
+
+void vfs::finish_read(bool cancelled, std::shared_ptr<read_dir_state> tstate) {
+    queue_main_wait([=] (vfs *self) {
+        int error = tstate->error;
+
+        // Swap new tree and old tree and set new directory type
+        if (!cancelled && !error) {
+            self->cur_tree.swap(tstate->tree);
+            self->dtype = std::move(tstate->type);
+        }
+
+        // Call finish callback
+        tstate->finish(cancelled, error, tstate->refresh);
+
+        // Start new monitor or reset old monitor
+        self->start_new_monitor(cancelled, error, tstate->refresh);
+
+        // Clear new_tree, new_type and flags
+        self->clear_flags();
+
+        // Resume task queue
+        self->queue->resume();
+
+        if (tstate->refresh && !cancelled && !error) {
+            // Check that the current tree's subpath still exists.
+            self->refresh_subdir();
         }
     });
 }
 
 
-void vfs::finish_read(bool cancelled, bool refresh, finish_fn finish) {
-    using namespace std::placeholders;
+void vfs::clear_flags() {
+    reading = false;
+    updating = false;
+}
 
-    if (cancelled || op_error) {
-        new_tree = nullptr;
-        new_type = dir_type();
-
-        reading = false;
-
-        // If not a cancelled update operation
-        if (!cancelled || !refresh) {
-            if (refresh || !updating) {
-                updating = false;
-
-                // If refresh is true resumes directory monitor which was
-                // created when this operation was queued. Otherwise
-                // resumes the old directory monitor
-                queue_main(std::bind(&vfs::resume_monitor, _1));
-            }
-            else { // Update tasks were cancelled when read task initiated
-                // Reread directory
-                add_refresh_task();
-
-                // Start new monitor for current directory.  Should be
-                // paused as the update flag is modified as soon as an
-                // event is received.
-                queue_main(std::bind(&vfs::monitor_dir, _1, true));
-            }
-        }
+void vfs::start_new_monitor(bool cancelled, int error, bool refresh) {
+    if (!cancelled && !error) {
+        if (!refresh)
+            monitor_dir();
+        else
+            resume_monitor();
     }
+    else if (updating) { // Some updates were not applied
+        // Reread directory
+        add_refresh_task();
 
-    call_finish(finish, cancelled, !cancelled ? op_error : 0, refresh);
+        // Start new monitor for current directory. Should be
+        // paused as the update flag is modified as soon as an
+        // event is received.
+
+        monitor_dir(true);
+    }
+    else { // No non-applied updates
+        // Resume old monitor
+        resume_monitor();
+    }
 }
 
 void vfs::resume_monitor() {
@@ -338,7 +348,7 @@ void vfs::resume_monitor() {
 
 void vfs::monitor_dir(bool paused) {
     if (!finalized) {
-        monitor.monitor_dir(cur_type.path(), paused, cur_type.is_dir());
+        monitor.monitor_dir(dtype.path(), paused, dtype.is_dir());
     }
 }
 
@@ -381,7 +391,7 @@ void vfs::file_event(dir_monitor::event e) {
             // Reset to base directory so that attempts to ascend up
             // the tree fail.
             cur_tree->subpath("");
-            sig_deleted.emit(cur_type.path());
+            sig_deleted.emit(dtype.path());
             break;
 
         case dir_monitor::DIR_MODIFIED:
@@ -410,7 +420,18 @@ void vfs::end_changes(cancel_state &state, finish_fn finish) {
             call_new_entry(ent.second, true);
         }
 
-        call_finish(finish, false, 0, true);
+        finish_updates(finish);
+    });
+}
+
+void vfs::finish_updates(finish_fn finish) {
+    queue_main_wait([=] (vfs *self) {
+        self->cur_tree.swap(new_tree);
+
+        finish(false, 0, true);
+
+        self->clear_flags();
+        self->queue->resume();
     });
 }
 
@@ -418,7 +439,7 @@ void vfs::end_changes(cancel_state &state, finish_fn finish) {
 void vfs::file_created(cancel_state &state, const paths::string &path) {
     struct stat st;
 
-    // Issue: Thee entry type is not obtained, instead the entry and
+    // Issue: The entry type is not obtained, instead the entry and
     // target file type are the same and obtained from the same stat
     // attributes.
 
@@ -506,34 +527,4 @@ void vfs::call_begin(cancel_state &state, bool refresh) {
 
 void vfs::call_new_entry(dir_entry &ent, bool refresh) {
     cb_new_entry(ent, refresh);
-}
-
-void vfs::call_finish(const finish_fn &finish, bool cancelled, int error, bool refresh) {
-    // Pause queue to prevent update tasks from being run before
-    // commit_read is called.
-
-    queue->pause();
-
-    queue_main([=] (vfs *self) {
-        finish(cancelled, error, refresh);
-        self->queue->resume();
-
-        if (refresh && !cancelled && !error) {
-            // Check that the current tree's subpath still exists.
-            self->refresh_subdir();
-        }
-    });
-}
-
-
-/// Create tree lister
-
-tree_lister * vfs::get_tree_lister(std::vector<dir_entry *> entries) {
-    std::vector<paths::pathname> paths;
-
-    for (dir_entry *ent : entries) {
-        paths.push_back(paths::pathname(ent->subpath(), ent->type() == dir_entry::type_dir));
-    }
-
-    return cur_type.create_tree_lister(paths);
 }

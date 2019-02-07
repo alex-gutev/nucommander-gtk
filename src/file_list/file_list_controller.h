@@ -657,23 +657,6 @@ namespace nuc {
          *    remaining event handlers should be called.
          */
         bool on_keypress(const GdkEventKey *e);
-
-
-        /* Cleanup */
-
-        /**
-         * Asynchronous cleanup method.
-         *
-         * @param fn The cleanup function to call once it is safe to
-         *           deallocate the object.
-         *
-         * This method should only be called on the main thread. The
-         * function fn will be called on the main thread.
-         */
-        template <typename F>
-        void cleanup(F fn) {
-            vfs->cleanup(fn);
-        }
     };
 }
 

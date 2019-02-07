@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,33 +35,20 @@ namespace nuc {
     /**
      * Virtual file system abstraction.
      *
-     * Reads directories, choosing the correct lister object for the
-     * directory, and presents a uniform file system abstraction, in
-     * which a single directory, in the directory tree, can be viewed
-     * at a time.
-     *
-     * TODO: Implement path case canonicalization
+     * Provides functionality for reading directories, with the
+     * correct lister object chosen automatically, and manages the
+     * reading on a background thread. Additionally the contents of
+     * the directory are viewed as a directory tree rather than a flat
+     * list of files.
      */
     class vfs : public std::enable_shared_from_this<vfs> {
         /**
          * The dir_type object, responsible for creating the lister
-         * and dir_tree objects, of the current directory.
+         * and dir_tree objects.
          *
          * Should only be modified from the main thread.
          */
-        dir_type cur_type;
-
-        /**
-         * The dir_type object, responsible for creating the lister
-         * and dir_tree objects, of the directory currently being
-         * read.
-         *
-         * Should only be accessed and modified from the background
-         * thread running the task queue, with the exception of the
-         * commit_read method, which is guaranteed to run when there
-         * are no background tasks running.
-         */
-        dir_type new_type;
+        dir_type dtype;
 
 
         /* Directory Tree */
@@ -76,14 +63,12 @@ namespace nuc {
         std::unique_ptr<dir_tree> cur_tree = nullptr;
 
         /**
-         * The directory tree into which the entries of the directory
-         * currently being read, are placed into.
+         * A directory tree which contains a copy of cur_tree and is
+         * modified in response to file system updates.
          *
-         * Both the pointer and pointed to object should only be
-         * accessed and modified from the background thread running
-         * the task queue, with the exception of the commit_read
-         * method, which is guaranteed to run when there are no
-         * background tasks running.
+         * The pointer and pointed to object should only be accessed
+         * and modified from a background thread, unless there is no
+         * background thread running.
          */
         std::unique_ptr<dir_tree> new_tree = nullptr;
 
@@ -96,23 +81,17 @@ namespace nuc {
         std::shared_ptr<task_queue> queue;
 
         /**
-         * Status of the last operation: 0 - the operation was
-         * successful, non-zero the operation failed with the non-zero
-         * value being the error code.
-         */
-        int op_error = 0;
-
-        /**
          * Flag: true if a read operation is ongoing.
          */
         std::atomic<bool> reading{false};
         /**
-         * Flag: true if an update/refresh operation is ongoing.
+         * Flag: true if updates to the directory tree have been
+         * received which have not been applied yet.
          */
         std::atomic<bool> updating{false};
 
         /**
-         * Flag: Once set no more background tasks will be initiated.
+         * Flag: Once set no more background tasks should be initiated.
          *
          * This is set when the object begins cleaning up.
          */
@@ -172,10 +151,27 @@ namespace nuc {
         void queue_main(F fn);
 
         /**
+         * Same as queue_main however the task_queue is paused prior
+         * to dispatching @a fn on the main thread.
+         *
+         * @param      fn Function to execute on the main thread.
+         */
+        template <typename F>
+        void queue_main_wait(F fn);
+
+        /**
          * Cancels the directory monitor and all background tasks, and
          * sets the finalized flag.
          */
         void finalize();
+
+        /**
+         * Constructor.
+         *
+         * Private to prevent construction in an automatic storage
+         * context.
+         */
+        vfs();
 
     public:
         /**
@@ -230,9 +226,6 @@ namespace nuc {
         typedef sigc::signal<void, paths::pathname> deleted_signal;
 
 
-        /* Constructor */
-        vfs();
-
         /**
          * Creates a new vfs object and returns an std::shared_ptr
          * pointer to it.
@@ -271,14 +264,16 @@ namespace nuc {
         deleted_signal signal_deleted();
 
         /**
-         * Returns the path of the current directory in the vfs. The
-         * path returned is the concatenation of the path to the
-         * physical directory/file on disk and the subdirectory.
+         * Returns the logical path of the current directory in the
+         * vfs.
+         *
+         * The logical path includes the path to the directory itself
+         * and the subpath.
          *
          * @return The current path.
          */
         paths::string path() {
-            return cur_type.logical_path();
+            return dtype.logical_path();
         }
 
         /**
@@ -339,23 +334,13 @@ namespace nuc {
         bool cancel();
 
         /**
-         * Returns the status (error code) of the last operation.
-         */
-        int status() const {
-            return op_error;
-        }
-
-        dir_type directory_type() const {
-            return cur_type;
-        }
-
-        /**
-         * Discards the previous list of entries and replaces it with
-         * the list read in the previous operation.
+         * Returns the directory type of the VFS's current directory.
          *
-         * Should only be called on the main thread.
+         * @return     dir_type
          */
-        void commit_read();
+        dir_type directory_type() const {
+            return dtype;
+        }
 
         /**
          * Calls the function function f on each entry (passed as the
@@ -391,32 +376,6 @@ namespace nuc {
             return cur_tree->get_entries(path);
         }
 
-        /**
-         * Creates a tree lister for a set of entries. Directory
-         * entries are descended into, other entries are simply
-         * visited once.
-         *
-         * @param entries List of entries to be visited by the tree
-         *    lister.
-         *
-         * @return The tree_lister object.
-         */
-        tree_lister *get_tree_lister(std::vector<dir_entry*> entries);
-
-        /**
-         * Asynchronous cleanup method.
-         *
-         * Calls the cleanup method once all background tasks have
-         * been cancelled.
-         *
-         * @param fn The cleanup method.
-         *
-         * This method should only be called on the main thread. The
-         * function fn will be called on the main thread.
-         */
-        template <typename F>
-        void cleanup(F fn);
-
     private:
         /**
          * New entry callback function.
@@ -439,6 +398,37 @@ namespace nuc {
 
 
         /* Reading Tasks */
+
+        /**
+         * Read Directory Task State.
+         */
+        struct read_dir_state {
+            /** Flag: Is this a refresh operation */
+            bool refresh;
+            /** Finish Callback */
+            finish_fn finish;
+
+            /** Error Code */
+            std::atomic<int> error{0};
+
+            /** dir_type of directory to read */
+            dir_type type;
+            /** dir_tree into which directory is read */
+            std::unique_ptr<dir_tree> tree;
+
+            /**
+             * Constructor.
+             *
+             * @param refresh True if this is a refresh operation.
+             * @param finish Finish callback function.
+             */
+            read_dir_state(bool refresh, finish_fn finish) : refresh(refresh), finish(finish) {}
+
+            /* Disable Copying */
+            read_dir_state(const read_dir_state &) = delete;
+            read_dir_state &operator=(const read_dir_state &) = delete;
+        };
+
 
         /**
          * Adds a read task to the task queue.
@@ -474,35 +464,46 @@ namespace nuc {
          *
          * @param path  The path to read.
          *
+         * @param tstate Read directory task state.
+         *
          * @param refresh True if the directory is being reread.
          */
-        void read_path(cancel_state &state, const paths::pathname &path, bool refresh);
+        void read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const paths::pathname &path);
 
         /**
          * Reads the directory using the lister and dir_tree objects
-         * created by the dir_type object @a type.
+         * created by the dir_type object found in the task state @a
+         * tstate.
          *
          * @param state The cancellation state.
          *
-         * @param type  The dir_type object for the directory to be
-         *   read.
+         * @param tstate Read directory task state.
          *
          * @param refresh True if the directory is being reread.
          */
-        void list_dir(cancel_state &state, dir_type type, bool refresh);
+        void list_dir(cancel_state &state, std::shared_ptr<read_dir_state> tstate);
 
         /**
-         * Read task finish callback. Calls the finish callback.
+         * Read task finish callback function.
+         *
+         * @param cancelled True if the task was cancelled.
+         * @param tstate Read directory task state.
          */
-        void finish_read(bool cancelled, bool refresh, finish_fn finish);
+        void finish_read(bool cancelled, std::shared_ptr<read_dir_state> tstate);
 
 
         /**
-         * Adds an entry to the 'new_tree' directory tree. The adding
+         * Adds an entry to directory tree 'tstate->tree'. The adding
          * of the entry is performed with the cancellation state set
          * to "no cancel".
+         *
+         * @param state Cancellation state.
+         * @param tstate Read directory task state.
+         * @param ent The entry to add.
+         * @param st State attributes of the entry to add.
          */
-        void add_entry(cancel_state &state, bool refresh, const lister::entry &ent, const struct stat &st);
+        void add_entry(cancel_state &state, read_dir_state &tstate, const lister::entry &ent, const struct stat &st);
+
 
         /**
          * Cancels all tasks on the task queue and cancels the
@@ -512,7 +513,50 @@ namespace nuc {
         void cancel_update();
 
 
+        /* Finish Read Tasks */
+
+        /**
+         * Clear the reading and updating flags.
+         */
+        void clear_flags();
+
+        /**
+         * Starts a directory monitor for the new directory or
+         * restarts/resumes the previous directory monitor.
+         *
+         * @param cancelled True if the task was cancelled.
+         * @param error Error code of the task.
+         * @param refresh True if the task was a refresh task.
+         */
+        void start_new_monitor(bool cancelled, int error, bool refresh);
+
+
         /* Reading subdirectories */
+
+        /**
+         * Read Subdirectory Task State.
+         */
+        struct read_subdir_state {
+            /** Subpath to the subdirectory */
+            paths::pathname subpath;
+            /** Finish callback */
+            finish_fn finish;
+
+            /** Error code */
+            std::atomic<int> error{0};
+
+            /**
+             * Constructor.
+             *
+             * @param path Subdirectory subpath.
+             * @param finish Finish callback.
+             */
+            read_subdir_state(paths::pathname path, finish_fn finish) : subpath(std::move(path)), finish(finish) {}
+
+            /* Disable copying */
+            read_subdir_state(const read_subdir_state &) = delete;
+            read_subdir_state &operator=(const read_subdir_state &) = delete;
+        };
 
         /**
          * Adds a read task for the subdirectory @a subpath, of the
@@ -531,17 +575,20 @@ namespace nuc {
          * carried out.
          *
          * @param state  The cancellation state.
-         * @param subdir The subdirectory to read.
+         * @param tstate Read subdirectory task state.
          */
-        void read_subdir(cancel_state &state, const paths::pathname &subdir);
+        void read_subdir(cancel_state &state, std::shared_ptr<read_subdir_state> tstate);
 
         /**
          * Read subdirectory task finish callback.
          *
          * Queues a task on the main thread, which sets the subpath of
          * the directory tree and calls the finish callback.
+         *
+         * @param cancelled True if the task was cancelled.
+         * @param tstate Read subdirectory task state.
          */
-        void finish_read_subdir(bool cancelled, const paths::pathname &subdir, finish_fn finish);
+        void finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> tstate);
 
         /**
          * Checks whether the current subdirectory of the directory
@@ -553,6 +600,7 @@ namespace nuc {
 
         /* Directory Monitoring */
 
+        /* Directory Monitor */
         dir_monitor monitor;
 
         /**
@@ -583,6 +631,14 @@ namespace nuc {
          * after a time interval has elapsed after the last event.
          */
         void end_changes(cancel_state &state, finish_fn finish);
+
+        /**
+         * Queues a task on the main thread to apply all updates,
+         * stored in 'new_tree'.
+         *
+         * @param finish Finish callback.
+         */
+        void finish_updates(finish_fn finish);
 
         /**
          * Handler functions for the create, change, delete and rename
@@ -629,20 +685,6 @@ namespace nuc {
          * Calls the new entry callback.
          */
         void call_new_entry(dir_entry &ent, bool refresh);
-        /**
-         * Calls the finish callback, on the main thread.
-         *
-         * The task queue is paused either until commit_read is
-         * called, if the operation was successful (error == 0 &&
-         * !cancelled), or until after the callback is called, if the
-         * operation failed or was cancelled.
-         *
-         * @param finish    The finish callback to call.
-         * @param cancelled True if the operation was cancelled.
-         * @param error     The error code of the operation.
-         * @param refresh   True if the operation was an update operation.
-         */
-        void call_finish(const finish_fn &finish, bool cancelled, int error, bool refresh);
     };
 }
 
@@ -669,16 +711,6 @@ void nuc::vfs::for_each(F f) {
     for (auto &ent_pair : *cur_tree) {
         f(ent_pair.second);
     }
-}
-
-
-template <typename F>
-void nuc::vfs::cleanup(F fn) {
-    finalize();
-
-    queue->add([fn] (cancel_state &state) {
-        dispatch_main(fn);
-    });
 }
 
 #endif // NUC_VFS_H

@@ -257,8 +257,6 @@ void file_list_controller::finish_read() {
 }
 
 void file_list_controller::set_new_list(bool clear_marked) {
-    vfs->commit_read();
-
     // Clear marked set
     if (clear_marked)
         marked_set.clear();
