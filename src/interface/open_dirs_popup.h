@@ -31,6 +31,7 @@
 
 #include "paths/pathname.h"
 #include "file_list/file_list_controller.h"
+#include "file_list/directory_buffers.h"
 
 namespace nuc {
     /**
@@ -118,7 +119,7 @@ namespace nuc {
          * @param dirs Vector of file_list_controller objects for each
          *   open directory.
          */
-        void set_dirs(const std::vector<std::shared_ptr<file_list_controller>> &dirs);
+        void set_dirs(const directory_buffers::buffer_set &dirs);
 
         /**
          * Sets the directory chosen callback function.

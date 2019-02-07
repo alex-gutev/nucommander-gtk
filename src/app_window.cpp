@@ -30,6 +30,7 @@
 #include "operations/copy.h"
 
 #include "operations/dir_size.h"
+#include "file_list/directory_buffers.h"
 
 using namespace nuc;
 
@@ -78,11 +79,8 @@ void app_window::init_pane_view() {
 
     // Create file_list_controllers for both panes
 
-    directories.push_back(file_list_controller::create());
-    directories.push_back(file_list_controller::create());
-
-    left_view->file_list(directories[0]);
-    right_view->file_list(directories[1]);
+    left_view->file_list(directory_buffers::instance().new_buffer());
+    right_view->file_list(directory_buffers::instance().new_buffer());
 
     left_view->path("/");
     right_view->path("/");
@@ -354,13 +352,7 @@ nuc::open_dirs_popup *app_window::open_dirs_popup() {
         m_open_dirs_popup->set_transient_for(*this);
     }
 
-    m_open_dirs_popup->set_dirs(directories);
+    m_open_dirs_popup->set_dirs(directory_buffers::instance().buffers());
 
     return m_open_dirs_popup;
-}
-
-std::shared_ptr<file_list_controller> app_window::open_new_dir() {
-    directories.emplace_back(file_list_controller::create());
-
-    return directories.back();
 }

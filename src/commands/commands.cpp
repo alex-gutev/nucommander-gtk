@@ -33,6 +33,8 @@
 #include "operations/move.h"
 #include "operations/delete.h"
 
+#include "file_list/directory_buffers.h"
+
 using namespace nuc;
 
 /**
@@ -359,7 +361,7 @@ void change_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
 }
 
 void open_dir_command_fn(nuc::app_window *window, nuc::file_view *src) {
-    auto flist = window->open_new_dir();
+    auto flist = directory_buffers::instance().new_buffer();
     auto old_path = src->file_list()->path();
 
     src->file_list(flist);

@@ -75,12 +75,6 @@ namespace nuc {
 
 
         /**
-         * List of file_list_controllers of all open directories.
-         */
-        std::vector<std::shared_ptr<file_list_controller>> directories;
-
-
-        /**
          * Error dialog: displays error details and a list of recovery
          * options.
          */
@@ -378,12 +372,6 @@ namespace nuc {
          * @return     open_dirs_popup *
          */
         nuc::open_dirs_popup *open_dirs_popup();
-
-        /**
-         * Creates a new file_list_controller and adds it to the list
-         * of file_list_controllers of all open directories.
-         */
-        std::shared_ptr<file_list_controller> open_new_dir();
 
         /**
          * Asynchronous cleanup method.
