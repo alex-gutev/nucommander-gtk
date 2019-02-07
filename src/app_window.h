@@ -33,6 +33,7 @@
 #include "cleanup_n.h"
 #include "file_view.h"
 
+#include "tasks/async_task.h"
 #include "tasks/task_queue.h"
 
 #include "errors/errors.h"
