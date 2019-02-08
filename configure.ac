@@ -16,9 +16,8 @@ AX_CXX_COMPILE_STDCXX_11
 
 PKG_PROG_PKG_CONFIG
 
-#AM_GNU_GETTEXT([external])
-#AM_GNU_GETTEXT_VERSION([0.18.1])
-#IT_PROG_INTLTOOL([0.40])
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.18.1])
 
 AC_CHECK_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources, yes)
 if test x"$GLIB_COMPILE_RESOURCES" != x"yes" ; then
@@ -39,13 +38,7 @@ AC_CHECK_HEADERS([stdlib.h dlfcn.h])
 AC_SEARCH_LIBS([dlopen], [dl])
 
 
-# intltool
-
-#GETTEXT_PACKAGE=${PACKAGE_TARNAME}
-#AC_SUBST([GETTEXT_PACKAGE])
-
-
 # Output
 
-AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile po/Makefile.in])
 AC_OUTPUT

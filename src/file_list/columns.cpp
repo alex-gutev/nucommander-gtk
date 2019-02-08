@@ -21,6 +21,8 @@
 
 #include "sort_func.h"
 
+#include <glib/gi18n.h>
+
 using namespace nuc;
 
 /**
@@ -178,7 +180,7 @@ Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
 
 Gtk::TreeView::Column *name_column::create() {
     auto &columns = file_model_columns::instance();
-    auto *column = create_column("Name");
+    auto *column = create_column(_("Name"));
 
     column->pack_start(columns.icon, false);
     auto *cell = add_text_cell(column, columns.name);
@@ -199,7 +201,7 @@ Gtk::TreeSortable::SlotCompare name_column::sort_func(Gtk::SortType order) {
 /* File Size Column */
 
 Gtk::TreeView::Column *size_column::create() {
-    auto *column = create_column("Size");
+    auto *column = create_column(_("Size"));
     auto *cell = add_text_cell(column);
 
     column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
@@ -268,7 +270,7 @@ void size_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
 /* Last Modified Date Column */
 
 Gtk::TreeView::Column *date_column::create() {
-    auto *column = create_column("Date Modified");
+    auto *column = create_column(_("Date Modified"));
     auto *cell = add_text_cell(column);
 
     column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));

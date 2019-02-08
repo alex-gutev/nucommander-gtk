@@ -3,6 +3,6 @@ Version=1.0
 Type=Application
 Name=NuCommander
 Exec=nucommander
-Comment="Orthodox File Manager"
+Comment=Orthodox File Manager
 Terminal=false
 Categories=Utility

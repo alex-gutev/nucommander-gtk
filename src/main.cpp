@@ -19,7 +19,14 @@
 
 #include "nucommander.h"
 
+#include <glib/gi18n.h>
+
 int main(int argc, char **argv) {
+
+    setlocale(LC_ALL, "");
+    bindtextdomain(PACKAGE, LOCALEDIR);
+    textdomain(PACKAGE);
+
     auto application = nuc::NuCommander::create();
     return application->run(argc, argv);
 }
