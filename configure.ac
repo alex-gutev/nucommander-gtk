@@ -33,6 +33,11 @@ PKG_CHECK_MODULES([NUCOMMANDER], [gtkmm-3.0 >= 3.8.0])
 PKG_CHECK_MODULES([ARCHGENERIC], [libarchive])
 AX_BOOST_BASE
 
+# Check for header files
+
+AC_CHECK_HEADERS([stdlib.h dlfcn.h])
+AC_SEARCH_LIBS([dlopen], [dl])
+
 
 # intltool
 
