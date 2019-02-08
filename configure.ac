@@ -1,8 +1,11 @@
 # Initialization
 AC_INIT([NuCommander], [0.1], [alex.gutev@gmail.com])
 AC_CONFIG_SRCDIR([src/main.cpp])
+AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AM_SILENT_RULES([yes])
+
+LT_INIT
 
 
 # Required Tools
@@ -27,6 +30,7 @@ GLIB_GSETTINGS
 # Libraries
 
 PKG_CHECK_MODULES([NUCOMMANDER], [gtkmm-3.0 >= 3.8.0])
+PKG_CHECK_MODULES([ARCHGENERIC], [libarchive])
 AX_BOOST_BASE
 
 
@@ -38,5 +42,5 @@ AX_BOOST_BASE
 
 # Output
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile])
 AC_OUTPUT
