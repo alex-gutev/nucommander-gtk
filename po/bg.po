@@ -1,0 +1,38 @@
+# Bulgarian translations for nucommander package.
+# Copyright (C) 2019 Alexander Gutev
+# This file is distributed under the same license as the nucommander package.
+# Alexander Gutev <alex.gutev@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: nucommander 0.1\n"
+"Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
+"POT-Creation-Date: 2019-02-08 21:52+0100\n"
+"PO-Revision-Date: 2019-02-08 20:13+0100\n"
+"Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
+"Language-Team: Bulgarian\n"
+"Language: bg\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/file_list/columns.cpp:183
+msgid "Name"
+msgstr "Име"
+
+#: src/file_list/columns.cpp:204
+msgid "Size"
+msgstr "Размер"
+
+#: src/file_list/columns.cpp:273
+msgid "Date Modified"
+msgstr "Дата на Промяна"
+
+#: nucommander.desktop:6
+msgid "NuCommander"
+msgstr "Нюкомандер"
+
+#: nucommander.desktop:8
+msgid "Orthodox File Manager"
+msgstr "Ортодоксиялен Файл Менаджер"
