@@ -25,6 +25,7 @@
 #include <memory>
 #include <functional>
 
+#include <glibmm/variant.h>
 #include <giomm/settings.h>
 #include <gdk/gdk.h>
 
@@ -42,7 +43,7 @@ namespace nuc {
      *   - A pointer to the source 'file_view' (if the command was run
      *     while the view is in focus).
      */
-    typedef std::function<void(app_window *, file_view *)> command_fn;
+    typedef std::function<void(app_window *, file_view *, Glib::VariantBase)> command_fn;
 
     /**
      * Global command table.
@@ -122,6 +123,23 @@ namespace nuc {
          *   there no command should be executed.
          */
         std::string command_name(const GdkEventKey *event);
+
+        /**
+         * Executes the command which is bound to the key-sequence
+         * corresponding to the key event @a event.
+         *
+         * @param window The window in which the event occurred.
+         *
+         * @param src The file_view in which the event occurred.
+         *
+         * @param event The event.
+         *
+         * @param arg Optional command argument.
+         *
+         * @return boolean True if a command was executed, false if
+         *    there is no command bound to the key-sequence.
+         */
+        bool exec_command(app_window *window, file_view *src, const GdkEventKey *event, Glib::VariantBase arg = Glib::VariantBase());
     };
 }
 
