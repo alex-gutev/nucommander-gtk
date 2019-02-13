@@ -8,16 +8,24 @@ AM_SILENT_RULES([yes])
 LT_INIT
 
 
-# Required Tools
+## Required Tools
+
+# Compilers
 
 AC_PROG_CC
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11
 
+# pkg-config
+
 PKG_PROG_PKG_CONFIG
+
+# gettext
 
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION([0.18.1])
+
+# glib-compile-resources
 
 AC_CHECK_PROG(GLIB_COMPILE_RESOURCES, glib-compile-resources, yes)
 if test x"$GLIB_COMPILE_RESOURCES" != x"yes" ; then
@@ -25,6 +33,7 @@ if test x"$GLIB_COMPILE_RESOURCES" != x"yes" ; then
 fi
 
 GLIB_GSETTINGS
+
 
 # Libraries
 
@@ -38,7 +47,14 @@ AC_CHECK_HEADERS([stdlib.h dlfcn.h])
 AC_SEARCH_LIBS([dlopen], [dl])
 
 
+# OS X App bundler
+
+AC_CHECK_PROG(GTK_MAC_BUNDLER, gtk-mac-bundler, yes)
+AC_ARG_VAR(BUNDLE_INSTALL_DIR, [Path to the directory where the APP bundle is installed])
+AC_SUBST([GTKMM_PREFIX], [$(${PKG_CONFIG} --variable=prefix gtkmm-3.0)])
+
 # Output
 
 AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile po/Makefile.in])
+AC_CONFIG_FILES([nucommander.bundle])
 AC_OUTPUT

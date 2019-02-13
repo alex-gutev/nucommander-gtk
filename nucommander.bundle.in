@@ -12,13 +12,15 @@
          defined by jhbuild, so it you are not using jhbuild you can
          either define your own or just hardcode the path here.
     -->
-    <prefix name="default">/opt/local</prefix>
+    <prefix name="default">@GTKMM_PREFIX@</prefix>
+
+    <prefix name="install">@prefix@</prefix>
 
     <!-- The project directory is the default location of the created
          app. If you leave out the path, the current directory is
          used. Note the usage of an environment variable here again.
     -->
-    <destination overwrite="yes">${env:HOME}/Applications</destination>
+    <destination overwrite="yes">@BUNDLE_INSTALL_DIR@</destination>
 
     <image>
       <!-- Not implemented yet (DMG image). -->
@@ -33,7 +35,7 @@
          not needed. If the source path is left out, the default
          script will be used.
     -->
-    <launcher-script>${project}/launcher.sh</launcher-script >
+    <launcher-script>@srcdir@/launcher.sh</launcher-script >
 
     <!-- Not implemented: Optional runtime, could be python or mono
          for example.
@@ -48,14 +50,14 @@
        this bundle file is located. The application name and bundle
        identifier are taken from the plist file.
   -->
-  <plist>${project}/info.plist</plist>
+  <plist>@srcdir@/info.plist</plist>
 
-  <main-binary dest="${bundle}/Contents/MacOS">
-    ${project}/build/nucommander
+  <main-binary>
+    ${prefix:install}/bin/nucommander
   </main-binary>
 
-  <binary dest="${bundle}/Contents/MacOS">
-    ${project}/build/src/plugins/archgeneric/libarchgeneric.dylib
+  <binary>
+    ${prefix:install}/lib/nucommander/libarchgeneric.so
   </binary>
 
   <!-- Copy in the input methods. Dunno if they actually work with
@@ -114,8 +116,8 @@
     ${prefix}/share/mime
   </data>
 
-  <data dest="${bundle}/Contents/Resources/share/schemas/gschemas.compiled">
-    ${project}/build/gschemas.compiled
+  <data>
+    ${prefix:install}/share/glib-2.0/schemas/gschemas.compiled
   </data>
 
   <!-- Copy icons. Note that the .icns file is an Apple format which
@@ -126,4 +128,4 @@
     ${project}/Giggle.icns
   </data -->
 
-  </app-bundle>
+</app-bundle>
