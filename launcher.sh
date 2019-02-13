@@ -171,5 +171,5 @@ if /bin/expr "x$1" : '^x-psn_' > /dev/null; then
     shift 1
 fi
 
-cd "$bundle_contents/MacOS"
+cd "$bundle_contents"
 $EXEC "$bundle_contents/MacOS/$name-bin" "$@" $EXTRA_ARGS
