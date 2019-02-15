@@ -28,8 +28,8 @@ GLIB_GSETTINGS
 
 # Libraries
 
-PKG_CHECK_MODULES([NUCOMMANDER], [gtkmm-3.0 >= 3.8.0])
-PKG_CHECK_MODULES([ARCHGENERIC], [libarchive])
+PKG_CHECK_MODULES([GLIBMM], [gtkmm-3.0 >= 3.8.0])
+PKG_CHECK_MODULES([LIBARCHIVE], [libarchive])
 AX_BOOST_BASE
 
 # Check for header files

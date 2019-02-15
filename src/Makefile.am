@@ -1,10 +1,9 @@
-# Alternatively try nucommander_CFLAGS
-AM_CFLAGS = $(NUCOMMANDER_CFLAGS)
-AM_CXXFLAGS = $(NUCOMMANDER_CFLAGS) $(BOOST_CPPFLAGS)
-AM_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\"
-
 bin_PROGRAMS = nucommander
-nucommander_LDADD = $(NUCOMMANDER_LIBS)
+nucommander_LDADD = $(GLIBMM_LIBS)
+
+nucommander_CFLAGS = $(GLIBMM_CFLAGS)
+nucommander_CXXFLAGS = $(GLIBMM_CFLAGS) $(BOOST_CPPFLAGS)
+nucommander_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\"
 
 # Source Files
 
