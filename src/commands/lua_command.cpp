@@ -17,22 +17,36 @@
  *
  */
 
-#ifndef NUC_COMMANDS_BUILTIN_H
-#define NUC_COMMANDS_BUILTIN_H
+#include "lua_command.h"
 
-#include "commands.h"
+using namespace nuc;
 
-namespace nuc {
-    /**
-     * Add the builtin commands to the command table @a table.
-     *
-     * @param table The command table to add the builtin commands to.
-     */
-    void add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
-}  // nuc
+void lua_command::init_state() {
+    if (!state) {
+        if (!(state = luaL_newstate())) {
+            throw error();
+        }
 
-#endif /* NUC_COMMANDS_BUILTIN_H */
+        luaL_openlibs(state);
 
-// Local Variables:
-// mode: c++
-// End:
+        if (luaL_loadfile(state, path.c_str())) {
+            throw error();
+        }
+
+        lua_setglobal(state, "command_fn");
+    }
+}
+
+lua_command::~lua_command() {
+    if (state) lua_close(state);
+}
+
+void lua_command::run(app_window *window, file_view *src, Glib::VariantBase arg) {
+    init_state();
+
+    lua_getglobal(state, "command_fn");
+
+    if (lua_pcall(state, 0, 0, 0)) {
+        throw error();
+    }
+}

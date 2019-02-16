@@ -20,8 +20,9 @@
 #include "commands.h"
 
 #include "settings/app_settings.h"
-#include "builtin.h"
 
+#include "builtin.h"
+#include "custom_commands.h"
 
 using namespace nuc;
 
@@ -29,6 +30,8 @@ using namespace nuc;
 
 command_keymap::command_keymap() {
     add_builtin_commands(command_table);
+    add_custom_commands(command_table);
+
     get_keymap();
 
     app_settings::instance().settings()->signal_changed("keybindings").connect(sigc::mem_fun(this, &command_keymap::keymap_changed));

@@ -1,8 +1,8 @@
 bin_PROGRAMS = nucommander
-nucommander_LDADD = $(GLIBMM_LIBS)
+nucommander_LDADD = $(GLIBMM_LIBS) $(LIBLUA_LIBS)
 
-nucommander_CFLAGS = $(GLIBMM_CFLAGS)
-nucommander_CXXFLAGS = $(GLIBMM_CFLAGS) $(BOOST_CPPFLAGS)
+nucommander_CFLAGS = $(GLIBMM_CFLAGS) $(LIBLUA_CFLAGS)
+nucommander_CXXFLAGS = $(GLIBMM_CFLAGS) $(BOOST_CPPFLAGS) $(LIBLUA_CFLAGS)
 nucommander_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\"
 
 # Source Files
@@ -96,6 +96,10 @@ nucommander_SOURCES = \
 	commands/commands.cpp \
 	commands/builtin.h \
 	commands/builtin.cpp \
+	commands/custom_commands.h \
+	commands/custom_commands.cpp \
+	commands/lua_command.h \
+	commands/lua_command.cpp \
 	settings/app_settings.h \
 	settings/app_settings.cpp \
 	interface/dest_dialog.h \

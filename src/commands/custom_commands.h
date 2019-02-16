@@ -17,21 +17,23 @@
  *
  */
 
-#ifndef NUC_COMMANDS_BUILTIN_H
-#define NUC_COMMANDS_BUILTIN_H
+#ifndef NUC_COMMANDS_CUSTOM_COMMANDS_H
+#define NUC_COMMANDS_CUSTOM_COMMANDS_H
 
 #include "commands.h"
 
 namespace nuc {
     /**
-     * Add the builtin commands to the command table @a table.
+     * Add the custom commands, retrieved from settings. to the
+     * command table @a table.
      *
-     * @param table The command table to add the builtin commands to.
+     * @param table The command table to add the custom commands to.
      */
-    void add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
+    void add_custom_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
 }  // nuc
 
-#endif /* NUC_COMMANDS_BUILTIN_H */
+
+#endif /* NUC_COMMANDS_CUSTOM_COMMANDS_H */
 
 // Local Variables:
 // mode: c++
