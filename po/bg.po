@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-02-08 21:52+0100\n"
+"POT-Creation-Date: 2019-02-16 13:56+0100\n"
 "PO-Revision-Date: 2019-02-08 20:13+0100\n"
 "Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
 "Language-Team: Bulgarian\n"
@@ -29,10 +29,54 @@ msgstr "Размер"
 msgid "Date Modified"
 msgstr "Дата на Промяна"
 
+#: src/commands/builtin.cpp:76
+msgid "Copy marked/selected files, in source pane, to a destination directory."
+msgstr ""
+
+#: src/commands/builtin.cpp:103
+msgid "Create a new directory in the source pane."
+msgstr ""
+
+#: src/commands/builtin.cpp:118
+msgid "Move/Rename marked/selected files in the source pane."
+msgstr ""
+
+#: src/commands/builtin.cpp:141
+msgid "Delete the marked/selected files in the source pane"
+msgstr ""
+
+#: src/commands/builtin.cpp:154
+msgid "Jump to the current path text entry."
+msgstr ""
+
+#: src/commands/builtin.cpp:165
+msgid "Open the keybinding preferences."
+msgstr ""
+
+#: src/commands/builtin.cpp:178
+msgid "Swap source and destination panes' directories."
+msgstr ""
+
+#: src/commands/builtin.cpp:191
+msgid ""
+"Display the list of open directories, to choose a new directory to display "
+"in the source pane."
+msgstr ""
+
+#: src/commands/builtin.cpp:205
+msgid "Create a new directory buffer."
+msgstr ""
+
+#: src/commands/builtin.cpp:219
+msgid ""
+"Close the source pane's current directory and return to the previously "
+"visited directory."
+msgstr ""
+
 #: nucommander.desktop:6
 msgid "NuCommander"
 msgstr "Нюкомандер"
 
-#: nucommander.desktop:8
+#: nucommander.desktop:9
 msgid "Orthodox File Manager"
 msgstr "Ортодоксиялен Файл Менаджер"

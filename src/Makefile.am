@@ -94,6 +94,8 @@ nucommander_SOURCES = \
 	operations/dir_size.cpp \
 	commands/commands.h \
 	commands/commands.cpp \
+	commands/builtin.h \
+	commands/builtin.cpp \
 	settings/app_settings.h \
 	settings/app_settings.cpp \
 	interface/dest_dialog.h \

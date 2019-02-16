@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,41 +17,22 @@
  *
  */
 
-#ifndef NUC_UTIL_UTIL_H
-#define NUC_UTIL_UTIL_H
+#ifndef NUC_COMMANDS_BUILTIN_H
+#define NUC_COMMANDS_BUILTIN_H
 
-#include <utility>
-#include <memory>
-
-/**
- * Miscellaneous Utilities
- */
+#include "paths/pathname.h"
+#include "commands.h"
 
 namespace nuc {
     /**
-     * Identity Functor
+     * Add the builtin commands to the command table @a table.
+     *
+     * @param table The command table to add the builtin commands to.
      */
-    struct identity {
-        /**
-         * Returns the object it received as an argument.
-         */
-        template<typename T>
-        constexpr auto operator()(T&& x) const noexcept
-            -> decltype(std::forward<T>(x)) {
-            return std::forward<T>(x);
-        }
-    };
+    void add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
+}  // nuc
 
-    /**
-     * Create a unique_ptr.
-     */
-    template<typename T>
-    std::unique_ptr<T> make_unique(T *ptr) {
-        return std::unique_ptr<T>(ptr);
-    }
-}
-
-#endif
+#endif /* NUC_COMMANDS_BUILTIN_H */
 
 // Local Variables:
 // mode: c++

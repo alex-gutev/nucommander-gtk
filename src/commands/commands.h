@@ -34,63 +34,45 @@ namespace nuc {
     class file_view;
 
     /**
-     * Command function type.
-     *
-     * Takes two parameters:
-     *
-     *   - A pointer to the 'app_window' on which the command was run.
-     *
-     *   - A pointer to the source 'file_view' (if the command was run
-     *     while the view is in focus).
+     * Command base functor class.
      */
-    typedef std::function<void(app_window *, file_view *, Glib::VariantBase)> command_fn;
+    struct command {
+        /* Virtual destructor */
+        virtual ~command() = default;
 
-    /**
-     * Global command table.
-     *
-     * Maps command identifier names to the corresponding command
-     * functions.
-     */
-    extern std::unordered_map<std::string, command_fn> commands;
+        /**
+         * Execute the command.
+         *
+         * @param window The window in which the command was triggered.
+         *
+         * @param src The pane in which the command was triggered
+         *   (i.e. the source pane).
+         *
+         * @param arg Optional command argument.
+         */
+        virtual void run(app_window *window, file_view *src, Glib::VariantBase arg) = 0;
+
+        /**
+         * Returns a description of the command.
+         *
+         * @return string.
+         */
+        virtual std::string description() = 0;
+    };
 
     /**
      * Stores the command keymap which is retrieved from GSettings.
      */
     class command_keymap {
-        /**
-         * The keymap.
-         *
-         * Each key is a string corresponding to a key sequence and
-         * the value is the command bound to that key sequence.
-         */
-        std::unordered_map<std::string, std::string> keymap;
-
-        /**
-         * Retrieves the key map from GSettings.
-         */
-        void get_keymap();
-
-        /**
-         * Default handler for the settings changed signal.
-         *
-         * Updates keymap.
-         *
-         * @param      key The changed key.
-         */
-        void keymap_changed(const Glib::ustring &key);
-
-        /**
-         * Returns the key sequence string corresponding to a key
-         * event.
-         *
-         * @param e The key event.
-         *
-         * @return The corresponding key sequence string or the empty
-         *    string if there is no key sequence string for the event.
-         */
-        static std::string event_keystring(const GdkEventKey *e);
-
     public:
+        /**
+         * Global Command Table.
+         *
+         * Each key is a unique string identifying the command and the
+         * corresponding value is the command functor.
+         */
+        std::unordered_map<std::string, std::unique_ptr<command>> command_table;
+
 
         /** Constructor */
         command_keymap();
@@ -140,6 +122,40 @@ namespace nuc {
          *    there is no command bound to the key-sequence.
          */
         bool exec_command(app_window *window, file_view *src, const GdkEventKey *event, Glib::VariantBase arg = Glib::VariantBase());
+
+    private:
+        /**
+         * The keymap.
+         *
+         * Each key is a string corresponding to a key sequence and
+         * the value is the command bound to that key sequence.
+         */
+        std::unordered_map<std::string, std::string> keymap;
+
+        /**
+         * Retrieves the key map from GSettings.
+         */
+        void get_keymap();
+
+        /**
+         * Default handler for the settings changed signal.
+         *
+         * Updates keymap.
+         *
+         * @param      key The changed key.
+         */
+        void keymap_changed(const Glib::ustring &key);
+
+        /**
+         * Returns the key sequence string corresponding to a key
+         * event.
+         *
+         * @param e The key event.
+         *
+         * @return The corresponding key sequence string or the empty
+         *    string if there is no key sequence string for the event.
+         */
+        static std::string event_keystring(const GdkEventKey *e);
     };
 }
 
