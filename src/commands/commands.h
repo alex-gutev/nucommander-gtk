@@ -123,6 +123,18 @@ namespace nuc {
          */
         bool exec_command(app_window *window, file_view *src, const GdkEventKey *event, Glib::VariantBase arg = Glib::VariantBase());
 
+        /**
+         * Execute the named command @a name.
+         *
+         * @param window The window in which the command should be
+         *   executed.
+         *
+         * @param src The source pane (file_view).
+         *
+         * @param arg Optional command argument.
+         */
+        bool exec_command(const std::string &name, app_window *window, file_view *src, Glib::VariantBase arg = Glib::VariantBase());
+
     private:
         /**
          * The keymap.

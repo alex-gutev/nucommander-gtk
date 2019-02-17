@@ -52,13 +52,35 @@ namespace nuc {
          */
         void init_state();
 
+
+        /**
+         * Retrieve the last error description string from the Lua
+         * stack.
+         *
+         * @return The description string.
+         */
+        std::string get_error_desc();
+
+        /**
+         * Throw an error exception with the description string
+         * retrieved from the Lua stack.
+         */
+        void raise_lua_error();
+
     public:
 
         /**
          * Lua Error Exception.
          */
         class error : public std::exception {
+            const std::string desc;
+
         public:
+            error(std::string desc) : desc(std::move(desc)) {}
+
+            virtual const char *what() const noexcept {
+                return desc.c_str();
+            }
         };
 
         /**

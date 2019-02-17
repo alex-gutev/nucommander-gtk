@@ -127,7 +127,11 @@ std::string command_keymap::event_keystring(const GdkEventKey *e) {
 }
 
 bool command_keymap::exec_command(app_window *window, file_view *src, const GdkEventKey *e, Glib::VariantBase arg) {
-    auto command = command_table.find(command_name(e));
+    return exec_command(command_name(e), window, src, arg);
+}
+
+bool command_keymap::exec_command(const std::string &name, app_window *window, file_view *src, Glib::VariantBase arg) {
+    auto command = command_table.find(name);
 
     if (command != command_table.end()) {
         command->second->run(window, src, arg);
