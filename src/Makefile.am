@@ -100,6 +100,8 @@ nucommander_SOURCES = \
 	commands/custom_commands.cpp \
 	commands/lua_command.h \
 	commands/lua_command.cpp \
+	commands/lua_api.h \
+	commands/lua_api.cpp \
 	luawrapper/luawrapper.hpp \
 	settings/app_settings.h \
 	settings/app_settings.cpp \

@@ -1,0 +1,335 @@
+/*
+ * NuCommander
+ * Copyright (C) 2019  Alexander Gutev <alex.gutev@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include "lua_api.h"
+
+#include "luawrapper/luawrapper.hpp"
+
+#include "app_window.h"
+#include "file_view.h"
+#include "commands/commands.h"
+
+#include "directory/dir_entry.h"
+
+using namespace nuc;
+
+/* Application Functions */
+
+/**
+ * Execute Command Function.
+ *
+ * Arguments:
+ *
+ * - String: Command Name
+ *
+ * - NucWindow: The window in which the command should be executed.
+ *
+ * - NucPane: The source pane in which the command should be executed.
+ *
+ * Return Values: None
+ */
+static int exec_command(lua_State *L);
+
+/**
+ * Open a file with a given application.
+ *
+ * Arguments:
+ *
+ *  - String: Application
+ *  - String: File Path
+ *
+ * Return Values: None
+ */
+static int open_with(lua_State *L);
+
+/** Nuc Functions Table */
+static luaL_Reg Nuc_table[] = {
+    {"exec_command", exec_command},
+    {"open_with", open_with},
+    {NULL, NULL}
+};
+
+/**
+ * Creates the "Nuc" table containing the application functions in
+ * Nuc_table.
+ *
+ * @param L Lua interpreter state.
+ */
+static void create_nuc_table(lua_State *L);
+
+
+/* NucWindow Methods */
+
+/**
+ * NucWindow (app_window wrapper) table and metatable.
+ */
+static luaL_Reg NucWindow_table[] = {
+    {NULL, NULL}
+};
+static luaL_Reg NucWindow_metatable[] = {
+    {NULL, NULL}
+};
+
+
+/* NucPane Methods */
+
+/**
+ * Get the selected entry.
+ *
+ * Return Values:
+ *
+ * - The selected NucEntry or nil if there is no selected entry.
+ */
+static int pane_selected(lua_State *L);
+
+/**
+ * Get the logical path to the current directory of the pane.
+ *
+ * Return Values:
+ *
+ * - Path string.
+ */
+static int pane_path(lua_State *L);
+
+/**
+ * NucPane (file_view wrapper) table and metatable.
+ */
+static luaL_Reg NucPane_table[] = {
+    {NULL, NULL}
+};
+static luaL_Reg NucPane_metatable[] = {
+    {"selected", pane_selected},
+    {"path", pane_path},
+    {NULL, NULL}
+};
+
+
+/* NucEntry Methods */
+
+/**
+ * Get the file name.
+ *
+ * Return Values:
+ *  - String
+ */
+static int entry_name(lua_State *L);
+/**
+ * Get the file extension (the substring of the file name following
+ * the last '.').
+ *
+ * Return Values:
+ *  - String
+ */
+static int entry_extension(lua_State *L);
+/**
+ * Get the entry type.
+ *
+ * Return Values:
+ *
+ * - Integer: Integer corresponding to a file type in NucEntry
+ *     (NucEntry.TYPE_x)
+ */
+static int entry_type(lua_State *L);
+/**
+ * Get the file type of the underlying file.
+ *
+ * This differs from the entry type in that if the entry is a symbolic
+ * link, this method returns the type of the target file (if it
+ * exists) whereas entry_type returns NucEntry.TYPE_LNK (symbolic
+ * link).
+ *
+ * Return Values:
+ *
+ * - Integer: Integer corresponding to a file type in NucEntry
+ *     (NucEntry.TYPE_x)
+ */
+static int entry_file_type(lua_State *L);
+
+/** NucEntry (dir_entry wrapper) table and metatable */
+static luaL_Reg NucEntry_table[] = {
+    {NULL, NULL}
+};
+static luaL_Reg NucEntry_metatable[] = {
+    {"name", entry_name},
+    {"extension", entry_extension},
+    {"type", entry_type},
+    {"file_type", entry_file_type},
+    {NULL, NULL}
+};
+
+/**
+ * Add the file type constants to the NucEntry table.
+ *
+ * The file type constants are prefixed with TYPE_.
+ *
+ * @param L Lua interpreter state.
+ */
+static void add_type_constants(lua_State *L);
+
+
+//// API Registration Functions
+
+void nuc::register_nuc_api(lua_State *L) {
+    create_nuc_table(L);
+
+    luaW_register<app_window>(L, "NucWindow", NucWindow_table, NucWindow_metatable, NULL, NULL);
+    luaW_register<file_view>(L, "NucPane", NucPane_table, NucPane_metatable, NULL, NULL);
+    luaW_register<dir_entry>(L, "NucEntry", NucEntry_table, NucEntry_metatable, NULL, NULL);
+
+    add_type_constants(L);
+}
+
+void create_nuc_table(lua_State *L) {
+    luaL_newlib(L, Nuc_table);
+    lua_setglobal(L, "Nuc");
+}
+
+void add_type_constants(lua_State *L) {
+    lua_getglobal(L, "NucEntry");
+
+    lua_pushinteger(L, dir_entry::type_unknown);
+    lua_setfield(L, -2, "TYPE_UNKNOWN");
+
+    lua_pushinteger(L, dir_entry::type_fifo);
+    lua_setfield(L, -2, "TYPE_FIFO");
+
+    lua_pushinteger(L, dir_entry::type_chr);
+    lua_setfield(L, -2, "TYPE_CHR");
+
+    lua_pushinteger(L, dir_entry::type_reg);
+    lua_setfield(L, -2, "TYPE_REG");
+
+    lua_pushinteger(L, dir_entry::type_lnk);
+    lua_setfield(L, -2, "TYPE_LNK");
+
+    lua_pushinteger(L, dir_entry::type_sock);
+    lua_setfield(L, -2, "TYPE_SOCK");
+
+    lua_pushinteger(L, dir_entry::type_wht);
+    lua_setfield(L, -2, "TYPE_WHT");
+
+    lua_pushinteger(L, dir_entry::type_parent);
+    lua_setfield(L, -2, "TYPE_PARENT");
+
+    lua_pop(L, 1);
+}
+
+void nuc::pass_lua_command_args(lua_State *L, app_window *window, file_view *src) {
+    luaW_push<app_window>(L, window);
+    lua_setglobal(L, "window");
+
+    luaW_push<file_view>(L, src);
+    lua_setglobal(L, "source_pane");
+}
+
+
+//// API Functions
+
+/// Application Functions
+
+int exec_command(lua_State *L) {
+    // Command, window, pane
+    int n = lua_gettop(L);
+
+    if (n == 3) {
+        const char *cmd = luaL_checkstring(L, 1);
+        // TODO: Check that CMD is not NULL
+
+        app_window *window = luaW_check<app_window>(L, 2);
+        file_view *view = luaW_check<file_view>(L, 3);
+
+        command_keymap::instance().exec_command(cmd, window, view);
+    }
+
+    // TODO: Signal error otherwise
+
+    return 0;
+}
+
+int open_with(lua_State *L) {
+    int n = lua_gettop(L);
+
+    if (n == 2) {
+        const char *app = luaL_checkstring(L, 1);
+        const char *file = luaL_checkstring(L, 2);
+        // TODO: Check that app and file are not NULL
+
+        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
+        info->launch(Gio::File::create_for_path(file));
+    }
+
+    return 0;
+}
+
+
+/// NucPane Methods
+
+int pane_selected(lua_State *L) {
+    // Pane
+    file_view *pane = luaW_check<file_view>(L, 1);
+
+    if (dir_entry *ent = pane->selected_entry())
+        luaW_push<dir_entry>(L, ent);
+    else
+        lua_pushnil(L);
+
+    return 1;
+}
+
+int pane_path(lua_State *L) {
+    // Pane
+    file_view *pane = luaW_check<file_view>(L, 1);
+
+    lua_pushstring(L, pane->path().c_str());
+
+    return 1;
+}
+
+
+/// NucEntry Methods
+
+int entry_name(lua_State *L) {
+    // Entry
+    dir_entry *ent = luaW_check<dir_entry>(L, 1);
+    lua_pushstring(L, ent->file_name().c_str());
+
+    return 1;
+}
+int entry_extension(lua_State *L) {
+    // Entry
+    dir_entry *ent = luaW_check<dir_entry>(L, 1);
+    lua_pushstring(L, ent->subpath().extension().c_str());
+
+    return 1;
+}
+
+int entry_type(lua_State *L) {
+    // Entry
+    dir_entry *ent = luaW_check<dir_entry>(L, 1);
+    lua_pushinteger(L, ent->ent_type());
+
+    return 1;
+}
+int entry_file_type(lua_State *L) {
+    // Entry
+    dir_entry *ent = luaW_check<dir_entry>(L, 1);
+    lua_pushinteger(L, ent->type());
+
+    return 1;
+}

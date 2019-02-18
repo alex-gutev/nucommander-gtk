@@ -19,51 +19,16 @@
 
 #include "lua_command.h"
 
+#include <giomm/appinfo.h>
+
 #include "app_window.h"
 #include "file_view.h"
 
-#include "luawrapper/luawrapper.hpp"
+#include "lua_api.h"
 
 using namespace nuc;
 
-/**
- * NucWindow (app_window wrapper) table and metatable.
- */
-static luaL_Reg NucWindow_table[] =
-{
-    {NULL, NULL}
-};
-static luaL_Reg NucWindow_metatable[] =
-{
-    {NULL, NULL}
-};
-
-/**
- * NucPane (file_view wrapper) table and metatable.
- */
-static luaL_Reg NucPane_table[] =
-{
-    {NULL, NULL}
-};
-static luaL_Reg NucPane_metatable[] =
-{
-    {NULL, NULL}
-};
-
-/**
- * Execute Command Lua Function.
- *
- * Called from Lua code to execute a command by name.
- */
-static int exec_command(lua_State *L);
-
-/**
- * Registers the C/C++ functions and classes for use in Lua code.
- *
- * @param L Lua interpreter state.
- */
-static void register_lua_funcs(lua_State *L);
-
+//// Initialization
 
 void lua_command::init_state() {
     if (!state) {
@@ -72,9 +37,7 @@ void lua_command::init_state() {
         }
 
         luaL_openlibs(state);
-
-        lua_register(state, "exec_command", exec_command);
-        register_lua_funcs(state);
+        register_nuc_api(state);
 
         if (luaL_loadfile(state, path.c_str())) {
             raise_lua_error();
@@ -83,6 +46,9 @@ void lua_command::init_state() {
         lua_setglobal(state, "command_fn");
     }
 }
+
+
+//// Error Handling
 
 std::string lua_command::get_error_desc() {
     std::string err = luaL_checkstring(state, -1);
@@ -96,53 +62,22 @@ void lua_command::raise_lua_error() {
 }
 
 
+//// Cleanup
+
 lua_command::~lua_command() {
     if (state) lua_close(state);
 }
 
+
+//// Script Execution
+
 void lua_command::run(app_window *window, file_view *src, Glib::VariantBase arg) {
     init_state();
 
-    lua_createtable(state, 2, 0);
-
-    lua_pushnumber(state, 1);
-    luaW_push<app_window>(state, window);
-    lua_settable(state, -3);
-
-    lua_pushnumber(state, 2);
-    luaW_push<file_view>(state, src);
-    lua_settable(state, -3);
-
-    lua_setglobal(state, "arg");
+    pass_lua_command_args(state, window, src);
 
     lua_getglobal(state, "command_fn");
     if (lua_pcall(state, 0, 0, 0)) {
         raise_lua_error();
     }
-}
-
-
-void register_lua_funcs(lua_State *L) {
-    luaW_register<app_window>(L, "NucWindow", NucWindow_table, NucWindow_metatable, NULL, NULL);
-    luaW_register<file_view>(L, "NucPane", NucPane_table, NucPane_metatable, NULL, NULL);
-}
-
-int exec_command(lua_State *L) {
-    // Command, window, pane
-    int n = lua_gettop(L);
-
-    if (n == 3) {
-        const char *cmd = luaL_checkstring(L, 1);
-
-        // May throw a Lua exception so be careful,
-        // use luaW_to return NULL if the type is incorrect.
-        app_window *window = luaW_check<app_window>(L, 2);
-        file_view *view = luaW_check<file_view>(L, 3);
-
-        command_keymap::instance().exec_command(cmd, window, view);
-    }
-
-    // TODO: Signal error otherwise
-
-    return 0;
 }
