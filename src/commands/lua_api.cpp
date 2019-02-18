@@ -21,6 +21,8 @@
 
 #include "luawrapper/luawrapper.hpp"
 
+#include "tasks/async_task.h"
+
 #include "app_window.h"
 #include "file_view.h"
 #include "commands/commands.h"
@@ -77,12 +79,38 @@ static void create_nuc_table(lua_State *L);
 /* NucWindow Methods */
 
 /**
+ * Unpacks a file to a temporary location (if necessary), and calls a
+ * Lua callback function, with the full path to the file passed as an
+ * argument, once it has been unpacked.
+ *
+ * The callback function should not depend that the values of the
+ * window and source_pane variables are the same as when the command
+ * script was executed, nor should it even depend that the window,
+ * source pane, or entry objects are still in memory.
+ *
+ * Arguments:
+ *
+ * - NucWindow: The window, on the task queue of which, to queue the
+ *      unpack task.
+ *
+ * - NucPane: The pane containing the entry.
+ *
+ * - NucEntry: The entry to unpack.
+ *
+ * - Function: Callback function which is called with one argument the
+ *      full path to the unpacked file, once the file has been
+ *      successfully unpacked.
+ */
+static int window_unpack_file(lua_State *L);
+
+/**
  * NucWindow (app_window wrapper) table and metatable.
  */
 static luaL_Reg NucWindow_table[] = {
     {NULL, NULL}
 };
 static luaL_Reg NucWindow_metatable[] = {
+    {"unpack_file", window_unpack_file},
     {NULL, NULL}
 };
 
@@ -249,7 +277,6 @@ int exec_command(lua_State *L) {
 
     if (n == 3) {
         const char *cmd = luaL_checkstring(L, 1);
-        // TODO: Check that CMD is not NULL
 
         app_window *window = luaW_check<app_window>(L, 2);
         file_view *view = luaW_check<file_view>(L, 3);
@@ -268,11 +295,40 @@ int open_with(lua_State *L) {
     if (n == 2) {
         const char *app = luaL_checkstring(L, 1);
         const char *file = luaL_checkstring(L, 2);
-        // TODO: Check that app and file are not NULL
 
         auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
         info->launch(Gio::File::create_for_path(file));
     }
+
+    return 0;
+}
+
+
+/// NucWindow Methods
+
+int window_unpack_file(lua_State *L) {
+    // Window, Pane, Entry, Function
+
+    app_window *window = luaW_check<app_window>(L, 1);
+    file_view *src = luaW_check<file_view>(L, 2);
+    dir_entry *ent = luaW_check<dir_entry>(L, 3);
+
+    if (!lua_isfunction(L, 4))
+        luaL_argerror(L, 4, "Argument 4 to NucWindow:unpack_file is expected to be a function");
+
+    // Store reference to function, which is at the top of the stack.
+    int fn_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    window->add_operation(src->file_list()->dir_vfs()->access_file(*ent, [=] (const paths::pathname &path) {
+        dispatch_main([=] {
+            // Get function
+            lua_rawgeti(L, LUA_REGISTRYINDEX, fn_ref);
+            lua_pushstring(L, path.c_str());
+            lua_pcall(L, 1, 0, 0);
+
+            luaL_unref(L, LUA_REGISTRYINDEX, fn_ref);
+        });
+    }));
 
     return 0;
 }
