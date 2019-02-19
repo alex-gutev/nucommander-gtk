@@ -47,14 +47,21 @@ AC_CHECK_HEADERS([stdlib.h dlfcn.h])
 AC_SEARCH_LIBS([dlopen], [dl])
 
 
-# OS X App bundler
+# OS X App bundle
 
-AC_CHECK_PROG(GTK_MAC_BUNDLER, gtk-mac-bundler, yes)
-AC_ARG_VAR(BUNDLE_INSTALL_DIR, [Path to the directory where the APP bundle is installed])
+AC_ARG_ENABLE([app-bundle], AS_HELP_STRING([--enable-app-bundle], [Enable App Bundle Creation]))
+
+AS_IF([test "x$enable_app_bundle" == "xyes"],
+      [AC_CHECK_PROG(has_gtk_mac_bundler, gtk-mac-bundler, yes)
+       AS_IF([test "x$has_gtk_mac_bundler" != "xyes"],
+             [AC_MSG_ERROR([App bundle requested however gtk-mac-bundler was not found.])])
+       AC_CONFIG_FILES([nucommander.bundle])])
+
+AC_ARG_VAR(BUNDLE_INSTALL_DIR, [Path to the directory where the App bundle is to be installed])
 AC_SUBST([GTKMM_PREFIX], [$(${PKG_CONFIG} --variable=prefix gtkmm-3.0)])
+
 
 # Output
 
 AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile po/Makefile.in])
-AC_CONFIG_FILES([nucommander.bundle])
 AC_OUTPUT
