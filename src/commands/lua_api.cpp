@@ -299,32 +299,21 @@ void nuc::pass_lua_command_args(lua_State *L, app_window *window, file_view *src
 /// Application Functions
 
 int exec_command(lua_State *L) {
-    // Command, window, pane
-    int n = lua_gettop(L);
+    const char *cmd = luaL_checkstring(L, 1);
 
-    if (n == 3) {
-        const char *cmd = luaL_checkstring(L, 1);
+    app_window *window = luaW_check<app_window>(L, 2);
+    file_view *view = luaW_check<file_view>(L, 3);
 
-        app_window *window = luaW_check<app_window>(L, 2);
-        file_view *view = luaW_check<file_view>(L, 3);
-
-        command_keymap::instance().exec_command(cmd, window, view);
-    }
-
-    // TODO: Signal error otherwise
+    command_keymap::instance().exec_command(cmd, window, view);
 
     return 0;
 }
 
 int open_with(lua_State *L) {
-    int n = lua_gettop(L);
+    const char *app = luaL_checkstring(L, 1);
+    const char *file = luaL_checkstring(L, 2);
 
-    if (n == 2) {
-        const char *app = luaL_checkstring(L, 1);
-        const char *file = luaL_checkstring(L, 2);
-
-        launch_app_with_file(app, file);
-    }
+    launch_app_with_file(app, file);
 
     return 0;
 }
@@ -350,30 +339,26 @@ int launch(lua_State *L) {
 
 static void launch_app(const std::string &app) {
 #ifdef __APPLE__
-
     Glib::spawn_command_line_async(Glib::ustring::compose("open -a %1", app));
 
 #else
+    auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
 
-        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
-
-        if (info)
-            info->launch_uri("");
+    if (info)
+        info->launch_uri("");
 
 #endif
 }
 
 static void launch_app_with_file(const std::string &app, const std::string &file) {
 #ifdef __APPLE__
-
     Glib::spawn_command_line_async(Glib::ustring::compose("open -a %1 '%2'", app, file));
 
 #else
+    auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
 
-        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
-
-        if (info)
-            info->launch(Gio::File::create_for_path(file));
+    if (info)
+        info->launch(Gio::File::create_for_path(file));
 
 #endif
 }
@@ -382,14 +367,12 @@ static void launch_app_with_file(const std::string &app, const std::string &file
 /// NucWindow Methods
 
 int window_unpack_file(lua_State *L) {
-    // Window, Pane, Entry, Function
-
     app_window *window = luaW_check<app_window>(L, 1);
     file_view *src = luaW_check<file_view>(L, 2);
     dir_entry *ent = luaW_check<dir_entry>(L, 3);
 
     if (!lua_isfunction(L, 4))
-        luaL_argerror(L, 4, "Argument 4 to NucWindow:unpack_file is expected to be a function");
+        luaL_argerror(L, 4, "Argument 4 to NucWindow:unpack_file is expected to be a function.");
 
     // Store reference to function, which is at the top of the stack.
     int fn_ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -424,9 +407,7 @@ int pane_selected(lua_State *L) {
 }
 
 int pane_path(lua_State *L) {
-    // Pane
     file_view *pane = luaW_check<file_view>(L, 1);
-
     lua_pushstring(L, pane->path().c_str());
 
     return 1;
@@ -436,14 +417,12 @@ int pane_path(lua_State *L) {
 /// NucEntry Methods
 
 int entry_name(lua_State *L) {
-    // Entry
     dir_entry *ent = luaW_check<dir_entry>(L, 1);
     lua_pushstring(L, ent->file_name().c_str());
 
     return 1;
 }
 int entry_extension(lua_State *L) {
-    // Entry
     dir_entry *ent = luaW_check<dir_entry>(L, 1);
     lua_pushstring(L, ent->subpath().extension().c_str());
 
@@ -451,14 +430,12 @@ int entry_extension(lua_State *L) {
 }
 
 int entry_type(lua_State *L) {
-    // Entry
     dir_entry *ent = luaW_check<dir_entry>(L, 1);
     lua_pushinteger(L, ent->ent_type());
 
     return 1;
 }
 int entry_file_type(lua_State *L) {
-    // Entry
     dir_entry *ent = luaW_check<dir_entry>(L, 1);
     lua_pushinteger(L, ent->type());
 
