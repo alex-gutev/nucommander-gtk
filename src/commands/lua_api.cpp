@@ -286,11 +286,13 @@ void add_type_constants(lua_State *L) {
 }
 
 void nuc::pass_lua_command_args(lua_State *L, app_window *window, file_view *src) {
+    lua_getglobal(L, "Nuc");
+
     luaW_push<app_window>(L, window);
-    lua_setglobal(L, "window");
+    lua_setfield(L, -2, "window");
 
     luaW_push<file_view>(L, src);
-    lua_setglobal(L, "source_pane");
+    lua_setfield(L, -2, "source");
 }
 
 
