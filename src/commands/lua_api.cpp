@@ -358,7 +358,7 @@ static void launch_app(const std::string &app) {
         auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
 
         if (info)
-            info->launch(Gio::File::create_for_path());
+            info->launch_uri("");
 
 #endif
 }
