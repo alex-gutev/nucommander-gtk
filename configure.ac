@@ -55,7 +55,7 @@ AS_IF([test "x$enable_app_bundle" == "xyes"],
       [AC_CHECK_PROG(has_gtk_mac_bundler, gtk-mac-bundler, yes)
        AS_IF([test "x$has_gtk_mac_bundler" != "xyes"],
              [AC_MSG_ERROR([App bundle requested however gtk-mac-bundler was not found.])])
-       AC_CONFIG_FILES([nucommander.bundle])])
+       AC_CONFIG_FILES([bundle/nucommander.bundle])])
 
 AC_ARG_VAR(BUNDLE_INSTALL_DIR, [Path to the directory where the App bundle is to be installed])
 AC_SUBST([GTKMM_PREFIX], [$(${PKG_CONFIG} --variable=prefix gtkmm-3.0)])

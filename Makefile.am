@@ -15,8 +15,8 @@ osx-set-defaults:
 	defaults write org.agware.nucommander "/org/agware/NuCommander/archgeneric/regex" '".*?(?:.zip|.tar|.tar.gz)$$"'
 	defaults write org.agware.nucommander "/org/agware/NuCommander/plugins" -array '"archgeneric"'
 
-osx-app-bundle: nucommander.bundle $(srcdir)/info.plist $(srcdir)/launcher.sh install osx-set-defaults
-	gtk-mac-bundler nucommander.bundle
+osx-app-bundle: bundle/nucommander.bundle $(srcdir)/bundle/info.plist $(srcdir)/bundle/launcher.sh install osx-set-defaults
+	cd bundle; gtk-mac-bundler nucommander.bundle
 
 uninstall-osx-app-bundle:
 	rm -rf $(BUNDLE_INSTALL_DIR)/NuCommander.app
