@@ -346,8 +346,13 @@ static void launch_app(const std::string &app) {
 #else
     auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
 
-    if (info)
-        info->launch_uri("");
+    try {
+        if (info)
+            info->launch_uri("");
+    }
+    catch (const Glib::Error &) {
+        // For now do nothing
+    }
 
 #endif
 }
@@ -359,8 +364,13 @@ static void launch_app_with_file(const std::string &app, const std::string &file
 #else
     auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
 
-    if (info)
-        info->launch(Gio::File::create_for_path(file));
+    try {
+        if (info)
+            info->launch(Gio::File::create_for_path(file));
+    }
+    catch (const Glib::Error &) {
+        // For now do nothing
+    }
 
 #endif
 }
