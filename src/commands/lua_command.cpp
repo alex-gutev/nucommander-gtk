@@ -28,6 +28,12 @@
 
 using namespace nuc;
 
+/**
+ * The registry key under which the command chunk is stored.
+ */
+static constexpr const char *nuc_command_key = "org.agware.nucommander.command";
+
+
 //// Initialization
 
 void lua_command::init_state() {
@@ -43,7 +49,7 @@ void lua_command::init_state() {
             raise_lua_error();
         }
 
-        lua_setglobal(state, "command_fn");
+        lua_setfield(state, LUA_REGISTRYINDEX, nuc_command_key);
     }
 }
 
@@ -76,7 +82,7 @@ void lua_command::run(app_window *window, file_view *src, Glib::VariantBase arg)
 
     pass_lua_command_args(state, window, src);
 
-    lua_getglobal(state, "command_fn");
+    lua_getfield(state, LUA_REGISTRYINDEX, nuc_command_key);
     if (lua_pcall(state, 0, 0, 0)) {
         raise_lua_error();
     }
