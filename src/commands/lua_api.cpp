@@ -60,10 +60,24 @@ static int exec_command(lua_State *L);
  */
 static int open_with(lua_State *L);
 
+/**
+ * Launches an application
+ *
+ * Arguments:
+ *
+ *  1. String: Application
+ *
+ *  .. Strings: Command-line arguments.
+ *
+ * Return Values: None
+ */
+static int launch(lua_State *L);
+
 /** Nuc Functions Table */
 static luaL_Reg Nuc_table[] = {
     {"exec_command", exec_command},
     {"open_with", open_with},
+    {"launch", launch},
     {NULL, NULL}
 };
 
@@ -74,6 +88,19 @@ static luaL_Reg Nuc_table[] = {
  * @param L Lua interpreter state.
  */
 static void create_nuc_table(lua_State *L);
+
+/**
+ * Launches an application.
+ *
+ * @param app Name of the application to launch.
+ */
+static void launch_app(const std::string &app);
+/**
+ * Launches an application with a file passed as an argument.
+ *
+ * @param file The file passed as an argument.
+ */
+static void launch_app_with_file(const std::string &app, const std::string &file);
 
 
 /* NucWindow Methods */
@@ -296,11 +323,59 @@ int open_with(lua_State *L) {
         const char *app = luaL_checkstring(L, 1);
         const char *file = luaL_checkstring(L, 2);
 
-        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
-        info->launch(Gio::File::create_for_path(file));
+        launch_app_with_file(app, file);
     }
 
     return 0;
+}
+
+int launch(lua_State *L) {
+    const char *app = luaL_checkstring(L, 1);
+
+    std::string cmd = app;
+
+    int nargs = lua_gettop(L);
+    for (int i = 2; i <= nargs; ++i) {
+        cmd.append(" ");
+        cmd.append(luaL_checkstring(L, i));
+    }
+
+    launch_app(cmd);
+
+    return 0;
+}
+
+
+// Application Launch Utilities
+
+static void launch_app(const std::string &app) {
+#ifdef __APPLE__
+
+    Glib::spawn_command_line_async(Glib::ustring::compose("open -a %1", app));
+
+#else
+
+        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
+
+        if (info)
+            info->launch(Gio::File::create_for_path());
+
+#endif
+}
+
+static void launch_app_with_file(const std::string &app, const std::string &file) {
+#ifdef __APPLE__
+
+    Glib::spawn_command_line_async(Glib::ustring::compose("open -a %1 '%2'", app, file));
+
+#else
+
+        auto info = Gio::AppInfo::create_from_commandline(app, "", Gio::AppInfoCreateFlags::APP_INFO_CREATE_NONE);
+
+        if (info)
+            info->launch(Gio::File::create_for_path(file));
+
+#endif
 }
 
 
