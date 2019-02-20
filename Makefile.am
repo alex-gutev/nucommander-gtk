@@ -21,4 +21,4 @@ osx-app-bundle: bundle/nucommander.bundle $(srcdir)/bundle/info.plist $(srcdir)/
 uninstall-osx-app-bundle:
 	rm -rf $(BUNDLE_INSTALL_DIR)/NuCommander.app
 
-.PHONY: osx-app-bundle
+.PHONY: osx-app-bundle osx-set-defaults uninstall-osx-app-bundle
