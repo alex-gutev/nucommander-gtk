@@ -169,7 +169,7 @@ namespace nuc {
          * be invoked, when a restart is chosen for all future errors
          * of the same type.
          */
-        struct error_handler {
+        class error_handler {
             /**
              * Map of chosen restarts for all errors of a given type.
              *
@@ -183,6 +183,33 @@ namespace nuc {
              */
             app_window *window;
 
+            /**
+             * Error Dialog.
+             */
+            error_dialog *err_dialog = nullptr;
+
+            /**
+             * Creates the error dialog, and stores a pointer to it in
+             * err_dialog, if it has not been created already.
+             */
+            void create_error_dialog();
+
+            /**
+             * Displays the error dialog with the error @e and the
+             * recovery options returned by restarts().
+             *
+             * Blocks until the user chooses an error recovery action.
+             *
+             * @param e The error.
+             *
+             * @return A pair consisting of a pointer to the chosen
+             *    restart and a flag, which is true if the recovery action
+             *    should be applied to all future errors of the same type.
+             */
+            std::pair<const restart *, bool> choose_action(const error &e);
+
+
+        public:
             /**
              * Constructor.
              *
@@ -212,28 +239,15 @@ namespace nuc {
          * Displays the error dialog with a particular error and
          * recovery options.
          *
-         * @param promise A promise which is set to the value of the
-         *   chosen recovery option, once it is chosen by the user.
-         *
          * @param err The error.
-         *
          * @param restarts The restart map (recovery options).
+         *
+         * @return A pair where the first element is the chosen
+         *   restart and the second element is a boolean that is true
+         *   if the restart should be executed for all future errors
+         *   of the same type.
          */
-        void show_error(error_dialog::action_promise &promise, const error &err, const restart_map &restarts);
-
-        /**
-         * Displays the error dialog with the error @e and the
-         * recovery options returned by restarts().
-         *
-         * Blocks until the user chooses an error recovery action.
-         *
-         * @param e The error.
-         *
-         * @return A pair consisting of a pointer to the chosen
-         *    restart and a flag, which is true if the recovery action
-         *    should be applied to all future errors of the same type.
-         */
-        std::pair<const restart *, bool> choose_action(const error &e);
+        std::pair<const restart *, bool> show_error(const error &err, const restart_map &restarts);
 
 
         /* Displaying Progress */

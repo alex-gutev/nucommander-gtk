@@ -20,6 +20,10 @@ AX_CXX_COMPILE_STDCXX_11
 
 PKG_PROG_PKG_CONFIG
 
+# Misc Tools
+
+AC_PROG_SED
+
 # gettext
 
 AM_GNU_GETTEXT([external])
@@ -39,6 +43,7 @@ GLIB_GSETTINGS
 
 PKG_CHECK_MODULES([GLIBMM], [gtkmm-3.0 >= 3.8.0])
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive])
+PKG_CHECK_MODULES([LIBLUA], [lua-5.2])
 AX_BOOST_BASE
 
 # Check for header files

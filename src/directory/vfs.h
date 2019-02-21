@@ -376,6 +376,23 @@ namespace nuc {
             return cur_tree->get_entries(path);
         }
 
+        /**
+         * Creates a task which unpacks the file to a temporary
+         * location, if it is not immediately accessible via the OS's
+         * file system API.
+         *
+         * Once the file has been unpacked, a callback function is
+         * called with the full path to the unpacked file passed as an
+         * argument.
+         *
+         * @param ent The entry to unpack. This must be an entry that
+         *   is contained in this vfs object.
+         *
+         * @param fn Callback function of one argument, the full path
+         *   to the unpacked file.
+         */
+        task_queue::task_type access_file(const dir_entry &ent, std::function<void(const paths::pathname &)> fn);
+
     private:
         /**
          * New entry callback function.

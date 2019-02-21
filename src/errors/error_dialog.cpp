@@ -50,8 +50,6 @@ error_dialog::error_dialog(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
 
     actions_view->signal_row_activated().connect(sigc::mem_fun(this, &error_dialog::row_clicked));
 
-    signal_delete_event().connect(sigc::mem_fun(this, &error_dialog::on_delete));
-
     add_events(Gdk::KEY_PRESS_MASK);
 
     signal_key_press_event().connect(sigc::mem_fun(this, &error_dialog::key_pressed));
@@ -75,11 +73,11 @@ Glib::RefPtr<Gtk::ListStore> error_dialog::create_model() {
 }
 
 
-void error_dialog::show(const error &e, const restart_map &restarts, chose_action_fn chose_fn) {
+void error_dialog::set_error(const error &err, const restart_map &restarts) {
     actions->clear();
 
     for (auto &restart : restarts) {
-        if (restart.second.applicable(e)) {
+        if (restart.second.applicable(err)) {
             Gtk::TreeRow row = *actions->append();
 
             row[columns.name] = restart.first;
@@ -87,20 +85,7 @@ void error_dialog::show(const error &e, const restart_map &restarts, chose_actio
         }
     }
 
-    action_chosen = chose_fn;
-
-    set_error_label(e);
-
-    Gtk::Dialog::show();
-    present();
-
-    actions_view->grab_focus();
-}
-
-void error_dialog::show(action_promise &promise, const error &e, const restart_map &restarts) {
-    show(e, restarts, [this, &promise] (const restart *r, bool all) {
-        promise.set_value(std::make_pair(r, all));
-    });
+    set_error_label(err);
 }
 
 void error_dialog::set_error_label(const nuc::error &e) {
@@ -112,6 +97,24 @@ void error_dialog::set_error_label(const nuc::error &e) {
     else {
         error_label->set_label(Glib::ustring::compose("%1\n\n%2", e.type_explanation(), e.explanation()));
     }
+}
+
+const restart * error_dialog::get_restart() const {
+    if (auto row = *actions_view->get_selection()->get_selected()) {
+        return row[columns.action];
+    }
+
+    return &restart_abort;
+}
+
+std::pair<const restart *, bool> error_dialog::run(const error &err, const restart_map &restarts) {
+    set_error(err, restarts);
+    int resp = run();
+
+    const restart *r = resp == RESPONSE_ABORT ? &restart_abort : get_restart();
+    hide();
+
+    return std::make_pair(r, resp == RESPONSE_ALL);
 }
 
 
@@ -127,21 +130,12 @@ void error_dialog::choose_action(bool all) {
     auto row = *actions_view->get_selection()->get_selected();
 
     if (row) {
-        action_chosen(row[columns.action], all);
-        hide();
+        response(all ? RESPONSE_ALL : RESPONSE_CHOOSE);
     }
 }
 
 void error_dialog::row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn *column) {
     exec_clicked();
-}
-
-bool error_dialog::on_delete(const GdkEventAny *e) {
-    action_chosen(&restart_abort, false);
-
-    gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
-
-    return true;
 }
 
 bool error_dialog::key_pressed(const GdkEventKey *e) {

@@ -116,18 +116,19 @@ Glib::RefPtr<Gtk::Builder> app_window::file_view_builder() {
 }
 
 bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
-    using namespace std::placeholders;
+    nuc::error_handler handler([this] (const error &e) {
+        (*show_error(e, restarts()).first)(e);
+    });
 
-    std::string command_name = command_keymap::instance().command_name(e);
+    try {
+        return command_keymap::instance().exec_command(this, src, e);
+    }
+    catch (const nuc::error &) {
+        // Catch errors to abort failed commands
 
-    auto command = commands.find(command_name);
-
-    if (command != commands.end()) {
-        command->second(this, src);
+        // Return true to indicate a command was executed.
         return true;
     }
-
-    return false;
 }
 
 void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controller *flist, nuc::dir_entry *ent) {
@@ -175,7 +176,29 @@ void app_window::add_operation(const task_queue::task_type &op, const progress_e
     });
 }
 
+
 /// Error Handlers
+
+void app_window::error_handler::create_error_dialog() {
+    if (!err_dialog) {
+        err_dialog = error_dialog::create();
+
+        err_dialog->set_transient_for(*window);
+    }
+}
+
+std::pair<const restart *, bool> app_window::error_handler::choose_action(const error &e) {
+    auto &actions = restarts();
+
+    std::promise<std::pair<const restart *, bool>> promise;
+
+    dispatch_main([&] {
+        create_error_dialog();
+        promise.set_value(err_dialog->run(e, actions));
+    });
+
+    return promise.get_future().get();
+}
 
 void app_window::error_handler::operator()(cancel_state &state, const nuc::error &e) {
     auto it = chosen_actions.find(e);
@@ -194,7 +217,7 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
     bool all;
 
     state.no_cancel([&] {
-        std::tie(r, all) = window->choose_action(e);
+        std::tie(r, all) = choose_action(e);
     });
 
     if (all) {
@@ -202,18 +225,6 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
     }
 
     (*r)(e);
-}
-
-std::pair<const restart *, bool> app_window::choose_action(const error &e) {
-    auto &actions = restarts();
-
-    error_dialog::action_promise promise;
-
-    dispatch_main([&] {
-        show_error(promise, e, actions);
-    });
-
-    return promise.get_future().get();
 }
 
 
@@ -227,11 +238,10 @@ void app_window::create_error_dialog() {
     }
 }
 
-void app_window::show_error(error_dialog::action_promise &promise, const nuc::error &err, const restart_map &restarts) {
+std::pair<const restart *, bool> app_window::show_error(const nuc::error &err, const restart_map &restarts) {
     create_error_dialog();
 
-    err_dialog->show(promise, err, restarts);
-    err_dialog->present();
+    return err_dialog->run(err, restarts);
 }
 
 

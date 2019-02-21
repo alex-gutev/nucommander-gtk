@@ -259,6 +259,18 @@ void file_view::entry_path(const std::string &path) {
 }
 
 
+//// Getting Selected Entry
+
+dir_entry *file_view::selected_entry() {
+    auto row = flist->selected();
+
+    if (row)
+        return row[file_model_columns::instance().ent];
+
+    return nullptr;
+}
+
+
 //// Changing Keyboard Focus
 
 void file_view::focus_path() {

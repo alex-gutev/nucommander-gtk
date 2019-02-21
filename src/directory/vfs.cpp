@@ -20,7 +20,7 @@
 #include "vfs.h"
 
 #include "tasks/async_task.h"
-
+#include "operations/copy.h"
 
 using namespace nuc;
 
@@ -527,4 +527,22 @@ void vfs::call_begin(cancel_state &state, bool refresh) {
 
 void vfs::call_new_entry(dir_entry &ent, bool refresh) {
     cb_new_entry(ent, refresh);
+}
+
+
+//// Accessing Files on Disk
+
+task_queue::task_type vfs::access_file(const dir_entry &ent, std::function<void(const paths::pathname &)> fn) {
+    using namespace std::placeholders;
+
+    if (!dtype.is_dir()) {
+        return make_unpack_task(dtype, ent.orig_subpath(), [=] (const char *path) {
+            fn(paths::pathname(path));
+        });
+    }
+    else {
+        paths::pathname full_path = dtype.path().append(ent.orig_subpath());
+
+        return std::bind(fn, full_path);
+    }
 }

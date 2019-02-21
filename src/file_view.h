@@ -256,6 +256,14 @@ namespace nuc {
          */
         void focus_path();
 
+        /**
+         * Return the selected entry or NULL if there is no selected
+         * entry.
+         *
+         * @return dir_entry *
+         */
+        dir_entry *selected_entry();
+
 
         /* Signals */
 
