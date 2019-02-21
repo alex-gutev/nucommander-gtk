@@ -164,7 +164,29 @@ void app_window::add_operation(const task_queue::task_type &op, const progress_e
     });
 }
 
+
 /// Error Handlers
+
+void app_window::error_handler::create_error_dialog() {
+    if (!err_dialog) {
+        err_dialog = error_dialog::create();
+
+        err_dialog->set_transient_for(*window);
+    }
+}
+
+std::pair<const restart *, bool> app_window::error_handler::choose_action(const error &e) {
+    auto &actions = restarts();
+
+    std::promise<std::pair<const restart *, bool>> promise;
+
+    dispatch_main([&] {
+        create_error_dialog();
+        promise.set_value(err_dialog->run(e, actions));
+    });
+
+    return promise.get_future().get();
+}
 
 void app_window::error_handler::operator()(cancel_state &state, const nuc::error &e) {
     auto it = chosen_actions.find(e);
@@ -183,7 +205,7 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
     bool all;
 
     state.no_cancel([&] {
-        std::tie(r, all) = window->choose_action(e);
+        std::tie(r, all) = choose_action(e);
     });
 
     if (all) {
@@ -191,18 +213,6 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
     }
 
     (*r)(e);
-}
-
-std::pair<const restart *, bool> app_window::choose_action(const error &e) {
-    auto &actions = restarts();
-
-    std::promise<std::pair<const restart *, bool>> promise;
-
-    dispatch_main([&] {
-        promise.set_value(show_error(e, actions));
-    });
-
-    return promise.get_future().get();
 }
 
 
