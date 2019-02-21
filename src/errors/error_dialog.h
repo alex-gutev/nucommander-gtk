@@ -40,18 +40,6 @@ namespace nuc {
      */
     class error_dialog : public Gtk::Dialog {
         /**
-         * Recovery action chosen callback function type.
-         *
-         * Arguments:
-         *
-         *  1. Pointer to the restart object of the chosen action.
-         *
-         *  2. Flag: true if the chosen action should be applied to
-         *     all future errors.
-         */
-        typedef std::function<void(const restart *, bool)> chose_action_fn;
-
-        /**
          * Columns model for an error recovery action.
          */
         class action_model_columns : public Gtk::TreeModelColumnRecord {
@@ -105,13 +93,6 @@ namespace nuc {
          * Model columns.
          */
         action_model_columns columns;
-
-
-        /**
-         * Callback function which is executed after the user has
-         * chosen a recovery action type.
-         */
-        chose_action_fn action_chosen;
 
 
         /* Initialization Methods */
@@ -168,32 +149,30 @@ namespace nuc {
         void row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn *column);
 
         /**
-         * Signal handler for the "deleted" signal. Called when the
-         * user closes the dialog.
-         *
-         * Sets the "abort" restart as the chosen action.
-         *
-         * @param e The event which triggered the delete signal.
-         */
-        bool on_delete(const GdkEventAny *e);
-
-        /**
          * Signal handler for key press events.
          */
         bool key_pressed(const GdkEventKey *e);
 
     public:
-        using Gtk::Dialog::show;
+        using Gtk::Dialog::run;
 
-        /**
-         * Action promise type.
-         *
-         * The promise value is a pair where the first element is a
-         * pointer to the chosen restart and the second value is a
-         * flag for whether the action should be executed for all
-         * future errors.
-         */
-        typedef std::promise<std::pair<const restart *, bool>> action_promise;
+        /** Response Typres */
+        enum response_type {
+            /**
+             * A restart was chosen to handle this single error only.
+             */
+            RESPONSE_CHOOSE = Gtk::RESPONSE_OK,
+            /**
+             * No restart was chosen, default to abort.
+             */
+            RESPONSE_ABORT = Gtk::RESPONSE_NONE,
+            /**
+             * A restart was chosen to handle this error and all
+             * future errors of the same type.
+             */
+            RESPONSE_ALL = 1
+        };
+
 
         /** Constructor */
         error_dialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
@@ -203,41 +182,40 @@ namespace nuc {
          */
         static error_dialog *create();
 
-        /**
-         * Shows the error dialog, displaying the error @a err and the
-         * recovery options @a restarts.
-         *
-         * When the user has chosen a recovery option, the callback
-         * function @a chose_fn is called with the chosen restart.
-         *
-         * @param err The error to display.
-         *
-         * @param restarts The restart map at the point at which the
-         *    error was triggered.
-         *
-         * @param chose_fn Callback function which is called, with the
-         *   chosen restart passed as an argument when the recovery
-         *   action has been chosen by the user.
-         */
-        void show(const error &err, const restart_map &restarts, chose_action_fn chose_fn);
 
         /**
-         * Shows the error dialog, displaying the error @a err and the
-         * recovery options @a restarts.
+         * Sets the label to display the description of the error @a
+         * err, and shows the lists of applicable restarts.
          *
-         * When the user has chosen a recovery option, the value of
-         * the promise, @a promise is set to a pointer to the chosen
-         * restart.
-         *
-         * @param promise A promise which is set to the pointer to the
-         *    chosen restart, once it is chosen by the user.
-         *
-         * @param err The error to display.
-         *
-         * @param restarts The restart map at the point at which the
-         *    error was triggered.
+         * @param err The error.
+         * @param restarts The restart map.
          */
-        void show(action_promise &promise, const error &err, const restart_map &restarts);
+        void set_error(const error &err, const restart_map &restarts);
+
+        /**
+         * Gets the selected restart. Restart to 'restart_abort' if no
+         * restart is selected.
+         *
+         * @return Pointer to the restart.
+         */
+        const restart *get_restart() const;
+
+        /**
+         * Displays the dialog, modally, displaying the error @a err
+         * and the list of applicable restarts in @a restarts.
+         *
+         * The dialog is automatically hidden after a restart is
+         * chosen or it is closed by the user.
+         *
+         * @param err The error.
+         * @param restarts The restarts.
+         *
+         * @return A pair with the first element being the chosen
+         *   restart and the second element being a boolean, which is
+         *   true if the chosen restart should be executed for all
+         *   future errors of the same type.
+         */
+        std::pair<const restart *, bool> run(const error &err, const restart_map &restarts);
     };
 }
 

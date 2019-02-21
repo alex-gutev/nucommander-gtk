@@ -212,14 +212,15 @@ namespace nuc {
          * Displays the error dialog with a particular error and
          * recovery options.
          *
-         * @param promise A promise which is set to the value of the
-         *   chosen recovery option, once it is chosen by the user.
-         *
          * @param err The error.
-         *
          * @param restarts The restart map (recovery options).
+         *
+         * @return A pair where the first element is the chosen
+         *   restart and the second element is a boolean that is true
+         *   if the restart should be executed for all future errors
+         *   of the same type.
          */
-        void show_error(error_dialog::action_promise &promise, const error &err, const restart_map &restarts);
+        std::pair<const restart *, bool> show_error(const error &err, const restart_map &restarts);
 
         /**
          * Displays the error dialog with the error @e and the

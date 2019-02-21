@@ -196,10 +196,10 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
 std::pair<const restart *, bool> app_window::choose_action(const error &e) {
     auto &actions = restarts();
 
-    error_dialog::action_promise promise;
+    std::promise<std::pair<const restart *, bool>> promise;
 
     dispatch_main([&] {
-        show_error(promise, e, actions);
+        promise.set_value(show_error(e, actions));
     });
 
     return promise.get_future().get();
@@ -216,11 +216,10 @@ void app_window::create_error_dialog() {
     }
 }
 
-void app_window::show_error(error_dialog::action_promise &promise, const nuc::error &err, const restart_map &restarts) {
+std::pair<const restart *, bool> app_window::show_error(const nuc::error &err, const restart_map &restarts) {
     create_error_dialog();
 
-    err_dialog->show(promise, err, restarts);
-    err_dialog->present();
+    return err_dialog->run(err, restarts);
 }
 
 
