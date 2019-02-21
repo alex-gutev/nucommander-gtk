@@ -5,14 +5,14 @@ apps = {
    ["txt"] = "gedit"
 }
 
-local selected = source_pane:selected()
+local selected = Nuc.source:selected()
 
 if selected and selected:file_type() == NucEntry.TYPE_REG then
    local app = apps[selected:extension()]
 
    if app then
-      window:unpack_file(
-         source_pane, selected,
+      Nuc.window:unpack_file(
+         Nuc.source, selected,
          function(path)
             Nuc.open_with(app, path)
          end
