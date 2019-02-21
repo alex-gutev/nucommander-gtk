@@ -5,7 +5,7 @@ desktopdir = $(datadir)/applications
 dist_desktop_in_files = nucommander.desktop.in
 dist_desktop_DATA = $(dist_desktop_in_files:.desktop.in=.desktop)
 
-dist_pkgdata_DATA = custom-commands/open-terminal.lua custom-commands/view.lua
+nobase_dist_pkgdata_DATA = commands/open-terminal.lua commands/view.lua
 
 CLEANFILES = $(srcdir)/nucommander.desktop
 

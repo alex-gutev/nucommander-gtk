@@ -39,8 +39,8 @@
     <key name="custom-commands" type="a{s(ss)}">
       <default>
         {
-        "open-terminal": ("Open a terminal in the current directory", "@datadir@/open-terminal.lua"),
-        "view": ("View the selected file with a view application", "@datadir@/view.lua")
+        "open-terminal": ("Open a terminal in the current directory", "@datadir@/commands/open-terminal.lua"),
+        "view": ("View the selected file with a view application", "@datadir@/commands/view.lua")
         }
       </default>
     </key>
