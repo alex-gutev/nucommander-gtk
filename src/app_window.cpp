@@ -116,7 +116,19 @@ Glib::RefPtr<Gtk::Builder> app_window::file_view_builder() {
 }
 
 bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
-    return command_keymap::instance().exec_command(this, src, e);
+    nuc::error_handler handler([this] (const error &e) {
+        (*show_error(e, restarts()).first)(e);
+    });
+
+    try {
+        return command_keymap::instance().exec_command(this, src, e);
+    }
+    catch (const nuc::error &) {
+        // Catch errors to abort failed commands
+
+        // Return true to indicate a command was executed.
+        return true;
+    }
 }
 
 void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controller *flist, nuc::dir_entry *ent) {

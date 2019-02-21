@@ -25,6 +25,8 @@
 
 #include <lua.hpp>
 
+#include "errors/errors.h"
+
 #include "commands.h"
 
 namespace nuc {
@@ -72,15 +74,10 @@ namespace nuc {
         /**
          * Lua Error Exception.
          */
-        class error : public std::exception {
-            const std::string desc;
-
+        class error : public nuc::error {
         public:
-            error(std::string desc) : desc(std::move(desc)) {}
-
-            virtual const char *what() const noexcept {
-                return desc.c_str();
-            }
+            template <typename T>
+            error(T&& desc) : nuc::error(-1, type_general, true, std::forward<T>(desc)) {}
         };
 
         /**

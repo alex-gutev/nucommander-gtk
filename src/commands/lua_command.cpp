@@ -45,9 +45,11 @@ void lua_command::init_state() {
         luaL_openlibs(state);
         register_nuc_api(state);
 
-        if (luaL_loadfile(state, path.c_str())) {
-            raise_lua_error();
-        }
+        try_op([=] {
+            if (luaL_loadfile(state, path.c_str())) {
+                raise_lua_error();
+            }
+        });
 
         lua_setfield(state, LUA_REGISTRYINDEX, nuc_command_key);
     }
@@ -80,10 +82,13 @@ lua_command::~lua_command() {
 void lua_command::run(app_window *window, file_view *src, Glib::VariantBase arg) {
     init_state();
 
-    pass_lua_command_args(state, window, src);
+    try_op([=] {
+        pass_lua_command_args(state, window, src);
 
-    lua_getfield(state, LUA_REGISTRYINDEX, nuc_command_key);
-    if (lua_pcall(state, 0, 0, 0)) {
-        raise_lua_error();
-    }
+        lua_getfield(state, LUA_REGISTRYINDEX, nuc_command_key);
+
+        if (lua_pcall(state, 0, 0, 0)) {
+            raise_lua_error();
+        }
+    });
 }
