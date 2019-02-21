@@ -225,7 +225,7 @@ struct close_dir_command : public command {
 
 void nuc::add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table) {
     table.emplace("copy", make_unique(new copy_command));
-    table.emplace("make-director", make_unique(new make_dir_command));
+    table.emplace("make-directory", make_unique(new make_dir_command));
     table.emplace("move", make_unique(new move_command));
     table.emplace("delete", make_unique(new delete_command));
     table.emplace("jump-path", make_unique(new jump_path_command));
