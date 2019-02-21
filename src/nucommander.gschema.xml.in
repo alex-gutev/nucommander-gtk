@@ -13,10 +13,12 @@
     <key name="keybindings" type="a{ss}">
       <default>
         {
+        "F3": "view",
         "F5": "copy",
         "F6": "move",
         "F7": "make-directory",
         "F8": "delete",
+        "F9": "open-terminal",
         "/": "jump-path",
         "C-,": "open-key-prefs",
         "C-u": "swap-panes",
@@ -35,6 +37,12 @@
       <default>[(7, 0, "skip attribute"), (8, 0, "skip attribute"), (9 , 0, "skip attribute")]</default>
     </key>
     <key name="custom-commands" type="a{s(ss)}">
+      <default>
+        {
+        "open-terminal": ("Open a terminal in the current directory", "@datadir@/open-terminal.lua"),
+        "view": ("View the selected file with a view application", "@datadir@/view.lua")
+        }
+      </default>
     </key>
   </schema>
 

@@ -5,7 +5,7 @@ nucommander_CFLAGS = $(GLIBMM_CFLAGS) $(LIBLUA_CFLAGS)
 nucommander_CXXFLAGS = $(GLIBMM_CFLAGS) $(BOOST_CPPFLAGS) $(LIBLUA_CFLAGS)
 nucommander_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\"
 
-# Source Files
+## Source Files
 
 nucommander_SOURCES = \
 	main.cpp \
@@ -125,7 +125,7 @@ nucommander_SOURCES = \
 	file_list/directory_buffers.h \
 	file_list/directory_buffers.cpp
 
-# Resources
+## Resources
 
 nodist_nucommander_SOURCES = resources.c
 
@@ -141,15 +141,22 @@ nucommander_RESOURCES = \
 	resources/styles.css
 
 
-CLEANFILES = resources.c
-
 $(srcdir)/resources.c: $(nucommander_RESOURCES)
 	glib-compile-resources --target=$(srcdir)/resources.c --sourcedir=$(srcdir)/resources --generate-source $(srcdir)/resources/nucommander.gresource.xml
 
-# GSettings
+
+## GSettings
+
+# Replace references to @datadir@ in schema
+
+nucommander.gschema.xml: nucommander.gschema.xml.in
+	$(AM_V_GEN) $(SED) -e 's|@datadir[@]|$(pkgdatadir)|g' $< > $@
+
 
 gsettings_SCHEMAS = nucommander.gschema.xml
 
-EXTRA_DIST = $(nucommander_RESOURCES) $(gsettings_SCHEMAS)
+
+EXTRA_DIST = $(nucommander_RESOURCES) $(gsettings_SCHEMAS) nucommander.gschema.xml.in
+CLEANFILES = resources.c nucommander.gschema.xml
 
 @GSETTINGS_RULES@
