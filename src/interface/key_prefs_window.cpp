@@ -53,6 +53,9 @@ key_prefs_window::key_prefs_window(BaseObjectType *cobject, const Glib::RefPtr<G
     // Get Widgets
 
     builder->get_widget("bindings_tree_view", bindings_view);
+    builder->get_widget("kb_add_button", kb_add_button);
+    builder->get_widget("kb_remove_button", kb_remove_button);
+
     builder->get_widget("ok_button", ok_button);
     builder->get_widget("apply_button", apply_button);
     builder->get_widget("cancel_button", cancel_button);
@@ -76,6 +79,9 @@ key_prefs_window::key_prefs_window(BaseObjectType *cobject, const Glib::RefPtr<G
     bindings_view->get_column(1)->set_resizable(true);
 
     // Initialize Buttons
+
+    kb_add_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::add_binding));
+    kb_remove_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::remove_binding));
 
     apply_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::apply_clicked));
     ok_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::ok_clicked));
@@ -105,6 +111,18 @@ void key_prefs_window::store_bindings() {
     }
 
     app_settings::instance().settings()->set_value("keybindings", Glib::Variant<std::map<Glib::ustring, Glib::ustring>>::create(key_map));
+}
+
+
+void key_prefs_window::add_binding() {
+    auto row = bindings_list->append();
+
+    bindings_view->set_cursor(bindings_list->get_path(row), *bindings_view->get_column(0), true);
+}
+
+void key_prefs_window::remove_binding() {
+    if (auto row = bindings_view->get_selection()->get_selected())
+        bindings_list->erase(row);
 }
 
 

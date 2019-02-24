@@ -33,6 +33,8 @@ namespace nuc {
      * Key bindings Preferences Dialog
      */
     class key_prefs_window : public Gtk::Window {
+        /* Key Binding Preferences */
+
         /**
          * Model Columns for the key
          */
@@ -56,12 +58,19 @@ namespace nuc {
          */
         Gtk::TreeView *bindings_view;
 
+        /* Add and remove binding buttons */
+        Gtk::Button *kb_add_button;
+        Gtk::Button *kb_remove_button;
+
+
         /** Buttons */
 
         Gtk::Button *ok_button;
         Gtk::Button *apply_button;
         Gtk::Button *cancel_button;
 
+
+        /* Key Binding Preferences */
 
         /**
          * Retrieves the key bindings from settings and stores them in
@@ -73,6 +82,20 @@ namespace nuc {
          * Saves the key bindings in bindings_list to settings.
          */
         void store_bindings();
+
+        /**
+         * Add a new key binding to the tree model and set the tree
+         * views's cursor to the created row.
+         */
+        void add_binding();
+
+        /**
+         * Remove the selected key binding from the tree model.
+         */
+        void remove_binding();
+
+
+        /* Signal Handlers */
 
         /**
          * Signal handlers of the clicked events of the buttons.
