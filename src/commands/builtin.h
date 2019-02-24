@@ -28,7 +28,7 @@ namespace nuc {
      *
      * @param table The command table to add the builtin commands to.
      */
-    void add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
+    void add_builtin_commands(command_keymap::command_map &table);
 }  // nuc
 
 #endif /* NUC_COMMANDS_BUILTIN_H */

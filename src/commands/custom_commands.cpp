@@ -21,38 +21,73 @@
 
 #include <map>
 
-#include "util/util.h"
+#include <glibmm/miscutils.h>
+#include <boost/algorithm/string.hpp>
 
-#include "settings/app_settings.h"
+#include "util/util.h"
+#include "lister/dir_lister.h"
 #include "commands/lua_command.h"
+
 
 using namespace nuc;
 
-#include <iostream>
-void nuc::add_custom_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table) {
-    auto settings = app_settings::instance().settings();
-    Glib::VariantContainerBase commands;
+/**
+ * Return the list of directories from which to load commands.
+ *
+ * @return Vector of pathname's of the directories.
+ */
+static std::vector<paths::pathname> command_dirs();
 
-    settings->get_value("custom-commands", commands);
+/**
+ * Loads all custom commands in the directory @a dir to the command
+ * table @a table.
+ *
+ * @param dir Directory to load commands from.
+ * @param table Command table to load the commands to.
+ */
+static void load_commands_in_dir(const paths::pathname &dir, command_keymap::command_map &table);
 
-    for (size_t i = 0; i < commands.get_n_children(); ++i) {
-        // Command Dictionary Entry
-        Glib::VariantContainerBase entry;
 
-        commands.get_child(entry, i);
+void nuc::add_custom_commands(command_keymap::command_map &table) {
+    for (auto &path : command_dirs()) {
+        try {
+            load_commands_in_dir(path, table);
+        }
+        catch (const nuc::error &e) {
+            // Skip loading commands from directory
+        }
+    }
+}
 
-        Glib::Variant<std::string> name; // Dictionary Key
-        Glib::VariantContainerBase command; // Dictionary Value
+static std::vector<paths::pathname> command_dirs() {
+    std::vector<paths::pathname> dirs;
 
-        Glib::Variant<std::string> path;
-        Glib::Variant<std::string> desc;
+    for (const auto &path : Glib::get_system_data_dirs()) {
+        dirs.push_back(paths::pathname(path).append("nucommander/commands"));
+    }
 
-        entry.get_child(name, 0);
-        entry.get_child(command, 1);
+    dirs.push_back(paths::pathname(Glib::get_user_data_dir()).append("nucommander/commands"));
 
-        command.get_child(desc, 0);
-        command.get_child(path, 1);
+    return dirs;
+}
 
-        table.emplace(name.get(), make_unique(new lua_command(path.get(), desc.get())));
+static void load_commands_in_dir(const paths::pathname &dir, command_keymap::command_map &table) {
+    dir_lister listr(dir);
+
+    lister::entry ent;
+    struct stat st;
+
+    while (listr.read_entry(ent)) {
+        if (ent.type != DT_REG) {
+            if (!listr.entry_stat(st) || S_ISREG(st.st_mode))
+                continue;
+        }
+
+        paths::pathname name(ent.name);
+
+        if (boost::iequals(name.extension(), "LUA")) {
+            const std::string &name_str = name.path();
+            table[name_str.substr(0, name_str.length() - 4)] = make_unique(new lua_command(dir.append(name)));
+        }
     }
 }

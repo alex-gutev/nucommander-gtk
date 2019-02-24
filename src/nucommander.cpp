@@ -22,6 +22,7 @@
 #include "app_window.h"
 
 #include "tasks/async_task.h"
+#include "commands/commands.h"
 
 #include <sigc++/sigc++.h>
 #include <gtkmm/styleprovider.h>
@@ -53,9 +54,11 @@ nuc::app_window *nuc::NuCommander::create_app_window() {
 }
 
 void nuc::NuCommander::on_activate() {
-    //TODO: Add exception handling
-
+    // Initialize Threading
     init_threads();
+
+    // Initialize Commands
+    command_keymap::instance();
 
     auto window = create_app_window();
     window->present();

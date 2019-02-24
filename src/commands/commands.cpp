@@ -24,13 +24,19 @@
 #include "builtin.h"
 #include "custom_commands.h"
 
+#include "tasks/async_task.h"
+
 using namespace nuc;
 
 /// command_keymap Implementation
 
 command_keymap::command_keymap() {
+    // Initially make builtin commands available
     add_builtin_commands(command_table);
-    add_custom_commands(command_table);
+
+    // Load custom commands in background so as to increase
+    // application load time.
+    load_custom_commands();
 
     get_keymap();
 
@@ -42,6 +48,25 @@ command_keymap &command_keymap::instance() {
 
     return inst;
 }
+
+
+void command_keymap::load_custom_commands() {
+    dispatch_async([=] {
+        command_map table;
+
+        add_builtin_commands(table);
+        add_custom_commands(table);
+
+        set_command_map(table);
+    });
+}
+
+void command_keymap::set_command_map(command_map &map) {
+    dispatch_main([=] {
+        command_table = std::move(map);
+    });
+}
+
 
 void command_keymap::get_keymap() {
     Glib::Variant<std::map<Glib::ustring, Glib::ustring>> gv_map;

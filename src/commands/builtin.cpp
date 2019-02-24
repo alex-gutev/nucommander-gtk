@@ -223,17 +223,17 @@ struct close_dir_command : public command {
 
 //// Implementations
 
-void nuc::add_builtin_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table) {
-    table.emplace("copy", make_unique(new copy_command));
-    table.emplace("make-directory", make_unique(new make_dir_command));
-    table.emplace("move", make_unique(new move_command));
-    table.emplace("delete", make_unique(new delete_command));
-    table.emplace("jump-path", make_unique(new jump_path_command));
-    table.emplace("open-key-prefs", make_unique(new open_key_prefs_command));
-    table.emplace("swap-panes", make_unique(new swap_panes_command));
-    table.emplace("change-directory", make_unique(new change_dir_command));
-    table.emplace("open-new-directory", make_unique(new open_dir_command));
-    table.emplace("close-directory", make_unique(new close_dir_command));
+void nuc::add_builtin_commands(command_keymap::command_map &table) {
+    table.emplace("copy", std::make_shared<copy_command>());
+    table.emplace("make-directory", std::make_shared<make_dir_command>());
+    table.emplace("move", std::make_shared<move_command>());
+    table.emplace("delete", std::make_shared<delete_command>());
+    table.emplace("jump-path", std::make_shared<jump_path_command>());
+    table.emplace("open-key-prefs", std::make_shared<open_key_prefs_command>());
+    table.emplace("swap-panes", std::make_shared<swap_panes_command>());
+    table.emplace("change-directory", std::make_shared<change_dir_command>());
+    table.emplace("open-new-directory", std::make_shared<open_dir_command>());
+    table.emplace("close-directory", std::make_shared<close_dir_command>());
 }
 
 

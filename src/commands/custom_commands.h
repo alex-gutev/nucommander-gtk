@@ -29,7 +29,7 @@ namespace nuc {
      *
      * @param table The command table to add the custom commands to.
      */
-    void add_custom_commands(std::unordered_map<std::string, std::unique_ptr<command>> &table);
+    void add_custom_commands(command_keymap::command_map &table);
 }  // nuc
 
 

@@ -65,14 +65,7 @@ namespace nuc {
      */
     class command_keymap {
     public:
-        /**
-         * Global Command Table.
-         *
-         * Each key is a unique string identifying the command and the
-         * corresponding value is the command functor.
-         */
-        std::unordered_map<std::string, std::unique_ptr<command>> command_table;
-
+        typedef std::unordered_map<std::string, std::shared_ptr<command>> command_map;
 
         /** Constructor */
         command_keymap();
@@ -137,12 +130,35 @@ namespace nuc {
 
     private:
         /**
+         * Global Command Table.
+         *
+         * Each key is a unique string identifying the command and the
+         * corresponding value is the command functor.
+         */
+        command_map command_table;
+
+        /**
          * The keymap.
          *
          * Each key is a string corresponding to a key sequence and
          * the value is the command bound to that key sequence.
          */
         std::unordered_map<std::string, std::string> keymap;
+
+
+        /**
+         * Loads the list of custom commands in the backgrounds and
+         * sets it as the command table, on the main thread.
+         */
+        void load_custom_commands();
+
+        /**
+         * Dispatches a task to the main thread which sets the command
+         * table to @a map.
+         *
+         * @param map The command table to set.
+         */
+        void set_command_map(command_map &map);
 
         /**
          * Retrieves the key map from GSettings.
