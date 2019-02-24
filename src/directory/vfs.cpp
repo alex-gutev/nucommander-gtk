@@ -268,7 +268,7 @@ void vfs::list_dir(cancel_state& state, std::shared_ptr<read_dir_state> tstate) 
             }
         }
     }
-    catch (lister::error &e) {
+    catch (const nuc::error &e) {
         tstate->error = e.code();
     }
 }

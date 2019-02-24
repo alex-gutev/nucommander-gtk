@@ -28,6 +28,7 @@
 
 #include "paths/pathname.h"
 #include "stream/instream.h"
+#include "errors/error.h"
 
 namespace nuc {
     /**
@@ -49,28 +50,6 @@ namespace nuc {
         struct entry {
             const char *name;
             uint8_t type;
-        };
-
-        /**
-         * Error exception.
-         */
-        class error : public std::exception {
-            /** Error code */
-            const int m_code;
-
-        public:
-            /**
-             * Constructs an error exception object with an error
-             * code.
-             */
-            error(int code) : m_code(code) {}
-
-            /**
-             * Returns the error code.
-             */
-            int code() const {
-                return m_code;
-            }
         };
 
         virtual ~lister() = default;
@@ -115,7 +94,7 @@ namespace nuc {
          * Throws an 'error' exception with error code 'code'.
          */
         void raise_error(int code) {
-            throw error(code);
+            throw error(code, false);
         }
     };
 }

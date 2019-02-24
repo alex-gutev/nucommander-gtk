@@ -140,7 +140,7 @@ nuc::paths::string nuc::dir_type::find_match_comp(const paths::string &dir, cons
 
         return match.empty() ? comp : match;
 
-    } catch(lister::error &e) {
+    } catch(const nuc::error &e) {
         return "";
     }
 }
