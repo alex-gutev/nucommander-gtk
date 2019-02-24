@@ -147,16 +147,10 @@ $(srcdir)/resources.c: $(nucommander_RESOURCES)
 
 ## GSettings
 
-# Replace references to @datadir@ in schema
-
-nucommander.gschema.xml: nucommander.gschema.xml.in
-	$(AM_V_GEN) $(SED) -e 's|@datadir[@]|$(nucommander_install_datadir)|g' $< > $@
-
-
 gsettings_SCHEMAS = nucommander.gschema.xml
 
 
-EXTRA_DIST = $(nucommander_RESOURCES) $(gsettings_SCHEMAS) nucommander.gschema.xml.in
-CLEANFILES = resources.c nucommander.gschema.xml
+EXTRA_DIST = $(nucommander_RESOURCES) $(gsettings_SCHEMAS)
+CLEANFILES = resources.c
 
 @GSETTINGS_RULES@

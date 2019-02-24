@@ -36,14 +36,6 @@
     <key name="auto-error-handlers" type="a(iis)">
       <default>[(7, 0, "skip attribute"), (8, 0, "skip attribute"), (9 , 0, "skip attribute")]</default>
     </key>
-    <key name="custom-commands" type="a{s(ss)}">
-      <default>
-        {
-        "open-terminal": ("Open a terminal in the current directory", "@datadir@/commands/open-terminal.lua"),
-        "view": ("View the selected file with a view application", "@datadir@/commands/view.lua")
-        }
-      </default>
-    </key>
   </schema>
 
   <schema id="org.agware.NuCommander.plugin" gettext-domain="NuCommander">

@@ -57,14 +57,10 @@ AC_SEARCH_LIBS([dlopen], [dl])
 AC_ARG_ENABLE([app-bundle], AS_HELP_STRING([--enable-app-bundle], [Enable App Bundle Creation]))
 
 AS_IF([test "x$enable_app_bundle" == "xyes"],
-
       [AC_CHECK_PROG(has_gtk_mac_bundler, gtk-mac-bundler, yes)
        AS_IF([test "x$has_gtk_mac_bundler" != "xyes"],
              [AC_MSG_ERROR([gtk-mac-bundler not found. Required to create App bundle.])])
-       AC_SUBST([nucommander_install_datadir], [Resources/share/nucommander])
-       AC_CONFIG_FILES([bundle/nucommander.bundle])],
-
-      [AC_SUBST([nucommander_install_datadir], [${datadir}/${PACKAGE}])])
+       AC_CONFIG_FILES([bundle/nucommander.bundle])])
 
 AC_ARG_VAR(BUNDLE_INSTALL_DIR, [Path to the directory where the App bundle is to be installed])
 AC_SUBST([GTKMM_PREFIX], [$(${PKG_CONFIG} --variable=prefix gtkmm-3.0)])
