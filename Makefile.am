@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = . src src/plugins/archgeneric po
+SUBDIRS = . src src/plugins/archgeneric po test
 
 desktopdir = $(datadir)/applications
 dist_desktop_in_files = nucommander.desktop.in

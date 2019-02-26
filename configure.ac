@@ -44,7 +44,9 @@ GLIB_GSETTINGS
 PKG_CHECK_MODULES([GLIBMM], [gtkmm-3.0 >= 3.8.0])
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive])
 PKG_CHECK_MODULES([LIBLUA], [lua-5.2])
+
 AX_BOOST_BASE
+AX_BOOST_UNIT_TEST_FRAMEWORK
 
 # Check for header files
 
@@ -68,5 +70,5 @@ AC_SUBST([GTKMM_PREFIX], [$(${PKG_CONFIG} --variable=prefix gtkmm-3.0)])
 
 # Output
 
-AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile po/Makefile.in])
+AC_CONFIG_FILES([Makefile src/Makefile src/plugins/archgeneric/Makefile po/Makefile.in test/Makefile])
 AC_OUTPUT
