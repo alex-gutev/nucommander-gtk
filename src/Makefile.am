@@ -123,7 +123,8 @@ nucommander_SOURCES = \
 	file_list/sort_func.h \
 	file_list/sort_func.cpp \
 	file_list/directory_buffers.h \
-	file_list/directory_buffers.cpp
+	file_list/directory_buffers.cpp \
+	search/fuzzy_filter.h
 
 ## Resources
 

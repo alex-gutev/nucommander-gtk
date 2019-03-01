@@ -22,6 +22,8 @@
 #include "tasks/async_task.h"
 #include "file_list/columns.h"
 
+#include "search/fuzzy_filter.h"
+
 #include <gdk/gdkkeysyms.h>
 
 #include <algorithm>
@@ -236,8 +238,18 @@ void file_view::on_path_changed(const paths::pathname &path) {
     entry_path(path);
 }
 
+/**
+ * Fuzzy TreeView Search Equality Function.
+ */
+static bool fuzzy_equal_func(const Glib::RefPtr<Gtk::TreeModel> &, int column, const Glib::ustring &key, const Gtk::TreeModel::iterator &it) {
+    Glib::ustring name = (*it)[file_model_columns::instance().name];
+    return !fuzzy_match(name, key);
+}
+
 void file_view::change_model(Glib::RefPtr<Gtk::ListStore> model) {
     file_list_view->set_model(model);
+
+    file_list_view->set_search_equal_func(sigc::ptr_fun(fuzzy_equal_func));
 }
 
 void file_view::select_row(Gtk::TreeRow row) {
