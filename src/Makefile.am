@@ -147,10 +147,13 @@ $(srcdir)/resources.c: $(nucommander_RESOURCES)
 
 ## GSettings
 
+nucommander.gschema.xml: nucommander.gschema.xml.in
+	$(AM_V_GEN) $(SED) -e 's|@libdir[@]|$(nucommander_install_libdir)|g' $< > $@
+
 gsettings_SCHEMAS = nucommander.gschema.xml
 
 
-EXTRA_DIST = $(nucommander_RESOURCES) $(gsettings_SCHEMAS)
-CLEANFILES = resources.c
+EXTRA_DIST = $(nucommander_RESOURCES) nucommander.gschema.xml.in
+CLEANFILES = resources.c nucommander.gschema.xml
 
 @GSETTINGS_RULES@

@@ -37,25 +37,18 @@ void archive_plugin_loader::get_plugin_details() {
     std::string reg;
     bool first = true;
 
-    for (const auto &child : app_settings::instance().settings()->get_string_array("plugins")) {
-        Glib::ustring child_path(app_settings::settings_path);
+    Glib::Variant<std::vector<std::pair<std::string, std::string>>> plugin_settings;
+    app_settings::instance().settings()->get_value("plugins", plugin_settings);
 
-        child_path.append(child);
-        child_path.append("/");
-
-        Glib::RefPtr<Gio::Settings> plg = Gio::Settings::create(plugin_schema, child_path);
-
-        std::string path = plg->get_string("path");
-        std::string ext_reg = plg->get_string("regex");
-
-        plugins.emplace_back(new archive_plugin(path));
+    for (const auto &child : plugin_settings.get()) {
+        plugins.emplace_back(new archive_plugin(child.first));
 
         if (!first) {
             reg.push_back('|');
         }
 
         reg.push_back('(');
-        reg.append(ext_reg);
+        reg.append(child.second);
         reg.push_back(')');
 
         first = false;

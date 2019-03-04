@@ -1,7 +1,7 @@
 <schemalist>
   <schema id="org.agware.NuCommander" path="/org/agware/NuCommander/" gettext-domain="NuCommander">
-    <key name="plugins" type="as">
-      <default>[]</default>
+    <key name="plugins" type="a(ss)">
+      <default>[("@libdir@/libarchgeneric.so", ".*?(?:.zip|.tar|.tar.gz|.tgz)$")]</default>
       <summary>
 	List of archive plugins.
       </summary>
@@ -36,39 +36,5 @@
     <key name="auto-error-handlers" type="a(iis)">
       <default>[(7, 0, "skip attribute"), (8, 0, "skip attribute"), (9 , 0, "skip attribute")]</default>
     </key>
-  </schema>
-
-  <schema id="org.agware.NuCommander.plugin" gettext-domain="NuCommander">
-    <key name="name" type="s">
-      <default l10n="messages">"plugin"</default>
-      <summary>
-	The plugin name.
-      </summary>
-      <description>
-	The plugin name which is displayed to the user.
-      </description>
-    </key>
-
-    <key name="path" type="s">
-      <default>"plugin.so"</default>
-      <summary>
-	Plugin library path.
-      </summary>
-      <description>
-	The path to the plugin's .so library file.
-      </description>
-    </key>
-
-    <key name="regex" type="s">
-      <default>".*?\\.zip"</default>
-      <summary>
-	Archive file name regex
-      </summary>
-      <description>
-	A regular expression which matches the file names of the
-	archives readable by the plugin.
-      </description>
-    </key>
-
   </schema>
 </schemalist>
