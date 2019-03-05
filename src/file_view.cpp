@@ -44,8 +44,11 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     builder->get_widget("file_list", file_list_view);
     builder->get_widget("scroll_window", scroll_window);
 
+    builder->get_widget("filter_entry", filter_entry);
+
     init_file_list();
     init_path_entry();
+    init_filter_entry();
 
     // Exclude entry widget from tab order focus chain.
     set_focus_chain({file_list_view});
@@ -149,6 +152,12 @@ void file_view::init_path_entry() {
     path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
 }
 
+void file_view::init_filter_entry() {
+    filter_entry->signal_changed().connect(sigc::mem_fun(*this, &file_view::filter_changed));
+
+    filter_entry->signal_key_press_event().connect(sigc::mem_fun(*this, &file_view::filter_key_press_before), false);
+    filter_entry->signal_key_press_event().connect(sigc::mem_fun(*this, &file_view::filter_key_press));
+}
 
 //// Changing the File List
 
@@ -204,7 +213,7 @@ void file_view::on_path_entry_activate() {
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = flist->list()->children()[row_path[0]];
+    auto row = filter_model->children()[row_path[0]];
 
     dir_entry &ent = *row[file_model_columns::instance().ent];
 
@@ -213,11 +222,20 @@ void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeV
 
 void file_view::on_selection_changed() {
     if (flist) {
-        flist->on_selection_changed(*file_list_view->get_selection()->get_selected());
+        auto row = file_list_view->get_selection()->get_selected();
+
+        if (row) {
+            flist->on_selection_changed(*filter_model->convert_iter_to_child_iter(row));
+        }
     }
 }
 
 bool file_view::on_file_list_keypress(GdkEventKey *e) {
+    if (filtering() && e->keyval == GDK_KEY_Escape) {
+        end_filter();
+        return true;
+    }
+
     switch (e->keyval) {
     case GDK_KEY_Return:
         if (auto row = *file_list_view->get_selection()->get_selected()) {
@@ -235,33 +253,33 @@ bool file_view::on_file_list_keypress(GdkEventKey *e) {
 
 
 void file_view::on_path_changed(const paths::pathname &path) {
+    end_filter();
     entry_path(path);
 }
 
-/**
- * Fuzzy TreeView Search Equality Function.
- */
-static bool fuzzy_equal_func(const Glib::RefPtr<Gtk::TreeModel> &, int column, const Glib::ustring &key, const Gtk::TreeModel::iterator &it) {
-    Glib::ustring name = (*it)[file_model_columns::instance().name];
-    return !fuzzy_match(name, key);
-}
-
 void file_view::change_model(Glib::RefPtr<Gtk::ListStore> model) {
-    file_list_view->set_model(model);
+    make_filter_model(model);
 
-    file_list_view->set_search_equal_func(sigc::ptr_fun(fuzzy_equal_func));
+    file_list_view->set_model(filter_model);
 }
 
 void file_view::select_row(Gtk::TreeRow row) {
     if (row) {
-        file_list_view->get_selection()->select(row);
-        file_list_view->scroll_to_row(file_list_view->get_model()->get_path(row));
+        auto it = filter_model->convert_child_iter_to_iter(row);
+
+        if (it) {
+            file_list_view->get_selection()->select(it);
+            file_list_view->scroll_to_row(file_list_view->get_model()->get_path(it));
+        }
     }
 }
+
 
 //// Changing the current path
 
 void file_view::path(const paths::pathname &path, bool move_to_old) {
+    end_filter();
+
     entry_path(path);
     flist->path(path, move_to_old);
 }
@@ -287,4 +305,66 @@ dir_entry *file_view::selected_entry() {
 
 void file_view::focus_path() {
     path_entry->grab_focus();
+}
+
+
+//// Filtering
+
+void file_view::make_filter_model(Glib::RefPtr<Gtk::ListStore> model) {
+    filter_model = Gtk::TreeModelFilter::create(model);
+    filter_model->set_visible_func([this] (const Gtk::TreeModel::iterator &it) -> bool {
+        if (m_filtering) {
+            Glib::ustring name = (*it)[file_model_columns::instance().name];
+            return fuzzy_match(name, filter_entry->get_text());
+        }
+
+        return true;
+    });
+}
+
+void file_view::begin_filter() {
+    filter_entry->show();
+    filter_entry->grab_focus_without_selecting();
+
+    if (!filtering()) {
+        m_filtering = true;
+    }
+}
+
+bool file_view::filtering() const {
+    return m_filtering;
+}
+
+void file_view::end_filter() {
+    if (filtering()) {
+        filter_entry->hide();
+        filter_entry->set_text("");
+        file_list_view->grab_focus();
+
+        m_filtering = false;
+        filter_model->refilter();
+    }
+}
+
+void file_view::filter_changed() {
+    auto key = filter_entry->get_text();
+
+    filter_model->refilter();
+}
+
+bool file_view::filter_key_press(GdkEventKey *e) {
+    file_list_view->grab_focus();
+    bool stop = file_list_view->event((GdkEvent*)e);
+
+    if (filtering()) filter_entry->grab_focus_without_selecting();
+
+    return stop;
+}
+
+bool file_view::filter_key_press_before(GdkEventKey *e) {
+    if (e->keyval == GDK_KEY_Return) {
+        return filter_key_press(e);
+    }
+
+    return false;
 }

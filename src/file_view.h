@@ -28,6 +28,7 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/treemodelfilter.h>
 
 #include <unordered_map>
 #include <vector>
@@ -75,6 +76,20 @@ namespace nuc {
         std::vector<std::weak_ptr<file_list_controller>> flist_stack;
 
 
+        /* Filtering */
+
+        /**
+         * Filtered model, which filters out entries based on the
+         * current filter.
+         */
+        Glib::RefPtr<Gtk::TreeModelFilter> filter_model;
+
+        /**
+         * Flag: True if the entry list is currently being filtered.
+         */
+        bool m_filtering = false;
+
+
         /* Widgets */
 
         /**
@@ -91,6 +106,11 @@ namespace nuc {
          * widget is contained.
          */
         Gtk::ScrolledWindow *scroll_window;
+
+        /**
+         * Search Entry Widget.
+         */
+        Gtk::Entry *filter_entry;
 
         /**
          * Activate entry signal.
@@ -128,6 +148,11 @@ namespace nuc {
          * operation for the new directory.
          */
         void init_path_entry();
+
+        /**
+         * Initializes the filter entry.
+         */
+        void init_filter_entry();
 
 
         /* Setting the path */
@@ -197,6 +222,59 @@ namespace nuc {
         void select_row(Gtk::TreeRow row);
 
 
+        /* Filtering */
+
+        /**
+         * Returns true if the file list is being filtered.
+         *
+         * @return true.
+         */
+        bool filtering() const;
+
+        /**
+         * Creates a new TreeModelFilter, for the model @a model, and
+         * stores it in 'filter_model'.
+         *
+         * @param model The TreeModel containing the file list.
+         */
+        void make_filter_model(Glib::RefPtr<Gtk::ListStore> model);
+
+        /**
+         * Ends filtering.
+         *
+         * Clears and hides the filter entry and resets the filter,
+         * such that no entries are filtered out.
+         */
+        void end_filter();
+
+        /**
+         * Signal handler for the 'changed' event of the filter entry.
+         *
+         * Updates the filter.
+         */
+        void filter_changed();
+
+        /**
+         * Signal handler for the keypress event of the filter
+         * entry. Connected after the default handler.
+         *
+         * Forwards the event to the tree view.
+         *
+         * @param e The event.
+         */
+        bool filter_key_press(GdkEventKey *e);
+
+        /**
+         * Signal handler for the keypress event of the filter
+         * entry. Connected before the default handler.
+         *
+         * Captures the Enter key press and forwards it to the tree
+         * view.
+         *
+         * @param e The event.
+         */
+        bool filter_key_press_before(GdkEventKey *e);
+
     public:
         /**
          * The opposite file_view, i.e. the destination pane.
@@ -263,6 +341,16 @@ namespace nuc {
          * @return dir_entry *
          */
         dir_entry *selected_entry();
+
+
+        /* Search */
+
+        /**
+         * Begins filtering.
+         *
+         * Shows the filter entry.
+         */
+        void begin_filter();
 
 
         /* Signals */
