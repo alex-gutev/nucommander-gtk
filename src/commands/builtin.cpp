@@ -156,6 +156,19 @@ struct jump_path_command : public command {
 };
 
 /**
+ * Begin Filter Command.
+ *
+ * Shows the filter entry in the source pane.
+ */
+struct begin_filter_command : public command {
+    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+
+    virtual std::string description() {
+        return _("Begin filtering in the source pane.");
+    }
+};
+
+/**
  * Open Key Binding Preferences Command.
  */
 struct open_key_prefs_command : public command {
@@ -229,6 +242,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("move", std::make_shared<move_command>());
     table.emplace("delete", std::make_shared<delete_command>());
     table.emplace("jump-path", std::make_shared<jump_path_command>());
+    table.emplace("begin-filter", std::make_shared<begin_filter_command>());
     table.emplace("open-key-prefs", std::make_shared<open_key_prefs_command>());
     table.emplace("swap-panes", std::make_shared<swap_panes_command>());
     table.emplace("change-directory", std::make_shared<change_dir_command>());
@@ -360,6 +374,12 @@ Glib::ustring delete_command::confirm_delete_msg(const std::vector<dir_entry *> 
 void jump_path_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     if (src) {
         src->focus_path();
+    }
+}
+
+void begin_filter_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+    if (src) {
+        src->begin_filter();
     }
 }
 
