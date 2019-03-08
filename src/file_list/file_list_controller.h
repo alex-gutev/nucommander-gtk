@@ -54,8 +54,9 @@ namespace nuc {
         /**
          * Marked entries set type.
          *
-         * Maps file names to row iterators (Gtk::TreeRow). Row
-         * iterators are used, instead of row references, as
+         * Maps file names to row iterators (Gtk::TreeRow).
+         *
+         * Row iterators are used, instead of row references, as
          * Gtk::ListStore supports persistent iterators.
          */
         typedef std::unordered_multimap<std::string, Gtk::TreeRow> entry_set;
@@ -65,6 +66,7 @@ namespace nuc {
          * finish callback.
          */
         typedef void(file_list_controller::*finish_method)(bool, int, bool);
+
 
         /* Signal Types */
 
@@ -156,15 +158,6 @@ namespace nuc {
          * being displayed in the tree view widget.
          */
         Glib::RefPtr<Gtk::ListStore> cur_list;
-        /**
-         * New list store model, into which, the new entries currently
-         * being read are stored.
-         *
-         * After the operation completes successfully, this list store
-         * is set as the tree view's model, 'cur_list' is cleared and
-         * 'new_list' and 'cur_list' are swapped.
-         */
-        Glib::RefPtr<Gtk::ListStore> new_list;
 
         /**
          * Empty list store.
@@ -202,55 +195,89 @@ namespace nuc {
          * The set is represented as a map where the key is the name
          * of the entry and the value is the tree model row
          * corresponding to the entry.
-         *
          */
         entry_set marked_set;
 
 
-        /* Initialization Methods */
+        /* Initialization */
 
         /**
-         * Creates a list store model, with the column model record
-         * 'columns'.
+         * Creates a list store model with the default sort column
+         * set.
          *
          * @return The list store model
          */
         static Glib::RefPtr<Gtk::ListStore> create_model();
 
         /**
-         * Initializes the VFS - sets the operation callbacks.
+         * Creates a list store model, with the 'file_model_columns'
+         * column record and a handler for the 'sort_column_changed'
+         * signal.
+         *
+         * @return The list store model.
+         */
+        static Glib::RefPtr<Gtk::ListStore> make_liststore();
+
+        /**
+         * Sets the sort column of the list store to 'name'.
+         *
+         * @param model The list store model.
+         */
+        static void init_liststore(Glib::RefPtr<Gtk::ListStore> model);
+
+
+        /**
+         * Initializes the VFS object. Sets the callback functions.
          */
         void init_vfs();
 
 
+        /* VFS Operation Delegates */
+
+        /**
+         * VFS Read Operation Delegate.
+         */
+        struct read_delegate : public vfs::delegate {
+            /** File List Controller */
+            std::weak_ptr<file_list_controller> flist;
+
+            /**
+             * List store model into which the entries are read.
+             */
+            Glib::RefPtr<Gtk::ListStore> list;
+
+            read_delegate(std::weak_ptr<file_list_controller> flist);
+
+            virtual void begin();
+            virtual void new_entry(dir_entry &ent);
+            virtual void finish(bool cancelled, int error);
+        };
+
+        /**
+         * VFS Refresh Operation Delegate.
+         */
+        struct update_delegate : public read_delegate {
+            using read_delegate::read_delegate;
+
+            virtual void finish(bool cancelled, int error);
+        };
+
+        /**
+         * VFS read operation delegate for reading the parent
+         * directory, after the current directory has been deleted.
+         */
+        struct move_up_delegate : public read_delegate {
+            /** Path to the directory being read */
+            paths::pathname path;
+
+            move_up_delegate(std::weak_ptr<file_list_controller> flist, paths::pathname path)
+                : read_delegate(flist), path(path) {}
+
+            virtual void finish(bool cancelled, int error);
+        };
+
+
         /* Callbacks */
-
-        /**
-         * VFS begin callback.
-         */
-        void vfs_begin(bool refresh);
-        /**
-         * VFS new entry callback.
-         */
-        void vfs_new_entry(dir_entry &entry, bool refresh);
-        /**
-         * VFS finish callback.
-         */
-        void vfs_finish(bool cancelled, int error, bool refresh);
-
-        /**
-         * VFS finish callback for moving up the directory tree when
-         * the current directory is deleted.
-         *
-         * The callback method vfs_finish is replaced with this
-         * method, when the current directory is deleted. If the
-         * parent directory is read successfully, the file list is
-         * displayed and the callback is restored to vfs_finish. If
-         * the directory was not read successfully, and it is not the
-         * root directory, an attempt is made to read its parent
-         * directory.
-         */
-        void vfs_finish_move_up(paths::pathname new_path, bool cancelled, int error, bool refresh);
 
         /**
          * Directory changed callback.
@@ -258,9 +285,9 @@ namespace nuc {
          * Called when the directory has changed, prior to initiating
          * an update operation.
          *
-         * @return The finish callback for the update operation.
+         * @return The update operation delegate.
          */
-        vfs::finish_fn vfs_dir_changed();
+        std::shared_ptr<vfs::delegate> vfs_dir_changed();
 
         /**
          * Directory deleted signal handler.
@@ -297,14 +324,6 @@ namespace nuc {
          */
         void clear_view();
 
-        /**
-         * Creates the finish callback. Binds the vfs_finish method's
-         * this pointer.
-         *
-         * @return The finish callback function.
-         */
-        vfs::finish_fn read_finish_callback();
-
 
         /**
          * Initiates a read operation for the parent directory of the
@@ -322,20 +341,62 @@ namespace nuc {
         /* Setting/Resetting the treeview model */
 
         /**
-         * Restores the old file list and path.
+         * Sets the new file list, containing the contents of the
+         * directory just read.
+         *
+         * Emits 'model_changed', 'select_row' and 'path_changed'
+         * signals.
+         *
+         * @param new_list The new list to set.
          */
-        void reset_list(bool refresh);
+        void finish_read(Glib::RefPtr<Gtk::ListStore> new_list);
 
         /**
-         * Switches to the new list and restores the previous
-         * selection, after an update operation.
+         * Sets 'cur_list' to @a new_list.
          *
-         * Emits the 'model_changed' signal with the 'new_list' model
+         * Emits the 'model_changed' signal.
+         *
+         * @param new_list The list to set 'cur_list' to.
+         *
+         * @param clear_marked If true the marked set should be
+         *   cleared.
+         */
+        void set_new_list(Glib::RefPtr<Gtk::ListStore> new_list, bool clear_marked);
+
+        /**
+         * Adds the parent ".." pseudo-entry to the new list if the
+         * path (@a new_path) is not the root directory.
+         *
+         * @param new_list The list to add the entry to.
+         * @param new_path The path of the directory being read.
+         */
+        void add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const paths::pathname &new_path);
+
+        /**
+         * Sets the sort column (and sort order) of @a new_list to be
+         * the same as 'cur_list'.
+         *
+         * @param new_list The list of which to set the sort column.
+         */
+        void set_sort_column(Glib::RefPtr<Gtk::ListStore> new_list);
+
+
+        /**
+         * Restores the old file list and path.
+         */
+        void reset_list();
+
+        /**
+         * Sets the new 'refreshed' file list.
+         *
+         * Emits the 'model_changed' signal with the new list model
          * and restores the previous selection if an entry with the
          * same name, as the previously selected entry, still
          * exits. Updates the marked set.
+         *
+         * @param new_list The new list to set.
          */
-        void set_updated_list();
+        void set_updated_list(Glib::RefPtr<Gtk::ListStore> new_list);
 
         /**
          * Updates the marked set, after a directory refresh.
@@ -345,48 +406,6 @@ namespace nuc {
          * iterators.
          */
         void update_marked_set();
-
-        /**
-         * Adds the parent ".." pseudo-entry to the new list if the
-         * path (@a new_path) is not the root directory.
-         *
-         * @param new_path The path of the directory being read.
-         */
-        void add_parent_entry(const paths::pathname &new_path);
-
-        /**
-         * Switches to the new list after a read operation.
-         *
-         * Emits 'model_changed', 'select_row' and 'path_changed'
-         * signals.
-         */
-        void finish_read();
-
-        /**
-         * Switches the the model to 'new_list', clears 'cur_list' and
-         * swaps the two models.
-         *
-         * Emits the 'model_changed' signal.
-         *
-         * @param clear_marked If true the marked set should be
-         *   cleared.
-         */
-        void set_new_list(bool clear_marked);
-
-        /**
-         * Fills in the tree view row's columns with the details of
-         * the entry 'ent'.
-         *
-         * @param row The tree view row.
-         * @param ent The entry.
-         */
-        void create_row(Gtk::TreeRow row, dir_entry &ent);
-
-        /**
-         * Sets the sort column (and sort order) of 'new_list' to be
-         * the same as 'cur_list'.
-         */
-        void set_sort_column();
 
 
         /* Selection */
@@ -475,32 +494,6 @@ namespace nuc {
          */
         void keypress_change_selection(const GdkEventKey *e, bool mark_sel);
 
-
-        /** Icons */
-
-        /**
-         * Loads the icons for all entries in new_list.
-         */
-       void load_icons();
-
-        /**
-         * Loads the icon for the entry at row @a row, and stores the
-         * entry in the icon column of the row.
-         *
-         * @param row The row.
-         */
-        void load_icon(Gtk::TreeRow row);
-
-
-        /** Sorting */
-
-        /**
-         * Called when the sort order changes.
-         *
-         * @param list_store The list store of which the sort order
-         *   changed.
-         */
-        static void sort_changed(Gtk::ListStore *list_store);
 
         /** Constructor */
         file_list_controller();

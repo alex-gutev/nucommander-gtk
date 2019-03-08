@@ -33,6 +33,48 @@
 
 using namespace nuc;
 
+//// Private Functions
+
+/// Sorting
+
+/**
+ * Called when the sort order changes.
+ *
+ * @param list_store The list store of which the sort order
+ *   changed.
+ */
+static void sort_changed(Gtk::ListStore *list_store);
+
+
+/// Creating Entries
+
+/**
+ * Fills in the tree view row's columns with the details of
+ * the entry 'ent'.
+ *
+ * @param row The tree view row.
+ * @param ent The entry.
+ */
+static void create_row(Gtk::TreeRow row, dir_entry &ent);
+
+
+/// Icons
+
+/**
+ * Loads the icons for all entries in @a new_list.
+ *
+ * @param new_list The list containing the icons to be loaded.
+ */
+static void load_icons(Glib::RefPtr<Gtk::ListStore> new_list);
+
+/**
+ * Loads the icon for the entry at row @a row, and stores the
+ * entry in the icon column of the row.
+ *
+ * @param row The row.
+ */
+static void load_icon(Gtk::TreeRow row);
+
 
 //// Initialization
 
@@ -49,20 +91,20 @@ std::shared_ptr<file_list_controller> file_list_controller::create() {
 
 file_list_controller::file_list_controller() {
     cur_list = create_model();
-    new_list = create_model();
     empty_list = create_model();
 }
 
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
+    auto list_store = make_liststore();
+
+    init_liststore(list_store);
+
+    return list_store;
+}
+
+Glib::RefPtr<Gtk::ListStore> file_list_controller::make_liststore() {
     auto list_store = Gtk::ListStore::create(file_model_columns::instance());
-
-    // Set "Name" as the default sort column
-    list_store->set_sort_column(0, Gtk::SortType::SORT_ASCENDING);
-
-    for (auto &col : file_column_descriptors) {
-        list_store->set_sort_func(col->id, col->sort_func());
-    }
 
     // The operator->() hack is necessary to get a raw pointer to the
     // ListStore object.
@@ -71,10 +113,20 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     // will result in a reference cycle. The list_store object holds a
     // strong reference to itself and will thus never be deallocated.
 
-    list_store->signal_sort_column_changed().connect(sigc::bind(&file_list_controller::sort_changed, list_store.operator->()));
+    list_store->signal_sort_column_changed().connect(sigc::bind(&sort_changed, list_store.operator->()));
 
     return list_store;
 }
+
+void file_list_controller::init_liststore(Glib::RefPtr<Gtk::ListStore> list_store) {
+    // Set "Name" as the default sort column
+    list_store->set_sort_column(file_model_columns::instance().name, Gtk::SortType::SORT_ASCENDING);
+
+    for (auto &col : file_column_descriptors) {
+        list_store->set_sort_func(col->id, col->sort_func());
+    }
+}
+
 
 void file_list_controller::init_vfs() {
     using namespace std::placeholders;
@@ -83,21 +135,11 @@ void file_list_controller::init_vfs() {
 
     auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
 
-    vfs->callback_begin([=] (bool refresh) {
-        if (auto self = ptr.lock())
-            self->vfs_begin(refresh);
-    });
-
-    vfs->callback_new_entry([=] (dir_entry &ent, bool refresh) {
-        if (auto self = ptr.lock())
-            self->vfs_new_entry(ent, refresh);
-    });
-
     vfs->callback_changed([=] {
         if (auto self = ptr.lock())
             return self->vfs_dir_changed();
 
-        return vfs::finish_fn();
+        return std::shared_ptr<vfs::delegate>();
     });
 
     vfs->signal_deleted().connect([=] (paths::pathname path) {
@@ -107,43 +149,71 @@ void file_list_controller::init_vfs() {
 }
 
 
-//// VFS Callbacks
+//// VFS Delegates
 
-void file_list_controller::vfs_begin(bool refresh) {
-    // Disable sorting while adding new entries to improve performance.
-    new_list->set_sort_column(Gtk::TreeSortable::DEFAULT_UNSORTED_COLUMN_ID, Gtk::SortType::SORT_ASCENDING);
+/// Read Delegate
+
+file_list_controller::read_delegate::read_delegate(std::weak_ptr<file_list_controller> flist) :
+    flist(flist), list(make_liststore()) {
 }
 
-void file_list_controller::vfs_new_entry(dir_entry &ent, bool refresh) {
-    Gtk::TreeRow row = *new_list->append();
+void file_list_controller::read_delegate::begin() {}
+
+void file_list_controller::read_delegate::new_entry(dir_entry &ent) {
+    Gtk::TreeRow row = *list->append();
     create_row(row, ent);
 }
 
-void file_list_controller::vfs_finish(bool cancelled, int error, bool refresh) {
-    if (!error && !cancelled) {
-        if (refresh) {
-            set_updated_list();
+void create_row(Gtk::TreeRow row, dir_entry &ent) {
+    auto &columns = file_model_columns::instance();
+
+    row[columns.name] = ent.file_name();
+    row[columns.ent] = &ent;
+    row[columns.marked] = false;
+
+    ent.context.row = row;
+}
+
+void file_list_controller::read_delegate::finish(bool cancelled, int error) {
+    if (auto ptr = flist.lock()) {
+        if (error || cancelled) {
+            ptr->reset_list();
         }
         else {
-            finish_read();
+            ptr->finish_read(list);
         }
     }
-    else {
-        reset_list(refresh);
+}
+
+
+/// Update Delegate
+
+void file_list_controller::update_delegate::finish(bool cancelled, int error) {
+    if (auto ptr = flist.lock()) {
+        if (!error && !cancelled) {
+            ptr->set_updated_list(list);
+        }
     }
 }
 
-void file_list_controller::vfs_finish_move_up(paths::pathname path, bool cancelled, int error, bool refresh) {
-    if (!cancelled && !error) {
-        finish_read();
-    }
-    else {
-        read_parent_dir(std::move(path));
+/// Move Up Delegate
+
+void file_list_controller::move_up_delegate::finish(bool cancelled, int error) {
+    if (auto ptr = flist.lock()) {
+        if (cancelled || error) {
+            ptr->read_parent_dir(path);
+        }
+        else {
+            ptr->finish_read(list);
+        }
     }
 }
 
-vfs::finish_fn file_list_controller::vfs_dir_changed() {
-    return read_finish_callback();
+
+//// VFS Callbacks
+
+std::shared_ptr<vfs::delegate> file_list_controller::vfs_dir_changed() {
+    return std::make_shared<update_delegate>(shared_from_this());
 }
 
 void file_list_controller::vfs_dir_deleted(paths::pathname new_path) {
@@ -158,49 +228,30 @@ void file_list_controller::read_parent_dir(paths::pathname path) {
     if (!path.is_root()) {
         path = path.remove_last_component();
 
-        auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
+        auto del = std::make_shared<move_up_delegate>(shared_from_this(), path);
 
-        vfs::finish_fn finish = [=] (bool cancelled, int error, bool refresh) {
-            if (auto self = ptr.lock())
-                self->vfs_finish_move_up(path, cancelled, error, refresh);
-        };
-
-        if (!vfs->ascend(finish))
-            vfs->read(path, finish);
+        if (!vfs->ascend(del))
+            vfs->read(path, del);
     }
 }
 
-vfs::finish_fn file_list_controller::read_finish_callback() {
-    auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
 
-    return [=] (bool cancelled, int error, bool refresh) {
-        if (auto self = ptr.lock())
-            self->vfs_finish(cancelled, error, refresh);
-    };
+//// Setting/Resetting The File List
+
+void file_list_controller::reset_list() {
+    m_signal_path.emit(cur_path);
+
+    // Reset to old list
+    m_signal_change_model.emit(cur_list);
+
+    // Select previously selected row
+    select_row(cur_list->get_path(selected_row)[0]);
+
+    // Reset move to old flag
+    move_to_old = false;
 }
 
-
-//// Setting New List
-
-void file_list_controller::reset_list(bool refresh) {
-    // Clear new list
-    new_list->clear();
-
-    if (!refresh) {
-        m_signal_path.emit(cur_path);
-
-        // Reset to old list
-        m_signal_change_model.emit(cur_list);
-
-        // Select previously selected row
-        select_row(cur_list->get_path(selected_row)[0]);
-
-        // Reset move to old flag
-        move_to_old = false;
-    }
-}
-
-void file_list_controller::set_updated_list() {
+void file_list_controller::set_updated_list(Glib::RefPtr<Gtk::ListStore> new_list) {
     bool selection = false;
     paths::string name;
     index_type index = 0;
@@ -214,7 +265,7 @@ void file_list_controller::set_updated_list() {
         index = cur_list->get_path(selected_row)[0];
     }
 
-    set_new_list(false);
+    set_new_list(new_list, false);
 
     update_marked_set();
 
@@ -241,44 +292,41 @@ void file_list_controller::update_marked_set() {
 }
 
 
-void file_list_controller::add_parent_entry(const paths::pathname &new_path) {
+void file_list_controller::add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const paths::pathname &new_path) {
     if (!new_path.is_root())
         create_row(*new_list->append(), parent_entry);
 }
 
-void file_list_controller::finish_read() {
+void file_list_controller::finish_read(Glib::RefPtr<Gtk::ListStore> new_list) {
     reading = false;
 
-    set_new_list(true);
+    set_new_list(new_list, true);
     restore_selection();
 
     cur_path = vfs->path();
     m_signal_path.emit(cur_path);
 }
 
-void file_list_controller::set_new_list(bool clear_marked) {
+void file_list_controller::set_new_list(Glib::RefPtr<Gtk::ListStore> new_list, bool clear_marked) {
     // Clear marked set
     if (clear_marked)
         marked_set.clear();
 
-    add_parent_entry(vfs->path());
+    add_parent_entry(new_list, vfs->path());
 
-    load_icons();
+    load_icons(new_list);
 
     // Sort new_list using cur_list's sort order
-    set_sort_column();
+    set_sort_column(new_list);
 
     // Swap models and switch model to 'new_list'
     cur_list.swap(new_list);
 
     // Emit 'model_changed' signal with new list
     m_signal_change_model.emit(cur_list);
-
-    // Clear old list
-    new_list->clear();
 }
 
-void file_list_controller::set_sort_column() {
+void file_list_controller::set_sort_column(Glib::RefPtr<Gtk::ListStore> new_list) {
     int col_id;
     Gtk::SortType order;
 
@@ -287,20 +335,10 @@ void file_list_controller::set_sort_column() {
     }
 }
 
-void file_list_controller::create_row(Gtk::TreeRow row, dir_entry &ent) {
-    auto &columns = file_model_columns::instance();
-
-    row[columns.name] = ent.file_name();
-    row[columns.ent] = &ent;
-    row[columns.marked] = false;
-
-    ent.context.row = row;
-}
-
 
 //// Sorting
 
-void file_list_controller::sort_changed(Gtk::ListStore *list_store) {
+void sort_changed(Gtk::ListStore *list_store) {
     int id;
     Gtk::SortType order;
 
@@ -462,17 +500,16 @@ void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool 
 
 //// Icons
 
-void file_list_controller::load_icons() {
+void load_icons(Glib::RefPtr<Gtk::ListStore> new_list) {
     using namespace std::placeholders;
 
     auto children = new_list->children();
 
-    std::for_each(children.begin(), children.end(), std::bind(&file_list_controller::load_icon, this, _1));
+    std::for_each(children.begin(), children.end(), std::bind(&load_icon, _1));
 }
 
-void file_list_controller::load_icon(Gtk::TreeRow row) {
+void load_icon(Gtk::TreeRow row) {
     auto &columns = file_model_columns::instance();
-
     dir_entry &ent = *row[columns.ent];
 
     row[columns.icon] = icon_loader::instance().load_icon(ent);
@@ -504,19 +541,19 @@ void file_list_controller::path(const paths::pathname &path, bool move_to_old) {
     paths::pathname cpath(expand_path(path));
     m_signal_path.emit(cpath);
 
-    vfs->read(cpath, read_finish_callback());
+    vfs->read(cpath, std::make_shared<read_delegate>(shared_from_this()));
 }
 
 bool file_list_controller::descend(const dir_entry& ent) {
     if (ent.ent_type() == dir_entry::type_parent) {
         paths::string new_path(cur_path.remove_last_component());
-        auto finish = read_finish_callback();
+        auto del = std::make_shared<read_delegate>(shared_from_this());
 
         m_signal_path.emit(new_path);
         prepare_read(true);
 
-        if (!vfs->ascend(finish)) {
-            vfs->read(new_path, finish);
+        if (!vfs->ascend(del)) {
+            vfs->read(new_path, del);
         }
 
         return true;
@@ -524,7 +561,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
     else {
         paths::string new_path(cur_path.append(ent.file_name()));
 
-        if (vfs->descend(ent, read_finish_callback())) {
+        if (vfs->descend(ent, std::make_shared<read_delegate>(shared_from_this()))) {
             prepare_read(false);
             m_signal_path.emit(new_path);
 
