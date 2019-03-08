@@ -456,9 +456,6 @@ void file_list_controller::on_selection_changed(Gtk::TreeRow row) {
 
 bool file_list_controller::on_keypress(const GdkEventKey *e) {
     switch (e->keyval) {
-        case GDK_KEY_Escape:
-            return keypress_escape();
-
         case GDK_KEY_Up:
         case GDK_KEY_Down:
             return keypress_arrow(e);
@@ -475,10 +472,6 @@ bool file_list_controller::on_keypress(const GdkEventKey *e) {
     }
 
     return false;
-}
-
-bool file_list_controller::keypress_escape() {
-    return vfs->cancel();
 }
 
 bool file_list_controller::keypress_arrow(const GdkEventKey *e) {

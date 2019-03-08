@@ -466,11 +466,6 @@ namespace nuc {
         /** Keypress handlers */
 
         /**
-         * Handler for the escape key press event.
-         */
-        bool keypress_escape();
-
-        /**
          * Handler for the up/down arrow key press event.
          *
          * e: The keyboard event.

@@ -220,6 +220,19 @@ struct close_dir_command : public command {
     }
 };
 
+/**
+ * Cancel Read Directory.
+ *
+ * Cancels ongoing read tasks in the source pane.
+ */
+struct cancel_command : public command {
+    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+
+    virtual std::string description() {
+        return _("Cancel reading the directory in the source pane");
+    }
+};
+
 
 //// Implementations
 
@@ -234,6 +247,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("change-directory", std::make_shared<change_dir_command>());
     table.emplace("open-new-directory", std::make_shared<open_dir_command>());
     table.emplace("close-directory", std::make_shared<close_dir_command>());
+    table.emplace("cancel", std::make_shared<cancel_command>());
 }
 
 
@@ -428,5 +442,11 @@ void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::
         src->file_list(flist, false);
 
         directory_buffers::instance().close_buffer(old_flist);
+    }
+}
+
+void cancel_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+    if (src) {
+        src->file_list()->dir_vfs()->cancel();
     }
 }
