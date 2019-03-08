@@ -95,25 +95,25 @@ void vfs::finalize() {
 }
 
 
-void vfs::read(const paths::pathname& path, finish_fn finish) {
+void vfs::read(const paths::pathname& path, std::shared_ptr<delegate> del) {
     cancel_update();
 
-    add_read_task(path, false, finish);
+    add_read_task(path, false, del);
 }
 
-void vfs::add_read_task(const paths::pathname &path, bool refresh, finish_fn finish) {
+void vfs::add_read_task(const paths::pathname &path, bool refresh, std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
-    auto tstate = std::make_shared<read_dir_state>(refresh, finish);
+    auto tstate = std::make_shared<read_dir_state>(refresh, del);
 
     queue_task(std::bind(&vfs::read_path, _1, _2, tstate, path),
                std::bind(&vfs::finish_read, _1, _2, tstate));
 }
 
-void vfs::add_read_task(dir_type type, bool refresh, finish_fn finish) {
+void vfs::add_read_task(dir_type type, bool refresh,  std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
-    auto tstate = std::make_shared<read_dir_state>(refresh, finish);
+    auto tstate = std::make_shared<read_dir_state>(refresh, del);
     tstate->type = std::move(type);
 
     queue_task(std::bind(&vfs::list_dir, _1, _2, tstate),
@@ -123,22 +123,22 @@ void vfs::add_read_task(dir_type type, bool refresh, finish_fn finish) {
 void vfs::add_refresh_task() {
     using namespace std::placeholders;
 
-    if (finish_fn fn = cb_changed())
-        add_read_task(dtype, true, fn);
+    if (auto del = cb_changed())
+        add_read_task(dtype, true, del);
 }
 
 
 /// Changing directory tree subdirectories
 
-bool vfs::descend(const dir_entry &ent, finish_fn finish) {
+bool vfs::descend(const dir_entry &ent, std::shared_ptr<delegate> del) {
     if (cur_tree->is_subdir(ent)) {
-        add_read_subdir(ent.subpath(), finish);
+        add_read_subdir(ent.subpath(), del);
         return true;
     }
     else {
         if (dir_type type = dir_type::get(dtype.path(), ent)) {
             cancel_update();
-            add_read_task(type, false, finish);
+            add_read_task(type, false, del);
             return true;
         }
 
@@ -146,33 +146,33 @@ bool vfs::descend(const dir_entry &ent, finish_fn finish) {
     }
 }
 
-bool vfs::ascend(finish_fn finish) {
+bool vfs::ascend(std::shared_ptr<delegate> del) {
     if (!cur_tree->at_basedir()) {
-        add_read_subdir(cur_tree->subpath().remove_last_component(), finish);
+        add_read_subdir(cur_tree->subpath().remove_last_component(), del);
         return true;
     }
 
     return false;
 }
 
-void vfs::add_read_subdir(const paths::pathname &subpath, finish_fn finish) {
+void vfs::add_read_subdir(const paths::pathname &subpath, std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
     monitor.pause();
 
-    auto tstate = std::make_shared<read_subdir_state>(subpath, finish);
+    auto tstate = std::make_shared<read_subdir_state>(subpath, del);
 
     queue_task(std::bind(&vfs::read_subdir, _1, _2, tstate),
                std::bind(&vfs::finish_read_subdir, _1, _2, tstate));
 }
 
 void vfs::read_subdir(cancel_state &state, std::shared_ptr<read_subdir_state> tstate) {
-    call_begin(state, false);
+    call_begin(state, tstate->m_delegate);
 
     state.no_cancel([=] {
         if (const dir_tree::dir_map *dir = cur_tree->subpath_dir(tstate->subpath)) {
             for (auto ent : *dir) {
-                call_new_entry(*ent.second, false);
+                tstate->m_delegate->new_entry(*ent.second);
             }
         }
         else {
@@ -190,7 +190,7 @@ void vfs::finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> 
             self->cur_tree->subpath(tstate->subpath);
         }
 
-        tstate->finish(cancelled, error, false);
+        tstate->m_delegate->finish(cancelled, error);
 
         self->resume_monitor();
         self->queue->resume();
@@ -254,7 +254,7 @@ void vfs::list_dir(cancel_state& state, std::shared_ptr<read_dir_state> tstate) 
 
     tstate->tree.reset(tstate->type.create_tree());
 
-    call_begin(state, tstate->refresh);
+    call_begin(state, tstate->m_delegate);
 
     try {
         std::unique_ptr<lister> listr(tstate->type.create_lister());
@@ -274,9 +274,9 @@ void vfs::list_dir(cancel_state& state, std::shared_ptr<read_dir_state> tstate) 
 }
 
 void vfs::add_entry(cancel_state &state, read_dir_state &tstate, const lister::entry &ent, const struct stat &st) {
-    state.no_cancel([this, &tstate, &ent, &st] {
+    state.no_cancel([&tstate, &ent, &st] {
         if (dir_entry *new_ent = tstate.tree->add_entry(ent, st)) {
-            call_new_entry(*new_ent, tstate.refresh);
+            tstate.m_delegate->new_entry(*new_ent);
         }
     });
 }
@@ -292,7 +292,7 @@ void vfs::finish_read(bool cancelled, std::shared_ptr<read_dir_state> tstate) {
         }
 
         // Call finish callback
-        tstate->finish(cancelled, error, tstate->refresh);
+        tstate->m_delegate->finish(cancelled, error);
 
         // Start new monitor or reset old monitor
         self->start_new_monitor(cancelled, error, tstate->refresh);
@@ -363,8 +363,8 @@ void vfs::file_event(dir_monitor::event e) {
             break;
 
         case dir_monitor::EVENTS_END:
-            if (finish_fn finish = cb_changed())
-                queue_task(std::bind(&vfs::end_changes, _1, _2, finish));
+            if (auto del = cb_changed())
+                queue_task(std::bind(&vfs::end_changes, _1, _2, del));
             break;
 
         // File events
@@ -412,23 +412,23 @@ void vfs::begin_changes(cancel_state &state) {
     });
 }
 
-void vfs::end_changes(cancel_state &state, finish_fn finish) {
+void vfs::end_changes(cancel_state &state, std::shared_ptr<delegate> del) {
     state.no_cancel([&] {
-        cb_begin(true);
+        del->begin();
 
         for (auto &ent : *new_tree) {
-            call_new_entry(ent.second, true);
+            del->new_entry(ent.second);
         }
 
-        finish_updates(finish);
+        finish_updates(del);
     });
 }
 
-void vfs::finish_updates(finish_fn finish) {
+void vfs::finish_updates(std::shared_ptr<delegate> del) {
     queue_main_wait([=] (vfs *self) {
         self->cur_tree.swap(new_tree);
 
-        finish(false, 0, true);
+        del->finish(false, 0);
 
         self->clear_flags();
         self->queue->resume();
@@ -519,14 +519,10 @@ bool vfs::file_stat(const paths::string &path, struct stat *st) {
 
 //// Callbacks
 
-void vfs::call_begin(cancel_state &state, bool refresh) {
+void vfs::call_begin(cancel_state &state, std::shared_ptr<delegate> del) {
     state.no_cancel([=] {
-        cb_begin(refresh);
+        del->begin();
     });
-}
-
-void vfs::call_new_entry(dir_entry &ent, bool refresh) {
-    cb_new_entry(ent, refresh);
 }
 
 

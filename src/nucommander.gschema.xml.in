@@ -25,7 +25,8 @@
         "C-u": "swap-panes",
         "C-b": "change-directory",
         "C-t": "open-new-directory",
-        "C-w": "close-directory"
+        "C-w": "close-directory",
+        "Escape": "cancel"
         }
       </default>
       <description>

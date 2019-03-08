@@ -175,53 +175,50 @@ namespace nuc {
 
     public:
         /**
-         * Begin callback function type.
-         *
-         * Called, on the background thread, before beginning a
-         * background operation. Takes the following arguments:
-         *
-         * bool: True if this a refresh operation, false if this is a
-         *       new read operation.
+         * Operation Delegate Interface.
          */
-        typedef std::function<void(bool)> begin_fn;
-        /**
-         * New entry callback function type.
-         *
-         * Called, on the background thread, when a new entry is
-         * read. Takes the following arguments:
-         *
-         * dir_entry &: Reference to the entry.
-         */
-        typedef std::function<void(dir_entry &, bool)> new_entry_fn;
-        /**
-         * Finish callback function type.
-         *
-         * Called, on the background thread, after the background
-         * operation has completed or is cancelled. After this
-         * callback is called there will be no further invocations of
-         * any of the callbacks regarding the last completed operation.
-         *
-         * Takes the following arguments:
-         *
-         * bool: True if the operation was cancelled, false if it ran
-         *       to completion.
-         *
-         * int:  The error code, 0 if no error occurred.
-         */
-        typedef std::function<void(bool, int, bool)> finish_fn;
+        class delegate {
+        public:
+            virtual ~delegate() = default;
+
+            /**
+             * Called when a read operation has just begun.
+             */
+            virtual void begin() = 0;
+
+            /**
+             * Called when a new entry has been read.
+             *
+             * @param ent Reference to the entry.
+             */
+            virtual void new_entry(dir_entry &ent) = 0;
+
+            /**
+             * Called when the operation has finished or has been
+             * cancelled.
+             *
+             * There will be no further invocations of any methods (of
+             * the delegate object), after this method is called.
+             *
+             * @param cancelled True if the operation has been cancelled.
+             *
+             * @param error Operation error code or 0 if no error
+             *   occurred.
+             */
+            virtual void finish(bool cancelled, int error) = 0;
+        };
 
         /**
          * Directory changed callback function type.
          *
-         * The return value is the finish callback function to call
-         * after completing the update operation. If an empty function
-         * is returned the update operation is not initiated.
+         * The callback function should return a delegate for the
+         * refresh operation. If NULL is returned the refresh
+         * operation is not initiated.
          */
-        typedef std::function<finish_fn()> changed_fn;
+        typedef std::function<std::shared_ptr<delegate>()> changed_fn;
 
         /**
-         * Signal type, of the signal sent when the directory has been
-         * deleted.
+         * Directory deleted signal type.
          */
         typedef sigc::signal<void, paths::pathname> deleted_signal;
 
@@ -233,24 +230,15 @@ namespace nuc {
         static std::shared_ptr<vfs> create();
 
         /**
-         * Sets the begin callback function.
-         */
-        template <typename F>
-        void callback_begin(F&& fn);
-        /**
-         * Sets the new entry callback function.
-         */
-        template <typename F>
-        void callback_new_entry(F&& fn);
-        /**
          * Sets the directory changed callback function.
          *
          * The callback function is called after the directory has
-         * changed and prior to initiating an update operation to
-         * refresh the vfs. The function should return the finish
-         * callback to call after completing the update operation. If
-         * an empty function is returned, the update operation is not
-         * initiated.
+         * changed and prior to initiating a refresh operation to
+         * refresh the vfs.
+         *
+         * The callback function should return a delegate for the
+         * refresh operation. If NULL is returned the refresh
+         * operation is not initiated.
          *
          * @param fn The update callback function.
          */
@@ -278,16 +266,14 @@ namespace nuc {
 
         /**
          * Initiates a background read operation for the directory at
-         * 'path'.
+         * @a path.
          *
          * Should only be called on the main thread.
          *
          * @param path The path of the directory to read.
-         *
-         * @param finish The finish callback function to call once the
-         *    operation completes.
+         * @param del The delegate object for the read operation.
          */
-        void read(const paths::pathname &path, finish_fn finish);
+        void read(const paths::pathname &path, std::shared_ptr<delegate> del);
 
         /**
          * Attempts to list the contents of the entry @a ent.
@@ -298,13 +284,12 @@ namespace nuc {
          *   passed to the add entry callback between the last
          *   invocations of the begin and end callbacks.
          *
-         * @param finish The finish callback function to call once the
-         *    operation completes.
+         * @param del The delegate object for the read operation.
          *
          * @return True if the entry is a directory which can be
          *   listed, false otherwise.
          */
-        bool descend(const dir_entry &ent, finish_fn finish);
+        bool descend(const dir_entry &ent, std::shared_ptr<delegate> del);
 
         /**
          * Attempts to list the contents of the parent directory. This
@@ -315,18 +300,17 @@ namespace nuc {
          *
          * Should only be called on the main thread.
          *
-         * @param finish The finish callback function to call once the
-         *    operation completes.
+         * @param del The delegate object for the read operation.
          *
-         * @return True if the parent directory's contents were
+         * @return True if the parent directory's contents can be
          *   listed, false otherwise.
          */
-        bool ascend(finish_fn finish);
+        bool ascend(std::shared_ptr<delegate> del);
 
         /**
          * Cancels the current background operation if any. The
-         * operation is considered cancelled when the finish callback
-         * is called.
+         * operation is considered cancelled when the finish method,
+         * of the delegate object, is called.
          *
          * @return True if there was an ongoing read operation that
          *    was cancelled.
@@ -395,21 +379,12 @@ namespace nuc {
 
     private:
         /**
-         * New entry callback function.
-         */
-        new_entry_fn cb_new_entry;
-        /**
-         * Begin callback function.
-         */
-        begin_fn cb_begin;
-
-        /**
          * Directory changed callback function.
          */
         changed_fn cb_changed;
 
         /**
-         * Deleted signal
+         * Deleted signal.
          */
         deleted_signal sig_deleted;
 
@@ -422,8 +397,9 @@ namespace nuc {
         struct read_dir_state {
             /** Flag: Is this a refresh operation */
             bool refresh;
-            /** Finish Callback */
-            finish_fn finish;
+
+            /** Operation Delegate */
+            std::shared_ptr<delegate> m_delegate;
 
             /** Error Code */
             std::atomic<int> error{0};
@@ -437,9 +413,9 @@ namespace nuc {
              * Constructor.
              *
              * @param refresh True if this is a refresh operation.
-             * @param finish Finish callback function.
+             * @param del The delegate object for the read operation.
              */
-            read_dir_state(bool refresh, finish_fn finish) : refresh(refresh), finish(finish) {}
+            read_dir_state(bool refresh, std::shared_ptr<delegate> del) : refresh(refresh), m_delegate(del) {}
 
             /* Disable Copying */
             read_dir_state(const read_dir_state &) = delete;
@@ -454,8 +430,10 @@ namespace nuc {
          *
          * @param refresh True if the current directory is being
          *   reread, false if a new directory is being read.
+         *
+         * @param del The delegate object for the read operation.
          */
-        void add_read_task(const paths::pathname &path, bool refresh, finish_fn finish);
+        void add_read_task(const paths::pathname &path, bool refresh, std::shared_ptr<delegate> del);
 
         /**
          * Adds a read task to the task queue.
@@ -465,8 +443,10 @@ namespace nuc {
          *
          * @param refresh True if the current directory is being
          *   reread, false if a new directory is being read.
+         *
+         * @param del The delegate object for the read operation.
          */
-        void add_read_task(dir_type type, bool refresh, finish_fn finish);
+        void add_read_task(dir_type type, bool refresh, std::shared_ptr<delegate> del);
 
         /**
          * Adds a directory refresh task, for the current directory,
@@ -478,12 +458,8 @@ namespace nuc {
          * Reads the directory at @a path.
          *
          * @param state The cancellation state.
-         *
-         * @param path  The path to read.
-         *
          * @param tstate Read directory task state.
-         *
-         * @param refresh True if the directory is being reread.
+         * @param path  The path to read.
          */
         void read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const paths::pathname &path);
 
@@ -493,10 +469,7 @@ namespace nuc {
          * tstate.
          *
          * @param state The cancellation state.
-         *
          * @param tstate Read directory task state.
-         *
-         * @param refresh True if the directory is being reread.
          */
         void list_dir(cancel_state &state, std::shared_ptr<read_dir_state> tstate);
 
@@ -556,8 +529,9 @@ namespace nuc {
         struct read_subdir_state {
             /** Subpath to the subdirectory */
             paths::pathname subpath;
-            /** Finish callback */
-            finish_fn finish;
+
+            /** Operation Delegate */
+            std::shared_ptr<delegate> m_delegate;
 
             /** Error code */
             std::atomic<int> error{0};
@@ -566,9 +540,9 @@ namespace nuc {
              * Constructor.
              *
              * @param path Subdirectory subpath.
-             * @param finish Finish callback.
+             * @param del The delegate object for the read operation.
              */
-            read_subdir_state(paths::pathname path, finish_fn finish) : subpath(std::move(path)), finish(finish) {}
+            read_subdir_state(paths::pathname path, std::shared_ptr<delegate> del) : subpath(std::move(path)), m_delegate(del) {}
 
             /* Disable copying */
             read_subdir_state(const read_subdir_state &) = delete;
@@ -580,8 +554,9 @@ namespace nuc {
          * current directory tree, to the background task queue.
          *
          * @param subpath The subpath to read.
+         * @param del The delegate object for the read operation.
          */
-        void add_read_subdir(const paths::pathname &subpath, finish_fn finish);
+        void add_read_subdir(const paths::pathname &subpath, std::shared_ptr<delegate> del);
 
         /**
          * Read subdirectory task.
@@ -646,16 +621,19 @@ namespace nuc {
         /**
          * Event handler for the EVENTS_END event. This event is sent
          * after a time interval has elapsed after the last event.
+         *
+         * @param Cancellation State.
+         * @param del The delegate object for the refresh operation.
          */
-        void end_changes(cancel_state &state, finish_fn finish);
+        void end_changes(cancel_state &state, std::shared_ptr<delegate> del);
 
         /**
          * Queues a task on the main thread to apply all updates,
          * stored in 'new_tree'.
          *
-         * @param finish Finish callback.
+         * @param del The delegate object for the read operation.
          */
-        void finish_updates(finish_fn finish);
+        void finish_updates(std::shared_ptr<delegate> del);
 
         /**
          * Handler functions for the create, change, delete and rename
@@ -689,34 +667,24 @@ namespace nuc {
         static bool file_stat(const paths::string &path, struct stat *st);
 
 
-        /** Callbacks */
+        /** Calling Delegate Methods */
 
         /**
-         * Calls the begin callback. The cancellation is switched
-         * switched to the "no cancel" state, before calling the
-         * callback, and switched to the "can cancel" state, after
-         * calling the callback.
+         * Calls the begin method of the delegate object @a del.
+         *
+         * The cancellation state is switched switched to the "no
+         * cancel" state, before calling the method, and switched to
+         * the "can cancel" state, after calling the method.
+         *
+         * @param state Cancellation State.
+         * @param del Operation Delegate
          */
-        void call_begin(cancel_state &state, bool refresh);
-        /**
-         * Calls the new entry callback.
-         */
-        void call_new_entry(dir_entry &ent, bool refresh);
+        void call_begin(cancel_state &state, std::shared_ptr<delegate> del);
     };
 }
 
 
 /** Template Implementation */
-
-template <typename F>
-void nuc::vfs::callback_begin(F&& fn) {
-    cb_begin = std::forward<F>(fn);
-}
-
-template <typename F>
-void nuc::vfs::callback_new_entry(F&& fn) {
-    cb_new_entry = std::forward<F>(fn);
-}
 
 template <typename F>
 void nuc::vfs::callback_changed(F &&fn) {
@@ -725,8 +693,17 @@ void nuc::vfs::callback_changed(F &&fn) {
 
 template <typename F>
 void nuc::vfs::for_each(F f) {
-    for (auto &ent_pair : *cur_tree) {
-        f(ent_pair.second);
+    if (cur_tree->at_basedir()) {
+        for (auto &ent_pair : *cur_tree) {
+            f(ent_pair.second);
+        }
+    }
+    else {
+        auto dir = cur_tree->subpath_dir(cur_tree->subpath());
+
+        for (auto &ent_pair : *dir) {
+            f(*ent_pair.second);
+        }
     }
 }
 
