@@ -20,7 +20,9 @@
 #include "file_view.h"
 
 #include "tasks/async_task.h"
+
 #include "file_list/columns.h"
+#include "file_list/filtered_list_controller.h"
 
 #include "search/fuzzy_filter.h"
 
@@ -159,6 +161,7 @@ void file_view::init_filter_entry() {
     filter_entry->signal_key_press_event().connect(sigc::mem_fun(*this, &file_view::filter_key_press));
 }
 
+
 //// Changing the File List
 
 void file_view::file_list(std::shared_ptr<file_list_controller> new_flist, bool push_old) {
@@ -166,27 +169,30 @@ void file_view::file_list(std::shared_ptr<file_list_controller> new_flist, bool 
         if (push_old)
             flist_stack.emplace_back(flist);
 
-        flist->signal_change_model().clear();
-        flist->signal_select().clear();
-        flist->signal_path().clear();
+        signals.path.disconnect();
+        signals.model_change.disconnect();
+        signals.select_row.disconnect();
     }
 
     if (new_flist) {
-        // Temporarily set flist to NULL to prevent so as to not
-        // forward the selection change event to the old flist.
+        // Temporarily set flist to NULL so as to not forward the
+        // selection change event to the old flist.
         flist = nullptr;
+        filtered_list = nullptr;
 
         change_model(new_flist->list());
         select_row(new_flist->selected());
 
-        new_flist->signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
-        new_flist->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
-        new_flist->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
+        signals.path = new_flist->signal_path().connect(sigc::mem_fun(*this, &file_view::on_path_changed));
+        connect_model_signals(new_flist);
 
         path_entry->set_text(new_flist->path().path());
     }
 
     flist = new_flist;
+    filtered_list = flist;
+
+    m_filtering = false;
 }
 
 std::shared_ptr<file_list_controller> file_view::pop_file_list() {
@@ -213,19 +219,41 @@ void file_view::on_path_entry_activate() {
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = filter_model->children()[row_path[0]];
-
+    auto row = file_list_view->get_model()->children()[row_path[0]];
     dir_entry &ent = *row[file_model_columns::instance().ent];
 
     m_signal_activate_entry.emit(this, flist.get(), &ent);
 }
 
 void file_view::on_selection_changed() {
-    if (flist) {
+    if (filtered_list) {
         auto row = file_list_view->get_selection()->get_selected();
+        auto model = file_list_view->get_model();
+
+        if (mark_rows) {
+            auto prev_index = model->get_path(filtered_list->selected())[0];
+            auto row_index = model->get_path(row)[0];
+
+            size_t start, end;
+
+            if (row_index > prev_index) {
+                start = prev_index;
+                end = row_index - mark_end_offset;
+            }
+            else {
+                start = row_index + mark_end_offset;
+                end = prev_index;
+            }
+
+            for (size_t i = start; i <= end; i++) {
+                filtered_list->mark_row(model->children()[i]);
+            }
+
+            mark_rows = false;
+        }
 
         if (row) {
-            flist->on_selection_changed(*filter_model->convert_iter_to_child_iter(row));
+            filtered_list->on_selection_changed(*row);
         }
     }
 }
@@ -246,11 +274,45 @@ bool file_view::on_file_list_keypress(GdkEventKey *e) {
         }
         return true;
 
-    default:
-        return flist ? flist->on_keypress(e) : false;
+    case GDK_KEY_Up:
+    case GDK_KEY_Down:
+        keypress_arrow(e);
+        break;
+
+    case GDK_KEY_Home:
+    case GDK_KEY_End:
+        keypress_change_selection(e, true);
+        break;
+
+    case GDK_KEY_Page_Down:
+    case GDK_KEY_Page_Up:
+        keypress_change_selection(e, false);
+        break;
+    }
+
+    return false;
+}
+
+void file_view::keypress_arrow(const GdkEventKey *e) {
+    if ((e->state & gtk_accelerator_get_default_mod_mask()) == GDK_SHIFT_MASK) {
+        if (auto row = file_list_view->get_selection()->get_selected()) {
+            filtered_list->mark_row(*row);
+        }
     }
 }
 
+void file_view::keypress_change_selection(const GdkEventKey *e, bool mark_selected) {
+    if ((e->state & gtk_accelerator_get_default_mod_mask()) == GDK_SHIFT_MASK) {
+        mark_rows = true;
+        mark_end_offset = mark_selected ? 0 : 1;
+    }
+}
+
+
+void file_view::connect_model_signals(std::shared_ptr<list_controller> list) {
+    signals.model_change = list->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
+    signals.select_row = list->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
+}
 
 void file_view::on_path_changed(const paths::pathname &path) {
     end_filter();
@@ -258,19 +320,13 @@ void file_view::on_path_changed(const paths::pathname &path) {
 }
 
 void file_view::change_model(Glib::RefPtr<Gtk::ListStore> model) {
-    make_filter_model(model);
-
-    file_list_view->set_model(filter_model);
+    file_list_view->set_model(model);
 }
 
 void file_view::select_row(Gtk::TreeRow row) {
     if (row) {
-        auto it = filter_model->convert_child_iter_to_iter(row);
-
-        if (it) {
-            file_list_view->get_selection()->select(it);
-            file_list_view->scroll_to_row(file_list_view->get_model()->get_path(it));
-        }
+        file_list_view->get_selection()->select(row);
+        file_list_view->scroll_to_row(file_list_view->get_model()->get_path(row));
     }
 }
 
@@ -292,7 +348,7 @@ void file_view::entry_path(const std::string &path) {
 //// Getting Selected Entry
 
 dir_entry *file_view::selected_entry() {
-    auto row = flist->selected();
+    auto row = filtered_list->selected();
 
     if (row)
         return row[file_model_columns::instance().ent];
@@ -310,16 +366,22 @@ void file_view::focus_path() {
 
 //// Filtering
 
-void file_view::make_filter_model(Glib::RefPtr<Gtk::ListStore> model) {
-    filter_model = Gtk::TreeModelFilter::create(model);
-    filter_model->set_visible_func([this] (const Gtk::TreeModel::iterator &it) -> bool {
-        if (m_filtering) {
-            Glib::ustring name = (*it)[file_model_columns::instance().name];
-            return fuzzy_match(name, filter_entry->get_text());
-        }
-
-        return true;
+void file_view::make_filter_model() {
+    auto filter_list = filtered_list_controller::create(flist, [this] (Gtk::TreeRow row) {
+        Glib::ustring name = row[file_model_columns::instance().name];
+        return fuzzy_match(name, filter_entry->get_text());
     });
+
+    signals.model_change.disconnect();
+    signals.select_row.disconnect();
+
+    signals.select_row = filter_list->signal_select().connect(sigc::mem_fun(this, &file_view::select_row));
+
+    filter_list->refilter();
+    filtered_list = filter_list;
+
+    file_list_view->set_model(filter_list->list());
+    select_row(filter_list->selected());
 }
 
 void file_view::begin_filter() {
@@ -327,6 +389,7 @@ void file_view::begin_filter() {
     filter_entry->grab_focus_without_selecting();
 
     if (!filtering()) {
+        make_filter_model();
         m_filtering = true;
     }
 }
@@ -337,19 +400,30 @@ bool file_view::filtering() const {
 
 void file_view::end_filter() {
     if (filtering()) {
+        auto selected_row = *file_list_view->get_selection()->get_selected();
+        dir_entry *ent = selected_row ? (dir_entry*)selected_row[file_model_columns::instance().ent] : nullptr;
+
         filter_entry->hide();
+
         filter_entry->set_text("");
         file_list_view->grab_focus();
 
         m_filtering = false;
-        filter_model->refilter();
+
+        filtered_list = flist;
+        file_list_view->set_model(flist->list());
+
+        if (ent) {
+            select_row(ent->context.row);
+        }
+
+        connect_model_signals(flist);
     }
 }
 
 void file_view::filter_changed() {
-    auto key = filter_entry->get_text();
-
-    filter_model->refilter();
+    auto filter_list = std::dynamic_pointer_cast<filtered_list_controller>(filtered_list);
+    if (filter_list) filter_list->refilter();
 }
 
 bool file_view::filter_key_press(GdkEventKey *e) {

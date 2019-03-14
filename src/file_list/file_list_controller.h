@@ -31,19 +31,19 @@
 
 #include "paths/pathname.h"
 
+#include "list_controller.h"
 #include "file_model_columns.h"
 #include "directory/vfs.h"
 
 namespace nuc {
     /**
-     * Manages the state of a file list, that is displayed in a tree
-     * view.
+     * Directory File List Controller.
      *
-     * Responsible for initiating background read operations and
-     * storing the file list in a tree model. Also keeps track of the
-     * marked and selected files.
+     * Maintains a list of the contents of a directory, and updates
+     * the list in response to file system changes.
      */
-    class file_list_controller : public std::enable_shared_from_this<file_list_controller> {
+    class file_list_controller : public list_controller, public std::enable_shared_from_this<file_list_controller> {
+    public:
         /* Types */
 
         /**
@@ -61,12 +61,6 @@ namespace nuc {
          */
         typedef std::unordered_multimap<std::string, Gtk::TreeRow> entry_set;
 
-        /**
-         * Pointer to method type with the same signature as the
-         * finish callback.
-         */
-        typedef void(file_list_controller::*finish_method)(bool, int, bool);
-
 
         /* Signal Types */
 
@@ -79,49 +73,114 @@ namespace nuc {
          */
         typedef sigc::signal<void, const paths::pathname &> signal_path_type;
 
-        /**
-         * Tree model changed signal type.
-         *
-         * Prototype: void(Glib::RefPtr<Gtk::ListStore> model)
-         *
-         * @param model The new tree view model.
-         */
-        typedef sigc::signal<void, Glib::RefPtr<Gtk::ListStore>> signal_change_model_type;
 
         /**
-         * Select row signal type.
-         *
-         * Prototype: void(Gtk::TreeRow row)
-         *
-         * @param row The row that should be selected.
+         * Creates a file_list_controller.
          */
-        typedef sigc::signal<void, Gtk::TreeRow> signal_select_type;
+        static std::shared_ptr<file_list_controller> create();
 
 
-        /* Current Path */
+        /* Changing the path */
 
         /**
-         * The current path.
+         * Changes the current path of the file view.
+         *
+         * Begins a read operation to read the entries of the
+         * directory @a path into the list.
+         *
+         * Emits the 'path_changed' signal.
+         *
+         * @param path Path to the directory to read.
+         *
+         * @param move_to_old If true the selection is moved to the
+         *   entry with the same names as the current directory.
          */
-        paths::pathname cur_path;
+        void path(const paths::pathname &path, bool move_to_old = false);
+
+        /**
+         * Returns the current path.
+         *
+         * @return The current path.
+         */
+        const paths::pathname &path() const {
+            return cur_path;
+        }
+
+        /**
+         * Attempts to change the directory to the entry @a ent. If @a
+         * ent is not a directory entry and is not a file which can be
+         * listed, this method does nothing. If @a ent is a directory
+         * entry a path changed signal is emitted.
+         *
+         * @param ent The entry to enter
+         *
+         * @return true if the entry is a directory entry that can be
+         *         listed, false otherwise.
+         */
+        bool descend(const dir_entry &ent);
+
+
+        /* VFS Object */
+
+        /**
+         * Returns a pointer to the vfs object responsible for reading
+         * the directory.
+         *
+         * @return The vfs object.
+         */
+        std::shared_ptr<nuc::vfs> dir_vfs() {
+            return vfs;
+        }
 
 
         /* Signals */
 
         /**
          * Path changed signal.
+         *
+         * Emitted when the current path has changed.
+         */
+        signal_path_type signal_path() {
+            return m_signal_path;
+        }
+
+        /**
+         * Returns true if the file_list_controller is attached to a
+         * file_view.
+         *
+         * @return     bool
+         */
+        bool attached() const {
+            return m_signal_path.size();
+        }
+
+
+        /* list_controller Methods */
+
+        virtual Glib::RefPtr<Gtk::ListStore> list() {
+            return cur_list;
+        }
+
+        virtual Gtk::TreeRow selected() const {
+            return selected_row;
+        }
+
+        virtual std::vector<dir_entry*> selected_entries() const;
+
+        virtual void mark_row(Gtk::TreeRow row);
+
+        virtual void on_selection_changed(Gtk::TreeRow row);
+
+    private:
+        /**
+         * The current path.
+         */
+        paths::pathname cur_path;
+
+        /**
+         * Path changed signal.
          */
         signal_path_type m_signal_path;
-
-        /**
-         * Model changed signal.
-         */
-        signal_change_model_type m_signal_change_model;
-
-        /**
-         * Select row signal.
-         */
-        signal_select_type m_signal_select;
 
 
         /* Background operation state */
@@ -154,8 +213,7 @@ namespace nuc {
         /* Tree View Model */
 
         /**
-         * Current list store model. Stores the entries currently
-         * being displayed in the tree view widget.
+         * List store model containing the contents of the directory.
          */
         Glib::RefPtr<Gtk::ListStore> cur_list;
 
@@ -174,20 +232,6 @@ namespace nuc {
          * The selected row.
          */
         Gtk::TreeRow selected_row;
-
-        /**
-         * True if the rows between the previous selection and current
-         * selection should be marked. Used to mark a range of rows in
-         * response to the Home/End/Page Up/Down key press event.
-         */
-        bool mark_rows = false;
-
-        /**
-         * The offset, from the current selected row, of the last row
-         * to mark. If 0, the current selected row is marked. Used in
-         * conjunction with 'mark_rows'.
-         */
-        int mark_end_offset = 0;
 
         /**
          * Set of marked entries.
@@ -440,18 +484,6 @@ namespace nuc {
         /* Marking */
 
         /**
-         * Toggles the marked state of a row, and updates the marked
-         * set.
-         *
-         * If the row is not marked, it is marked and added to the
-         * marked set. If the row is marked it is unmarked and removed
-         * from the marked set.
-         *
-         * @param row Iterator to the row to toggle mark.
-         */
-        void mark_row(Gtk::TreeRow row);
-
-        /**
          * Marks/Unmarks a row.
          *
          * The marked attributes (marked flag, colour, etc) of the row
@@ -463,188 +495,8 @@ namespace nuc {
         void mark_row(Gtk::TreeRow row, bool marked);
 
 
-        /** Keypress handlers */
-
-        /**
-         * Handler for the up/down arrow key press event.
-         *
-         * e: The keyboard event.
-         */
-        bool keypress_arrow(const GdkEventKey *e);
-
-        /**
-         * Handler for a keypress which changes the current selection:
-         * Home/End/Page Up/Down.
-         *
-         * Sets 'mark_rows' to true in order for all rows between the
-         * current selection and the new selection to be marked (when
-         * the selection changed signal is emitted), if the shift
-         * modifier key was held down.
-         *
-         * e:        The keyboard event.
-         *
-         * mark_sel: True if the new selected row should also be
-         *           marked, false if the last row to be marked is the
-         *           row before the selected row.
-         */
-        void keypress_change_selection(const GdkEventKey *e, bool mark_sel);
-
-
         /** Constructor */
         file_list_controller();
-
-    public:
-
-        /**
-         * Creates a file_list_controller.
-         */
-        static std::shared_ptr<file_list_controller> create();
-
-        /* Changing the path */
-
-        /**
-         * Changes the current path of the file view.
-         *
-         * Begins a read operation to read the entries of the
-         * directory @a path into the list.
-         *
-         * Emits the 'path_changed' signal.
-         *
-         * @param path Path to the directory to read.
-         *
-         * @param move_to_old If true the selection is moved to the
-         *   entry with the same names as the current directory.
-         */
-        void path(const paths::pathname &path, bool move_to_old = false);
-
-        /**
-         * Returns the current path.
-         *
-         * @return The current path.
-         */
-        const paths::pathname &path() const {
-            return cur_path;
-        }
-
-        /**
-         * Attempts to change the directory to the entry @a ent. If @a
-         * ent is not a directory entry and is not a file which can be
-         * listed, this method does nothing. If @a ent is a directory
-         * entry a path changed signal is emitted.
-         *
-         * @param ent The entry to enter
-         *
-         * @return true if the entry is a directory entry that can be
-         *         listed, false otherwise.
-         */
-        bool descend(const dir_entry &ent);
-
-
-        /* VFS Object */
-
-        /**
-         * Returns a pointer to the vfs object responsible for reading
-         * the directory.
-         *
-         * @return The vfs object.
-         */
-        std::shared_ptr<nuc::vfs> dir_vfs() {
-            return vfs;
-        }
-
-
-        /* Signals */
-
-        /**
-         * Path changed signal.
-         *
-         * Emitted when the current path has changed.
-         */
-        signal_path_type signal_path() {
-            return m_signal_path;
-        }
-
-        /**
-         * Model changed signal.
-         *
-         * Emitted when the tree view's list store model should be
-         * changed. The new model is passed as an argument to the
-         * signal handler.
-         */
-        signal_change_model_type signal_change_model() {
-            return m_signal_change_model;
-        }
-
-        /**
-         * Select row signal.
-         *
-         * Emitted when the selection should be changed to the row,
-         * passed as an argument to the handler.
-         */
-        signal_select_type signal_select() {
-            return m_signal_select;
-        }
-
-        /**
-         * Returns true if the file_list_controller is attached to a file_view.
-         *
-         * @return     bool
-         */
-        bool attached() const {
-            return m_signal_change_model.size();
-        }
-
-
-        /* Retrieving the model and selection */
-
-        /**
-         * Returns the current list store model.
-         *
-         * @return The list store model.
-         */
-        Glib::RefPtr<Gtk::ListStore> list() {
-            return cur_list;
-        }
-
-        /**
-         * Returns the selected row.
-         *
-         * @return The row.
-         */
-        Gtk::TreeRow selected() const {
-            return selected_row;
-        }
-
-        /**
-         * Returns the list of selected/marked entries.
-         *
-         * @return An std::vector of the dir_entry objects
-         *   corresponding to the selected/marked entries.
-         */
-        std::vector<dir_entry*> selected_entries();
-
-
-        /* Tree View Events */
-
-        /**
-         * Should be called when the tree view's selection has been
-         * changed. Should be called for both external and internal,
-         * in response to the 'select_row' signal, changes.
-         *
-         * @param row The selected row.
-         */
-        void on_selection_changed(Gtk::TreeRow row);
-
-        /**
-         * Should be called in response to a keypress event within the
-         * tree view.
-         *
-         * @param e.
-         *
-         * @return True if the event has been handled, false if the
-         *    remaining event handlers should be called.
-         */
-        bool on_keypress(const GdkEventKey *e);
     };
 }
 

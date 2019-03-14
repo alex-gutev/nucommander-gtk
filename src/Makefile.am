@@ -114,8 +114,11 @@ nucommander_SOURCES = \
 	interface/open_dirs_popup.h \
 	interface/open_dirs_popup.cpp \
 	util/util.h \
+	file_list/list_controller.h \
 	file_list/file_list_controller.h \
 	file_list/file_list_controller.cpp \
+	file_list/filtered_list_controller.h \
+	file_list/filtered_list_controller.cpp \
 	file_list/file_model_columns.h \
 	file_list/file_model_columns.cpp \
 	file_list/columns.h \

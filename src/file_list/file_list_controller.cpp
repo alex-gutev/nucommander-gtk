@@ -425,68 +425,7 @@ void file_list_controller::select_named(const paths::string &name, index_type ro
 
 void file_list_controller::on_selection_changed(Gtk::TreeRow row) {
     if (!reading) {
-        if (mark_rows) {
-            index_type prev_index = cur_list->get_path(selected_row)[0];
-            index_type row_index = cur_list->get_path(row)[0];
-
-            size_t start, end;
-
-            if (row_index > prev_index) {
-                start = prev_index;
-                end = row_index - mark_end_offset;
-            }
-            else {
-                start = row_index + mark_end_offset;
-                end = prev_index;
-            }
-
-            for (size_t i = start; i <= end; i++) {
-                mark_row(cur_list->children()[i]);
-            }
-
-            mark_rows = false;
-        }
-
         selected_row = row;
-    }
-}
-
-
-//// Keypress event handlers
-
-bool file_list_controller::on_keypress(const GdkEventKey *e) {
-    switch (e->keyval) {
-        case GDK_KEY_Up:
-        case GDK_KEY_Down:
-            return keypress_arrow(e);
-
-        case GDK_KEY_Home:
-        case GDK_KEY_End:
-            keypress_change_selection(e, true);
-            break;
-
-        case GDK_KEY_Page_Down:
-        case GDK_KEY_Page_Up:
-            keypress_change_selection(e, false);
-            break;
-    }
-
-    return false;
-}
-
-bool file_list_controller::keypress_arrow(const GdkEventKey *e) {
-    if (e->state & GDK_SHIFT_MASK) {
-        if (selected_row) {
-            mark_row(selected_row);
-        }
-    }
-    return false;
-}
-
-void file_list_controller::keypress_change_selection(const GdkEventKey *e, bool mark_sel) {
-    if (e->state & GDK_SHIFT_MASK) {
-        mark_rows = true;
-        mark_end_offset = mark_sel ? 0 : 1;
     }
 }
 
@@ -568,7 +507,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
 
 //// Getting Selected and Marked Entries
 
-std::vector<dir_entry*> file_list_controller::selected_entries() {
+std::vector<dir_entry*> file_list_controller::selected_entries() const {
     auto &columns = file_model_columns::instance();
 
     std::vector<dir_entry*> entries;

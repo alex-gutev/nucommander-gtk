@@ -21,6 +21,7 @@
 #define SEARCH_FUZZY_FILTER_H
 
 #include <algorithm>
+#include <tuple>
 
 namespace nuc {
     /**
@@ -34,19 +35,25 @@ namespace nuc {
      * @param string The string to match.
      * @param key The search string key.
      *
-     * @return True if @a key fuzzy matches @a string.
+     * @return A pair of:
+     *   - A Boolean which is true if @a key fuzzy matches @a string.
+     *
+     *   - An accuracy score, the lower the score the more closely @a
+     *     key matches @a string.
      */
     template <typename T>
-    bool fuzzy_match(const T& string, const T& key);
+    std::pair<bool, float> fuzzy_match(const T& string, const T& key);
 }  // nuc
 
 
 /// Implementation
 
 template <typename T>
-bool nuc::fuzzy_match(const T& string, const T& key) {
+std::pair<bool, float> nuc::fuzzy_match(const T& string, const T& key) {
     auto sit = string.begin(), send = string.end();
     auto kit = key.begin(), kend = key.end();
+
+    size_t start = T::npos;
 
     while (kit != kend && sit != send) {
         gunichar kc = g_unichar_toupper(*kit);
@@ -56,12 +63,21 @@ bool nuc::fuzzy_match(const T& string, const T& key) {
         });
 
         if (sit != send) {
+            if (start == T::npos)
+                start = std::distance(string.begin(), sit);
+
             ++kit;
             ++sit;
         }
     }
 
-    return kit == kend;
+    if (kit == kend) {
+        size_t end = std::distance(string.begin(), sit);
+
+        return std::make_pair(true,  key.length() / float(end - start));
+    }
+
+    return std::make_pair(false, 0);
 }
 
 

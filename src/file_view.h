@@ -28,7 +28,6 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/liststore.h>
-#include <gtkmm/treemodelfilter.h>
 
 #include <unordered_map>
 #include <vector>
@@ -66,7 +65,17 @@ namespace nuc {
         typedef decltype(((Gtk::Frame*)nullptr)->signal_key_press_event()) signal_key_press_event_type;
 
         /**
-         * File list controller of the file view.
+         * Stores the connections to the file list controller signals.
+         */
+        struct list_controller_signals {
+            sigc::connection path;
+            sigc::connection model_change;
+            sigc::connection select_row;
+        };
+
+
+        /**
+         * File list controller containing the directory's contents.
          */
         std::shared_ptr<file_list_controller> flist;
 
@@ -75,17 +84,24 @@ namespace nuc {
          */
         std::vector<std::weak_ptr<file_list_controller>> flist_stack;
 
+        /**
+         * File list controller signal connections.
+         */
+        list_controller_signals signals;
+
 
         /* Filtering */
 
         /**
-         * Filtered model, which filters out entries based on the
-         * current filter.
+         * Filtered list controller, which filters out entries based
+         * on the current filter.
+         *
+         * When not filtering, this is simply set to flist.
          */
-        Glib::RefPtr<Gtk::TreeModelFilter> filter_model;
+        std::shared_ptr<list_controller> filtered_list;
 
         /**
-         * Flag: True if the entry list is currently being filtered.
+         * Flag: True if the list is currently being filtered.
          */
         bool m_filtering = false;
 
@@ -116,6 +132,23 @@ namespace nuc {
          * Activate entry signal.
          */
         signal_activate_entry_type m_signal_activate_entry;
+
+
+        /* Marking */
+
+        /**
+         * True if the rows between the previous selection and current
+         * selection should be marked. Used to mark a range of rows in
+         * response to the Home/End/Page Up/Down key press event.
+         */
+        bool mark_rows = false;
+
+        /**
+         * The offset, from the current selected row, of the last row
+         * to mark. If 0, the current selected row is marked. Used in
+         * conjunction with 'mark_rows'.
+         */
+        int mark_end_offset = 0;
 
 
         /* Initialization */
@@ -201,7 +234,42 @@ namespace nuc {
         bool on_file_list_keypress(GdkEventKey *e);
 
 
+        /* Keyboard Events */
+
+        /**
+         * Handler for the up/down arrow key press event.
+         *
+         * e: The keyboard event.
+         */
+        void keypress_arrow(const GdkEventKey *e);
+
+        /**
+         * Handler for a keypress which changes the current selection:
+         * Home/End/Page Up/Down.
+         *
+         * Sets 'mark_rows' to true in order for all rows between the
+         * current selection and the new selection to be marked (when
+         * the selection changed signal is emitted), if the shift
+         * modifier key was held down.
+         *
+         * e:        The keyboard event.
+         *
+         * mark_sel: True if the new selected row should also be
+         *           marked, false if the last row to be marked is the
+         *           row before the selected row.
+         */
+        void keypress_change_selection(const GdkEventKey *e, bool mark_selected);
+
+
         /* File List Controller Signal Handlers */
+
+        /**
+         * Connects the signal handlers of the 'change_model' and
+         * 'select_row' signals of @a list.
+         *
+         * @param list The list controller.
+         */
+        void connect_model_signals(std::shared_ptr<list_controller> list);
 
         /**
          * Signal handler for the file list controller's path changed
@@ -232,18 +300,16 @@ namespace nuc {
         bool filtering() const;
 
         /**
-         * Creates a new TreeModelFilter, for the model @a model, and
-         * stores it in 'filter_model'.
-         *
-         * @param model The TreeModel containing the file list.
+         * Creates a new filtered_list_controller and stores it in
+         * 'filtered_list'.
          */
-        void make_filter_model(Glib::RefPtr<Gtk::ListStore> model);
+        void make_filter_model();
 
         /**
          * Ends filtering.
          *
-         * Clears and hides the filter entry and resets the filter,
-         * such that no entries are filtered out.
+         * Clears and hides the filter entry and resets filtered_list
+         * to flist.
          */
         void end_filter();
 
@@ -343,7 +409,7 @@ namespace nuc {
         dir_entry *selected_entry();
 
 
-        /* Search */
+        /* Filtering */
 
         /**
          * Begins filtering.
