@@ -408,6 +408,25 @@ namespace nuc {
          */
         dir_entry *selected_entry();
 
+        /**
+         * Returns the list of all marked entries. If there are no
+         * marked entries, a list containing only the selected entry
+         * is returned. If there is no selected entry an empty list is
+         * returned.
+         *
+         * @return List of entries.
+         */
+        std::vector<dir_entry*> selected_entries() const;
+
+        /**
+         * Returns a pointer to the vfs object for reading the current
+         * directory.
+         *
+         * @return Pointer to the vfs object or NULL if the file_view
+         * is not currently displaying a directory.
+         */
+        std::shared_ptr<nuc::vfs> dir_vfs() const;
+
 
         /* Filtering */
 

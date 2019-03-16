@@ -82,6 +82,11 @@ void filtered_list_controller::copy_columns(Gtk::TreeRow src, Gtk::TreeRow dest)
         Glib::ValueBase value;
 
         gtk_tree_model_get_value((GtkTreeModel*)flist->list()->gobj(), src.gobj(), i, value.gobj());
+
+        // The const_cast is necessary as for some reason the gobj()
+        // returns a const pointer. The object is not actually
+        // modified by gtk_list_store_set_value thus the const_cast is
+        // safe.
         gtk_list_store_set_value(m_list->gobj(), const_cast<GtkTreeIter*>(dest->gobj()), i, value.gobj());
     }
 }

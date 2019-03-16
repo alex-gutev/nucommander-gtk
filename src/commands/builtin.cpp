@@ -276,7 +276,7 @@ paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathn
 
 void copy_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     if (window && src) {
-        auto entries = src->file_list()->selected_entries();
+        auto entries = src->selected_entries();
 
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
@@ -286,7 +286,7 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Varia
             dialog->set_exec_button_label("Copy");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->file_list()->dir_vfs()->directory_type();
+                auto type = src->dir_vfs()->directory_type();
 
                 window->add_operation(
                     make_copy_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
@@ -330,7 +330,7 @@ void make_dir_command::make_dir_task(cancel_state &state, const paths::string &d
 
 void move_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     if (window && src) {
-        auto entries = src->file_list()->selected_entries();
+        auto entries = src->selected_entries();
 
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
@@ -340,7 +340,7 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Varia
             dialog->set_exec_button_label("Move");
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->file_list()->dir_vfs()->directory_type();
+                auto type = src->dir_vfs()->directory_type();
 
                 window->add_operation(
                     make_move_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
@@ -353,7 +353,7 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Varia
 
 void delete_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     if (window && src) {
-        auto entries = src->file_list()->selected_entries();
+        auto entries = src->selected_entries();
 
         if (!entries.empty()) {
             // Query for confirmation
@@ -366,7 +366,7 @@ void delete_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Var
             // Add delete operation if response was OK
 
             if (result == Gtk::RESPONSE_OK) {
-                auto type = src->file_list()->dir_vfs()->directory_type();
+                auto type = src->dir_vfs()->directory_type();
 
                 window->add_operation(make_delete_task(type, entries),
                                       window->get_progress_fn(type));
@@ -430,7 +430,7 @@ void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib:
 
 void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     auto flist = directory_buffers::instance().new_buffer();
-    auto old_path = src->file_list()->path();
+    auto old_path = src->path();
 
     src->file_list(flist);
     src->path(old_path);
@@ -467,6 +467,6 @@ void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::
 
 void cancel_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
     if (src) {
-        src->file_list()->dir_vfs()->cancel();
+        src->dir_vfs()->cancel();
     }
 }

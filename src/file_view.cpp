@@ -193,6 +193,7 @@ void file_view::file_list(std::shared_ptr<file_list_controller> new_flist, bool 
     filtered_list = flist;
 
     m_filtering = false;
+    filter_entry->hide();
 }
 
 std::shared_ptr<file_list_controller> file_view::pop_file_list() {
@@ -356,6 +357,15 @@ dir_entry *file_view::selected_entry() {
     return nullptr;
 }
 
+std::vector<dir_entry*> file_view::selected_entries() const {
+    return filtered_list ? filtered_list->selected_entries() : std::vector<dir_entry*>();
+}
+
+
+std::shared_ptr<nuc::vfs> file_view::dir_vfs() const {
+    return flist ? flist->dir_vfs() : nullptr;
+}
+
 
 //// Changing Keyboard Focus
 
@@ -389,6 +399,8 @@ void file_view::begin_filter() {
     filter_entry->grab_focus_without_selecting();
 
     if (!filtering()) {
+        filter_entry->set_text("");
+
         make_filter_model();
         m_filtering = true;
     }
@@ -404,8 +416,6 @@ void file_view::end_filter() {
         dir_entry *ent = selected_row ? (dir_entry*)selected_row[file_model_columns::instance().ent] : nullptr;
 
         filter_entry->hide();
-
-        filter_entry->set_text("");
         file_list_view->grab_focus();
 
         m_filtering = false;
