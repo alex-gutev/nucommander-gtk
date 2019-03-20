@@ -22,4 +22,5 @@ test_directory_tree_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
 	$(GLIBMM_LIBS) \
 	../src/paths/nucommander-pathname.$(OBJEXT) \
 	../src/directory/nucommander-dir_entry.$(OBJEXT) \
-	../src/directory/nucommander-dir_tree.$(OBJEXT)
+	../src/directory/nucommander-dir_tree.$(OBJEXT) \
+	../src/directory/nucommander-archive_tree.$(OBJEXT)
