@@ -49,7 +49,7 @@ namespace nuc {
      * @param callback Callback function to call (on the main thread)
      *   once the directory's size has been determined.
      */
-    void dir_size(std::shared_ptr<cancel_state> state, const dir_type &type, const paths::pathname &path, dir_size_callback callback);
+    void dir_size(std::shared_ptr<cancel_state> state, std::shared_ptr<dir_type> type, const paths::pathname &path, dir_size_callback callback);
 };
 
 #endif

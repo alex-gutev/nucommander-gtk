@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #define NUC_DIR_TYPE_H
 
 #include <tuple>
-#include <functional>
+#include <memory>
 #include <vector>
 
 #include "types.h"
@@ -42,245 +42,87 @@
 
 namespace nuc {
     /**
-     * Directory type class.
-     *
-     * Stores the path of the directory, the subpath within the
-     * virtual directory tree and provides functions for creating the
-     * lister and directory tree object for the directory type.
+     * Generic interface for creating directory listers.
      */
     class dir_type {
-        /**
-         * Create lister function type.
-         *
-         * Takes one parameter: the path to the directory.
-         *
-         * Returns a pointer to a newly created lister object.
-         */
-        typedef std::function<lister*(const paths::pathname &)> create_lister_fn;
-
-        /**
-         * Create tree lister function type.
-         *
-         * Takes two parameters:
-         *
-         * - Path to the directory.
-         * - Array of the subpaths of the directory trees to list.
-         *
-         * Returns a pointer to a newly created tree_lister object.
-         */
-        typedef std::function<tree_lister*(const paths::pathname &, const std::vector<paths::pathname> &)> create_tree_lister_fn;
-
-        /**
-         * Create directory tree function type.
-         *
-         * Takes as argument the subpath of the tree and returns a
-         * newly created dir_tree object with the subpath set to the
-         * subpath passed as an argument.
-         */
-        typedef std::function<dir_tree*(const paths::pathname &)> create_tree_fn;
-
-        /**
-         * The path of the actual directory file which is read by the
-         * lister.
-         */
-        paths::pathname m_path;
-
-        /**
-         * The initial subpath of the directory tree which is created.
-         */
-        paths::pathname m_subpath;
-
-        /**
-         * Create lister function.
-         */
-        create_lister_fn m_create_lister;
-
-        /**
-         * Create tree_lister function.
-         */
-        create_tree_lister_fn m_create_tree_lister;
-
-        /**
-         * Create directory tree function.
-         */
-        create_tree_fn m_create_tree;
-
-        /**
-         * Flag indicating whether the directory is a regular
-         * directory or file.
-         */
-        bool m_is_dir = false;
-
-
-        /**
-         * Canonicalizes a path by expanding leading tilde's and
-         * removing all '.' and '..' directory components.
-         *
-         * @param path The path to canonicalize.
-         *
-         * @return The canonicalized path.
-         */
-        static paths::pathname canonicalize(const paths::pathname &path);
-
-        /**
-         * Canonicalizes the case of a path.
-         *
-         * Each intermediate directory component is searched for an
-         * entry with a name which is either identical to the child
-         * component, in which case the the case is preserved, or the
-         * first entry with a name which matches (ignoring case) the
-         * name of the child component, in which case the child is
-         * replaced with the matching entry.
-         *
-         * @return A pair where the first value is the path with the
-         *    case canonicalized up to the last directory component
-         *    which can be read, the second value is the remainder of
-         *    the path, which has not been case-canonicalized.
-         */
-        static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths::pathname &path);
-
-        /**
-         * Searches the directory, at @a dir, for an entry with a name
-         * that is equal to @a comp or the first entry with a name
-         * that matches, ignoring case, @a comp.
-         *
-         * @return The name of the matching entry or an empty string
-         *    if the directory @a dir could not be read.
-         */
-        static paths::string find_match_comp(const paths::string &dir, const paths::string &comp);
-
-
-        /**
-         * Determines which initial components of a path refer to an
-         * existing file.
-         *
-         * @param path The path to check.
-         *
-         * @return A pair where the first value is the initial portion
-         *   of path which refers to an existing file and the second
-         *   value is the remaining non-existent portion.
-         */
-        static std::pair<paths::string, paths::string> find_dir(const paths::string &path);
-
-        /**
-         * Checks whether the file @a path is a regular directory.
-         *
-         * @path Path to the file.
-         *
-         * @return True if the file is a regular directory.
-         */
-        static bool is_reg_dir(const paths::string &path);
-
     public:
-        /**
-         * Constructs an "empty" dir_type object with no path and no
-         * creation functions.
-         */
-        dir_type() : dir_type("", nullptr, nullptr, nullptr, false, "") {}
+        /* Destructor */
+        virtual ~dir_type() noexcept = default;
 
         /**
-         * Constructs a dir_type object with a given path, subpath and
-         * creation functions.
+         * Returns a copy of the directory type.
          *
-         * @param path               The path to the directory file.
-         * @param create_lister      Lister creation function.
-         * @param create_tree_lister Tree lister creation function
-         * @param create_tree        Tree creation function.
-         * @param is_dir             True if directory is a regular directory.
-         * @param subpath            Initial subpath of tree.
+         * @return shared_ptr to dir_type object
          */
-        dir_type(paths::pathname path, create_lister_fn create_lister, create_tree_lister_fn tree_lister, create_tree_fn create_tree, bool is_dir, paths::pathname subpath)
-            : m_path(std::move(path)), m_subpath(std::move(subpath)),
-              m_create_lister(create_lister), m_create_tree_lister(tree_lister),
-              m_create_tree(create_tree), m_is_dir(is_dir) {}
-
-
-        /* Creating lister and dir_tree */
+        virtual std::shared_ptr<dir_type> copy() const = 0;
 
         /**
-         * Creates the lister object.
+         * Creates a lister for the directory.
          *
-         * @return Pointer to a newly created lister object.
+         * @return lister object
          */
-        lister * create_lister() const {
-            return m_create_lister(m_path);
-        }
+        virtual lister * create_lister() const = 0;
 
         /**
-         * Creates the tree_lister object for the directory.
+         * Creates a tree_lister for the directory.
          *
-         * @param subpaths Subpaths of the directory trees to list
+         * @param subpaths The subpaths to visit.
          *
-         * @return Pointer to a newly created tree_lister object.
+         * @return tree_lister object
          */
-        tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
-            return m_create_tree_lister(m_path, subpaths);
-        }
+        virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const = 0;
 
         /**
-         * Creates the directory tree, with the subpath set to the
-         * subpath stored in the dir_type object.
+         * Creates a directory tree suitable for the directory.
          *
-         * @return Pointer to a newly created dir_tree object.
+         * @return dir_tree object.
          */
-        dir_tree * create_tree() const {
-            return m_create_tree(m_subpath);
-        }
+        virtual dir_tree * create_tree() const = 0;
 
         /**
-         * @return True if dir_type is not empty.
-         */
-        explicit operator bool() const {
-            return static_cast<bool>(m_create_lister);
-        }
-
-
-        /* Accessors */
-
-        /**
-         * @return True if the directory is a regular directory.
-         */
-        bool is_dir() const {
-            return m_is_dir;
-        }
-
-        /**
-         * @return The path to the directory file.
-         */
-        const paths::pathname & path() const {
-            return m_path;
-        }
-
-        /**
-         * @return The initial subpath of the directory tree.
-         */
-        const paths::pathname & subpath() const {
-            return m_subpath;
-        }
-
-        /**
-         * Sets the initial subpath of the directory trees to be
-         * created.
+         * Returns true if the directory is a regular directory that
+         * can be read directly using the OS's file system API.
          *
-         * @param subpath The subpath
+         * @return boolean
          */
-        void subpath(paths::pathname subpath) {
-            m_subpath = std::move(subpath);
-        }
-
+        virtual bool is_dir() const = 0;
 
         /**
-         * Returns the logical path of the directory. The logical path
-         * is the concatenated path of where the directory is located
-         * in the filesystem and the subpath within the directory.
+         * Returns the path to the directory file. If the directory is
+         * located within a virtual file system, such as an archive,
+         * the path to that file is returned instead.
          *
-         * @return The logical path.
+         * @return pathname
          */
-        paths::pathname logical_path() const {
-            return m_subpath.empty() ? m_path : m_path.append(m_subpath);
-        }
+        virtual paths::pathname path() const = 0;
 
-        /* Determining the type of a directory */
+        /**
+         * Returns the subpath to the directory within its parent
+         * directory.
+         *
+         * A non-empty string is only returned if the directory is
+         * contained within another virtual file system such as an
+         * archive.
+         *
+         * @return pathname
+         */
+        virtual paths::pathname subpath() const = 0;
+
+        /**
+         * Sets the subpath to the directory within the parent virtual
+         * file system.
+         *
+         * @param subpath The subpath to set.
+         */
+        virtual void subpath(const paths::pathname &subpath) = 0;
+
+        /**
+         * Returns the logical path to the directory that is the path
+         * returned by subpath() concatenated to the path returned by
+         * path().
+         */
+        virtual paths::pathname logical_path() const = 0;
+
 
         /**
          * Determines the directory type of the directory @a path.
@@ -291,7 +133,7 @@ namespace nuc {
          *
          * @param path Path to the directory.
          */
-        static dir_type get(const paths::pathname &path);
+        static std::shared_ptr<dir_type> get(const paths::pathname &path);
 
         /**
          * Determines the directory type of the entry @a ent within
@@ -302,7 +144,7 @@ namespace nuc {
          * @param path Path to the directory containing the entry.
          * @param ent  The entry within the directory @a path.
          */
-        static dir_type get(const paths::pathname &path, const dir_entry &ent);
+        static std::shared_ptr<dir_type> get(const paths::pathname &path, const dir_entry &ent);
 
         /**
          * Returns a directory writer object for creating files in the

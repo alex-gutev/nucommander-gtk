@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,89 +37,115 @@
 #include "stream/reg_dir_writer.h"
 #include "stream/archive_dir_writer.h"
 
+using namespace nuc;
 
 /**
- * Creates a dir_lister object.
+ * Regular directory type.
  *
- * @param path Path to the directory
- *
- * @return The dir_lister object.
+ * For on disk directories readable directly using the OS's file
+ * system API.
  */
-static nuc::lister * make_dir_lister(const nuc::paths::pathname &path) {
-    return new nuc::dir_lister(path);
-}
+class reg_dir_type : public dir_type {
+    paths::pathname m_path;
+
+public:
+    reg_dir_type(paths::pathname path) : m_path(path) {}
+
+    virtual std::shared_ptr<dir_type> copy() const {
+        return std::make_shared<reg_dir_type>(*this);
+    }
+
+    virtual lister * create_lister() const {
+        return new dir_lister(m_path);
+    }
+
+    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+        return new dir_tree_lister(m_path, subpaths);
+    }
+
+    virtual dir_tree * create_tree() const {
+        return new dir_tree();
+    }
+
+    virtual bool is_dir() const {
+        return true;
+    }
+
+    virtual paths::pathname path() const {
+        return m_path;
+    }
+
+    virtual paths::pathname subpath() const {
+        return "";
+    }
+
+    virtual void subpath(const paths::pathname &subpath) {}
+
+    virtual paths::pathname logical_path() const {
+        return m_path;
+    }
+};
 
 /**
- * Creates a dir_tree_lister object.
- *
- * @param path Path to the directory.
- * @param subpaths Subpaths, within the directory, to list.
- *
- * @return The tree_lister object.
+ * Archive directory type.
  */
-static nuc::tree_lister * make_dir_tree_lister(const nuc::paths::pathname &dir, const std::vector<nuc::paths::pathname> &subpaths) {
-    return new nuc::dir_tree_lister(dir, subpaths);
-}
+class archive_dir_type : public dir_type {
+    archive_plugin * plugin;
 
-/**
- * Creates an archive_lister object initialized with the archive
- * plugin @a plugin.
- *
- * @param plugin The archive plugin.
- * @param path Path to the archive.
- *
- * @return The archive_lister object.
- */
-static nuc::lister * make_archive_lister(nuc::archive_plugin *plugin, const nuc::paths::pathname &path) {
-    plugin->load();
-    return new nuc::archive_lister(plugin, path);
-}
+    paths::pathname m_path;
+    paths::pathname m_subpath;
 
-/**
- * Creates an archive_tree_lister object.
- *
- * @param path Path to the archive.
- * @param base Subpath within the archive.
- * @param subpaths Subpaths, within the @a base directory , to list.
- *
- * @return The tree_lister object.
- */
-static nuc::tree_lister * make_archive_tree_lister(nuc::archive_plugin *plugin, const nuc::paths::pathname &base, const std::vector<nuc::paths::pathname> &subpaths) {
-    return new nuc::archive_tree_lister(plugin, base, subpaths);
-}
+public:
+    archive_dir_type(archive_plugin *plugin, paths::pathname path, paths::pathname subpath)
+        : plugin(plugin), m_path(path), m_subpath(subpath) {}
 
-/**
- * Creates a dir_tree object.
- *
- * @param subpath Ignored as dir_tree objects don't have
- *    subdirectories.
- *
- * @return The dir_tree object.
- */
-static nuc::dir_tree * make_dir_tree(const nuc::paths::pathname &subpath) {
-    return new nuc::dir_tree();
-}
+    virtual std::shared_ptr<dir_type> copy() const {
+        return std::make_shared<archive_dir_type>(*this);
+    }
 
-/**
- * Creates an archive_tree object with the initial subdirectory at @a
- * subpath.
- *
- * @param subpath The subpath of the initial subdirectory.
- *
- * @return The archive_tree object.
- */
-static nuc::dir_tree * make_archive_tree(nuc::paths::pathname subpath) {
-    return new nuc::archive_tree(std::move(subpath));
-}
+    virtual lister * create_lister() const {
+        plugin->load();
+        return new archive_lister(plugin, m_path);
+    }
+
+    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+        plugin->load();
+        return new archive_tree_lister(plugin, m_path, subpaths);
+    }
+
+    virtual dir_tree * create_tree() const {
+        return new archive_tree(m_subpath);
+    }
+
+    virtual bool is_dir() const {
+        return false;
+    }
+
+    virtual paths::pathname path() const {
+        return m_path;
+    }
+
+    virtual paths::pathname subpath() const {
+        return m_subpath;
+    }
+
+    virtual void subpath(const paths::pathname &subpath) {
+        m_subpath = subpath;
+    }
+
+    virtual paths::pathname logical_path() const {
+        return m_path.append(m_subpath);
+    }
+};
 
 
-/// Private methods
+/// Path Canonicalization Utilities
 
-nuc::paths::pathname nuc::dir_type::canonicalize(const paths::pathname &path) {
+static paths::pathname canonicalize(const paths::pathname &path) {
     return path.expand_tilde().canonicalize();
 }
 
-nuc::paths::string nuc::dir_type::find_match_comp(const paths::string &dir, const paths::string &comp) {
+static paths::string find_match_comp(const paths::string &dir, const paths::string &comp) {
     if (comp == "/")
         return comp;
 
@@ -140,12 +166,12 @@ nuc::paths::string nuc::dir_type::find_match_comp(const paths::string &dir, cons
 
         return match.empty() ? comp : match;
 
-    } catch(const nuc::error &e) {
+    } catch(const error &e) {
         return "";
     }
 }
 
-std::pair<nuc::paths::pathname, nuc::paths::pathname> nuc::dir_type::canonicalize_case(const paths::pathname &path) {
+static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths::pathname &path) {
     paths::pathname cpath;
     auto comps(path.components());
 
@@ -166,7 +192,7 @@ std::pair<nuc::paths::pathname, nuc::paths::pathname> nuc::dir_type::canonicaliz
 }
 
 
-std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::find_dir(const paths::string &path) {
+static std::pair<paths::string, paths::string> find_dir(const paths::string &path) {
     paths::string sub_path = path;
     size_t sep_index = paths::string::npos;
 
@@ -184,65 +210,41 @@ std::pair<nuc::paths::string, nuc::paths::string> nuc::dir_type::find_dir(const 
     );
 }
 
-
-bool nuc::dir_type::is_reg_dir(const paths::string &path) {
+static bool is_reg_dir(const paths::string &path) {
     struct stat st;
 
     return !stat(path.c_str(), &st) && S_ISDIR(st.st_mode);
 }
 
+
 /// Public static methods
 
 // Getting a dir_type object
 
-nuc::dir_type nuc::dir_type::get(const paths::pathname &path) {
-    using namespace std::placeholders;
-
+std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path) {
     auto pair = canonicalize_case(canonicalize(path));
 
     if (!pair.second.empty() || !is_reg_dir(pair.first)) {
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
-            return dir_type(std::move(pair.first),
-                            std::bind(make_archive_lister, plugin, _1),
-                            std::bind(make_archive_tree_lister, plugin, _1, _2),
-                            make_archive_tree,
-                            false,
-                            std::move(pair.second));
+            return std::make_shared<archive_dir_type>(plugin, pair.first, pair.second);
         }
     }
 
-    if (!pair.second.empty())
-        pair.first = pair.first.append(pair.second);
-
-    return dir_type(std::move(pair.first),
-                    make_dir_lister,
-                    make_dir_tree_lister,
-                    make_dir_tree,
-                    true,
-                    "");
+    return std::make_shared<reg_dir_type>(pair.first.append(pair.second));
 }
 
-nuc::dir_type nuc::dir_type::get(const paths::pathname &path, const dir_entry& ent) {
-    using namespace std::placeholders;
-
+std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path, const dir_entry& ent) {
     switch (ent.type()) {
     case dir_entry::type_dir:
-        return dir_type(path.append(ent.file_name()),
-                        make_dir_lister,
-                        make_dir_tree_lister,
-                        make_dir_tree, true, "");
+        return std::make_shared<reg_dir_type>(path.append(ent.file_name()));
 
     case dir_entry::type_reg:
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
-            return dir_type(path.append(ent.file_name()),
-                            std::bind(make_archive_lister, plugin, _1),
-                            std::bind(make_archive_tree_lister, plugin, _1, _2),
-                            make_archive_tree,
-                            false, "");
+            return std::make_shared<archive_dir_type>(plugin, path.append(ent.file_name()), "");
         }
 
     default:
-        return dir_type();
+        return nullptr;
 
     }
 }
@@ -250,7 +252,7 @@ nuc::dir_type nuc::dir_type::get(const paths::pathname &path, const dir_entry& e
 
 // Getting a directory writer object
 
-nuc::dir_writer * nuc::dir_type::get_writer(const paths::pathname &path) {
+dir_writer * dir_type::get_writer(const paths::pathname &path) {
     paths::pathname cpath = path.expand_tilde();
     std::pair<paths::string, paths::string> parts = find_dir(cpath);
 
@@ -268,7 +270,7 @@ nuc::dir_writer * nuc::dir_type::get_writer(const paths::pathname &path) {
 
 // Querying Directory Type Properties
 
-nuc::dir_type::fs_type nuc::dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
+dir_type::fs_type dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
     auto path1 = find_dir(dir1).first;
     auto path2 = find_dir(dir2).first;
 
@@ -286,10 +288,10 @@ nuc::dir_type::fs_type nuc::dir_type::on_same_fs(const paths::string &dir1, cons
     return fs_type_none;
 }
 
-
-nuc::paths::pathname nuc::dir_type::get_subpath(const paths::pathname &path) {
+paths::pathname dir_type::get_subpath(const paths::pathname &path) {
     return find_dir(path).second;
 }
+
 
 // Local Variables:
 // indent-tabs-mode: nil

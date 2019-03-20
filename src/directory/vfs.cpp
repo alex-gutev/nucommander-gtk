@@ -110,11 +110,11 @@ void vfs::add_read_task(const paths::pathname &path, bool refresh, std::shared_p
                std::bind(&vfs::finish_read, _1, _2, tstate));
 }
 
-void vfs::add_read_task(dir_type type, bool refresh,  std::shared_ptr<delegate> del) {
+void vfs::add_read_task(std::shared_ptr<dir_type> type, bool refresh,  std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
     auto tstate = std::make_shared<read_dir_state>(refresh, del);
-    tstate->type = std::move(type);
+    tstate->type = type;
 
     queue_task(std::bind(&vfs::list_dir, _1, _2, tstate),
                std::bind(&vfs::finish_read, _1, _2, tstate));
@@ -124,7 +124,7 @@ void vfs::add_refresh_task() {
     using namespace std::placeholders;
 
     if (auto del = cb_changed())
-        add_read_task(dtype, true, del);
+        add_read_task(dtype->copy(), true, del);
 }
 
 
@@ -136,7 +136,7 @@ bool vfs::descend(const dir_entry &ent, std::shared_ptr<delegate> del) {
         return true;
     }
     else {
-        if (dir_type type = dir_type::get(dtype.path(), ent)) {
+        if (auto type = dir_type::get(dtype->path(), ent)) {
             cancel_update();
             add_read_task(type, false, del);
             return true;
@@ -186,7 +186,7 @@ void vfs::finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> 
         int error = tstate->error;
 
         if (!cancelled && !error) {
-            self->dtype.subpath(tstate->subpath);
+            self->dtype->subpath(tstate->subpath);
             self->cur_tree->subpath(tstate->subpath);
         }
 
@@ -211,7 +211,7 @@ void vfs::refresh_subdir() {
         }
 
         cur_tree->subpath(subpath);
-        sig_deleted.emit(dtype.path().append(subpath));
+        sig_deleted.emit(dtype->path().append(subpath));
     }
 }
 
@@ -252,12 +252,12 @@ void vfs::list_dir(cancel_state& state, std::shared_ptr<read_dir_state> tstate) 
         if (!tstate->refresh) reading = true;
     });
 
-    tstate->tree.reset(tstate->type.create_tree());
+    tstate->tree.reset(tstate->type->create_tree());
 
     call_begin(state, tstate->m_delegate);
 
     try {
-        std::unique_ptr<lister> listr(tstate->type.create_lister());
+        std::unique_ptr<lister> listr(tstate->type->create_lister());
 
         lister::entry ent;
         struct stat st;
@@ -288,7 +288,7 @@ void vfs::finish_read(bool cancelled, std::shared_ptr<read_dir_state> tstate) {
         // Swap new tree and old tree and set new directory type
         if (!cancelled && !error) {
             self->cur_tree.swap(tstate->tree);
-            self->dtype = std::move(tstate->type);
+            self->dtype = tstate->type;
         }
 
         // Call finish callback
@@ -348,7 +348,7 @@ void vfs::resume_monitor() {
 
 void vfs::monitor_dir(bool paused) {
     if (!finalized) {
-        monitor.monitor_dir(dtype.path(), paused, dtype.is_dir());
+        monitor.monitor_dir(dtype->path(), paused, dtype->is_dir());
     }
 }
 
@@ -391,7 +391,7 @@ void vfs::file_event(dir_monitor::event e) {
             // Reset to base directory so that attempts to ascend up
             // the tree fail.
             cur_tree->subpath("");
-            sig_deleted.emit(dtype.path());
+            sig_deleted.emit(dtype->path());
             break;
 
         case dir_monitor::DIR_MODIFIED:
@@ -531,13 +531,13 @@ void vfs::call_begin(cancel_state &state, std::shared_ptr<delegate> del) {
 task_queue::task_type vfs::access_file(const dir_entry &ent, std::function<void(const paths::pathname &)> fn) {
     using namespace std::placeholders;
 
-    if (!dtype.is_dir()) {
+    if (!dtype->is_dir()) {
         return make_unpack_task(dtype, ent.orig_subpath(), [=] (const char *path) {
             fn(paths::pathname(path));
         });
     }
     else {
-        paths::pathname full_path = dtype.path().append(ent.orig_subpath());
+        paths::pathname full_path = dtype->path().append(ent.orig_subpath());
 
         return std::bind(fn, full_path);
     }

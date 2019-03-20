@@ -34,7 +34,7 @@ using namespace nuc;
  *
  * @return The number of files in the directory.
  */
-static size_t count_files(std::shared_ptr<cancel_state> state, const dir_type &type, const paths::pathname &dir);
+static size_t count_files(std::shared_ptr<cancel_state> state, std::shared_ptr<dir_type> type, const paths::pathname &dir);
 
 /**
  * Calls the callback function, with the number of files, on the main
@@ -46,7 +46,7 @@ static size_t count_files(std::shared_ptr<cancel_state> state, const dir_type &t
  */
 static void call_callback(std::shared_ptr<cancel_state> state, dir_size_callback callback, size_t nfiles);
 
-void nuc::dir_size(std::shared_ptr<cancel_state> state, const dir_type &type, const paths::pathname &dir, dir_size_callback callback) {
+void nuc::dir_size(std::shared_ptr<cancel_state> state, std::shared_ptr<dir_type> type, const paths::pathname &dir, dir_size_callback callback) {
     using namespace std::placeholders;
 
     dispatch_async([=] {
@@ -64,8 +64,8 @@ void nuc::dir_size(std::shared_ptr<cancel_state> state, const dir_type &type, co
     });
 }
 
-size_t count_files(std::shared_ptr<cancel_state> state, const dir_type &type, const paths::pathname &dir) {
-    std::unique_ptr<tree_lister> lister{type.create_tree_lister({dir})};
+size_t count_files(std::shared_ptr<cancel_state> state, std::shared_ptr<dir_type> type, const paths::pathname &dir) {
+    std::unique_ptr<tree_lister> lister{type->create_tree_lister({dir})};
     size_t nfiles = 0;
 
     lister->list_entries([&] (const lister::entry &ent, const struct stat *, tree_lister::visit_info info) {

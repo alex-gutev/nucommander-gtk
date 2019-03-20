@@ -46,7 +46,7 @@ namespace nuc {
      *    the directory @a src_type, to the destination directory with
      *    writer @a dest.
      */
-    task_queue::task_type make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest);
+    task_queue::task_type make_move_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest);
 
     /**
      * Moves the files returned by the tree lister @a lister to the

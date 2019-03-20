@@ -42,7 +42,7 @@ namespace nuc {
      * @return A task which deletes the entries @a entries, located in
      *    the directory @a src_type.
      */
-    task_queue::task_type make_delete_task(dir_type src_type, const std::vector<dir_entry*> &entries);
+    task_queue::task_type make_delete_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries);
 }
 
 #endif

@@ -52,7 +52,7 @@ struct begin_copy_exception {};
  *
  * @param dest Path to the destination directory.
  */
-static void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
+static void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
 
 /**
  * Copies the files in @a paths to the destination directory @a dest.
@@ -67,9 +67,9 @@ static void move_or_copy(cancel_state &state, const dir_type &src_type, const st
  *
  * @param dest Path to the destination directory.
  */
-static void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
+static void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
 
-task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest) {
+task_queue::task_type nuc::make_move_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest) {
     std::vector<paths::pathname> paths = lister_paths(entries);
 
     return [=] (cancel_state &state) {
@@ -86,11 +86,11 @@ task_queue::task_type nuc::make_move_task(dir_type src_type, const std::vector<d
     };
 }
 
-void move_or_copy(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
     // Check that the source and destination directories are on the
     // same file system.
-    if (auto fs_type = dir_type::on_same_fs(src_type.path(), dest)) {
-        std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.path()));
+    if (auto fs_type = dir_type::on_same_fs(src_type->path(), dest)) {
+        std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type->path()));
 
         error_handler handler([=] (const error &e) {
             if (e.code() == EXDEV) {
@@ -135,15 +135,15 @@ void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, c
     }
 }
 
-void copy_files(cancel_state &state, const dir_type &src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
     paths::pathname dest_dir;
     map_name_fn map_name;
 
     std::tie(dest_dir, map_name) = determine_dest_dir(dest, paths);
 
-    std::unique_ptr<dir_writer> src_writer{dir_type::get_writer(src_type.logical_path())};
+    std::unique_ptr<dir_writer> src_writer{dir_type::get_writer(src_type->logical_path())};
 
-    std::unique_ptr<tree_lister> lister{src_type.create_tree_lister(paths)};
+    std::unique_ptr<tree_lister> lister{src_type->create_tree_lister(paths)};
     std::unique_ptr<dir_writer> dest_writer{dir_type::get_writer(dest_dir)};
 
     lister->add_list_callback([&] (const lister::entry &ent, const struct stat *st, tree_lister::visit_info info) {

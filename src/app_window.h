@@ -260,7 +260,7 @@ namespace nuc {
              * Type of the directory containing the files being
              * processed.
              */
-            dir_type type;
+            std::shared_ptr<dir_type> type;
 
             /**
              * Current file hierarchy depth.
@@ -301,7 +301,7 @@ namespace nuc {
              * @param type The type of the parent directory of the
              *   files being processed.
              */
-            progress_fn(progress_dialog *dialog, const dir_type &type) : type(type), dialog(dialog) {}
+            progress_fn(progress_dialog *dialog, std::shared_ptr<dir_type> type) : type(type), dialog(dialog) {}
             progress_fn(progress_dialog *dialog) : dialog(dialog) {}
 
             /**
@@ -378,7 +378,7 @@ namespace nuc {
          *
          * @return The callback function.
          */
-        progress_event::callback get_progress_fn(const dir_type &type);
+        progress_event::callback get_progress_fn(std::shared_ptr<dir_type> type);
 
         /**
          * Returns a pointer to the open directory list popup.

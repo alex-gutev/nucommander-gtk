@@ -37,13 +37,13 @@
  */
 static void delete_task(nuc::cancel_state &state, nuc::tree_lister &lister, nuc::dir_writer &writer);
 
-nuc::task_queue::task_type nuc::make_delete_task(dir_type src_type, const std::vector<dir_entry*> &entries) {
+nuc::task_queue::task_type nuc::make_delete_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries) {
     return [=] (cancel_state &state) {
         state.call_progress(progress_event(progress_event::type_begin));
 
         try {
-            std::unique_ptr<tree_lister> lister(src_type.create_tree_lister(lister_paths(entries)));
-            std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type.logical_path()));
+            std::unique_ptr<tree_lister> lister(src_type->create_tree_lister(lister_paths(entries)));
+            std::unique_ptr<dir_writer> writer(dir_type::get_writer(src_type->logical_path()));
 
             delete_task(state, *lister, *writer);
         }

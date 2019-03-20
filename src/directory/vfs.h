@@ -48,7 +48,7 @@ namespace nuc {
          *
          * Should only be modified from the main thread.
          */
-        dir_type dtype;
+        std::shared_ptr<dir_type> dtype;
 
 
         /* Directory Tree */
@@ -261,7 +261,7 @@ namespace nuc {
          * @return The current path.
          */
         paths::string path() {
-            return dtype.logical_path();
+            return dtype->logical_path();
         }
 
         /**
@@ -322,7 +322,7 @@ namespace nuc {
          *
          * @return     dir_type
          */
-        dir_type directory_type() const {
+        std::shared_ptr<dir_type> directory_type() const {
             return dtype;
         }
 
@@ -405,7 +405,7 @@ namespace nuc {
             std::atomic<int> error{0};
 
             /** dir_type of directory to read */
-            dir_type type;
+            std::shared_ptr<dir_type> type;
             /** dir_tree into which directory is read */
             std::unique_ptr<dir_tree> tree;
 
@@ -446,7 +446,7 @@ namespace nuc {
          *
          * @param del The delegate object for the read operation.
          */
-        void add_read_task(dir_type type, bool refresh, std::shared_ptr<delegate> del);
+        void add_read_task(std::shared_ptr<dir_type> type, bool refresh, std::shared_ptr<delegate> del);
 
         /**
          * Adds a directory refresh task, for the current directory,

@@ -48,7 +48,7 @@ namespace nuc {
      *    the directory @a src_type, to the destination directory with
      *    writer @a dest.
      */
-    task_queue::task_type make_copy_task(dir_type src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
+    task_queue::task_type make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
 
     /**
      * Returns the subpaths of the entries which should be visited by
@@ -121,7 +121,7 @@ namespace nuc {
      *
      * @return The task.
      */
-    task_queue::task_type make_unpack_task(const dir_type &src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback);
+    task_queue::task_type make_unpack_task(std::shared_ptr<dir_type> src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback);
 }
 
 #endif
