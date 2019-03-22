@@ -88,6 +88,33 @@ const char * nuc_arch_error_string(void *handle);
  */
 
 /**
+ * Creates an unpacker for an archive where the actual archive data is
+ * returned by a read callback function rather than read directly from
+ * a file.
+ *
+ * The purpose of this function is to allow unpacking of archives
+ * directly from memory. This is used to read archives nested within
+ * other archives.
+ *
+ * @param read_fn Read callback function.
+ *
+ * @param skip_fn Skip callback function. May be NULL in which case
+ *   the plugin should call manually skip over data returned by the
+ *   read callback.
+ *
+ * @param ctx Context pointer which is passed as the first argument to
+ *   the read and skip callback functions.
+ *
+ * @param error Pointer to a integer which is set to an error constant
+ *   if an error occurs.
+ *
+ * @return Handle to the archive unpacker, or NULL if an error
+ *   occurred, in which case an appropriate NUC_AP_ error code should
+ *   be stored in the location pointed to by @a error.
+ */
+void *nuc_arch_open_unpack(nuc_arch_read_callback read_fn, nuc_arch_skip_callback skip_fn, void *ctx, int *error);
+
+/**
  * Reads the next entry's metadata from the archive.
  *
  * @param handle The handle to the archive.

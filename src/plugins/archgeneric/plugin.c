@@ -60,6 +60,19 @@ typedef struct nuc_arch_handle {
      */
     nuc_arch_progress_fn callback;
     void *ctx;
+
+    /**
+     * Read callback function.
+     */
+    nuc_arch_read_callback read_fn;
+    /**
+     * Skip callback function.
+     */
+    nuc_arch_skip_callback skip_fn;
+    /**
+     * Context pointer argument for read and skip callbacks.
+     */
+    void *read_ctx;
 } nuc_arch_handle;
 
 
@@ -104,6 +117,54 @@ static int close_unpack(nuc_arch_handle *);
  *    if an error occurred.
  */
 static int close_pack(nuc_arch_handle *);
+
+/**
+ * Open callback function.
+ *
+ * @param ar Archive handle.
+ * @param ctx Plugin handle.
+ *
+ * @return Always returns ARCHIVE_OK.
+ */
+int open_callback(struct archive *ar, void *ctx);
+/**
+ * Open callback function.
+ *
+ * @param ar Archive handle.
+ * @param ctx Plugin handle.
+ *
+ * @return Always returns ARCHIVE_OK.
+ */
+int close_callback(struct archive *ar, void *ctx);
+/**
+ * Read callback function.
+ *
+ * Calls the read callback function provided to the plugin in
+ * nuc_arch_open_unpack.
+ *
+ * @param ar Archive handle.
+ *
+ * @param ctx Plugin handle.
+ *
+ * @param buffer Pointer to pointer which is set to point to the block
+ *   of data read.
+ *
+ * @return The number of bytes read, 0 on EOF or -1 on error.
+ */
+ssize_t read_callback(struct archive *ar, void *ctx, const void **buffer);
+/**
+ * Skip callback function.
+ *
+ * Calls the skip callback function provided to the plugin in
+ * nuc_arch_open_unpack.
+ *
+ * @param ar Archive handle.
+ * @param ctx Plugin handle.
+ * @param request The number of bytes to skip.
+ *
+ * @return The number of bytes actually skipped.
+ */
+off_t skip_callback(struct archive *ar, void *ctx, off_t request);
 
 /**
  * Writes a block of zeroes to the archive.
@@ -210,6 +271,82 @@ int open_pack(const char *file, nuc_arch_handle *handle) {
 }
 
 
+//// Unpacking Raw Data
+
+EXPORT
+void *nuc_arch_open_unpack(nuc_arch_read_callback read_fn, nuc_arch_skip_callback skip_fn, void *ctx, int *error) {
+    nuc_arch_handle *handle = malloc(sizeof(nuc_arch_handle));
+    int err;
+
+    if (!handle) {
+        *error = NUC_AP_FATAL;
+        return NULL;
+    }
+
+    handle->callback = NULL;
+    handle->dest_file = NULL;
+    handle->mode = NUC_AP_MODE_UNPACK;
+
+    handle->read_fn = read_fn;
+    handle->skip_fn = skip_fn;
+    handle->read_ctx = ctx;
+
+    if (!(handle->ar = archive_read_new())) {
+        *error = NUC_AP_FATAL;
+        goto free_mem;
+    }
+
+    if ((err = archive_read_support_filter_all(handle->ar)) != ARCHIVE_OK) {
+        goto cleanup;
+    }
+
+    if ((err = archive_read_support_format_all(handle->ar)) != ARCHIVE_OK) {
+        goto cleanup;
+    }
+
+    if ((err = archive_read_open(handle->ar, handle, open_callback, read_callback, close_callback)) != ARCHIVE_OK) {
+        goto cleanup;
+    }
+
+    return handle;
+
+cleanup:
+    *error = err_code(handle, err);
+    archive_read_free(handle->ar);
+
+free_mem:
+
+    free(handle);
+    return NULL;
+}
+
+int open_callback(struct archive *ar, void *ctx) {
+    return ARCHIVE_OK;
+}
+
+int close_callback(struct archive *ar, void *ctx) {
+    return ARCHIVE_OK;
+}
+
+ssize_t read_callback(struct archive *ar, void *ctx, const void **buffer) {
+    nuc_arch_handle *handle = ctx;
+
+    ssize_t n = handle->read_fn(handle->read_ctx, buffer);
+
+    if (n < 0) {
+	    /* TODO: Call archive_set_erro */
+	    return ARCHIVE_FATAL;
+    }
+
+    return n;
+}
+
+off_t skip_callback(struct archive *ar, void *ctx, off_t request) {
+    nuc_arch_handle *handle = ctx;
+    return handle->skip_fn(handle->read_ctx, request);
+}
+
+
 //// Closing Archives
 
 EXPORT
@@ -252,14 +389,14 @@ int close_pack(nuc_arch_handle *handle) {
 
 EXPORT
 int nuc_arch_error_code(void *ctx) {
-	nuc_arch_handle *handle = ctx;
-	return archive_errno(handle->ar);
+    nuc_arch_handle *handle = ctx;
+    return archive_errno(handle->ar);
 }
 
 EXPORT
 const char * nuc_arch_error_string(void *ctx) {
-	nuc_arch_handle *handle = ctx;
-	return archive_error_string(handle->ar);
+    nuc_arch_handle *handle = ctx;
+    return archive_error_string(handle->ar);
 }
 
 
@@ -335,8 +472,8 @@ int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nu
 
     // Update attributes if new attributes provided
     if (ent) {
-	    if (ent->path) archive_entry_set_pathname(src->ent, ent->path);
-	    if (ent->stat) archive_entry_copy_stat(src->ent, ent->stat);
+        if (ent->path) archive_entry_set_pathname(src->ent, ent->path);
+        if (ent->stat) archive_entry_copy_stat(src->ent, ent->stat);
     }
 
     if ((err = err_code(dest, archive_write_header(dest->ar, src->ent)))) {
@@ -380,7 +517,7 @@ int nuc_arch_create_entry(void *ctx, const nuc_arch_entry *ent) {
     archive_entry_copy_stat(ar_ent, ent->stat);
 
     if (S_ISLNK(ent->stat->st_mode) && ent->symlink_dest)
-	    archive_entry_set_symlink(ar_ent, ent->symlink_dest);
+        archive_entry_set_symlink(ar_ent, ent->symlink_dest);
 
     err = err_code(handle, archive_write_header(handle->ar, ar_ent));
 

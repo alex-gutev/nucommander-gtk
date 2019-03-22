@@ -144,6 +144,34 @@ typedef enum {
  */
 typedef nuc_arch_prog_act(*nuc_arch_progress_fn)(void *ctx, nuc_arch_prog_type type, int error, size_t bytes);
 
+/**
+ * Read callback function type.
+ *
+ * Called by the plugin to read the next block of data of the archive
+ * file.
+ *
+ * @param ctx Context pointer.
+ *
+ * @param buffer Pointer to a pointer which should be set to point to
+ *   the block just read.
+ *
+ * @return The size of the block read. 0 if the end of file was
+ *   reached (no data was read). -1 if an error occurred.
+ */
+typedef ssize_t(*nuc_arch_read_callback)(void *ctx, const void **buffer);
+/**
+ * Skip callback function type.
+ *
+ * Called by the plugin to skip the next block of bytes.
+ *
+ * @param ctx Context pointer.
+ * @param n The number of bytes to skip.
+ *
+ * @return The number of bytes actually skipped, which may be less
+ *   than the @a n.
+ */
+typedef off_t(*nuc_arch_skip_callback)(void *ctx, off_t n);
+
 #endif // NUC_ARCHIVE_PLUGIN_TYPES_H
 
 /* Local Variables: */
