@@ -47,7 +47,7 @@ namespace nuc {
         /**
          * Archive lister for reading the archive.
          */
-        archive_lister listr;
+        std::unique_ptr<archive_lister> listr;
 
         /**
          * Checks whether the entry @a path should be visited,
@@ -109,13 +109,25 @@ namespace nuc {
          */
         archive_tree_lister(archive_plugin *plugin, const paths::pathname &archive, const std::vector<paths::pathname> &paths);
 
+        /**
+         * Creates an archive tree lister.
+         *
+         * @param listr The lister object for listing the archive.
+         *
+         * @param paths Subpaths, within the archive, of the directory
+         *    trees to list (base paths). All paths should be
+         *    canonicalized and paths to directories should have a
+         *    trailing slash '/'.
+         */
+        archive_tree_lister(archive_lister* listr, const std::vector<paths::pathname> &paths);
+
 
         /* Method Overrides */
 
         virtual void list_entries(const list_callback &fn);
 
         virtual instream * open_entry() {
-            return listr.open_entry();
+            return listr->open_entry();
         }
 
         virtual std::string symlink_path();

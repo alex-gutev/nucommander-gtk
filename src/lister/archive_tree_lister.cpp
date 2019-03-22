@@ -19,11 +19,16 @@
 
 #include "archive_tree_lister.h"
 
+#include "sub_archive_lister.h"
+
 
 using namespace nuc;
 
 archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const paths::pathname &base, const std::vector<paths::pathname> &paths)
-    : visit_paths(paths.begin(), paths.end()), listr(plugin, base) {}
+    : visit_paths(paths.begin(), paths.end()), listr(new archive_lister(plugin, base)) {}
+
+archive_tree_lister::archive_tree_lister(archive_lister *listr, const std::vector<paths::pathname> &paths)
+    : visit_paths(paths.begin(), paths.end()), listr(listr) {}
 
 
 void archive_tree_lister::list_entries(const list_callback &fn) {
@@ -32,7 +37,7 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
 
     add_list_callback(fn);
 
-    while (listr.read_entry(ent)) {
+    while (listr->read_entry(ent)) {
         paths::pathname ent_path = paths::pathname(ent.name).canonicalize();
 
         if (ent.type == DT_DIR)
@@ -40,7 +45,7 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
 
         size_t offset = path_offset(ent_path);
         if (offset != paths::string::npos) {
-            bool got_stat = listr.entry_stat(st);
+            bool got_stat = listr->entry_stat(st);
 
             ent.name = ent_path.path().c_str() + offset;
 
@@ -126,7 +131,7 @@ bool archive_tree_lister::add_dir_stat(const paths::pathname &name, const struct
 }
 
 std::string archive_tree_lister::symlink_path() {
-    return listr.symlink_path();
+    return listr->symlink_path();
 }
 
 // Local Variables:
