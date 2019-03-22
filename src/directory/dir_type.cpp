@@ -30,6 +30,7 @@
 
 #include "lister/dir_tree_lister.h"
 #include "lister/archive_tree_lister.h"
+#include "lister/sub_archive_lister.h"
 
 #include "archive_tree.h"
 #include "plugins/archive_plugin_loader.h"
@@ -135,6 +136,87 @@ public:
 
     virtual paths::pathname logical_path() const {
         return m_path.append(m_subpath);
+    }
+};
+
+/**
+ * Archive nested in another archive directory type.
+ */
+class sub_archive_dir_type : public dir_type {
+    /**
+     * Plugin for reading the nested archive.
+     */
+    archive_plugin *plugin;
+
+    /**
+     * Directory type of the archive containing this archive.
+     */
+    std::shared_ptr<dir_type> parent_type;
+
+    /**
+     * Subpath to the archive within the containing archive.
+     */
+    paths::pathname m_path;
+    /**
+     * Subpath within the archive.
+     */
+    paths::pathname m_subpath;
+
+public:
+    sub_archive_dir_type(archive_plugin *plugin, std::shared_ptr<dir_type> parent_type, const paths::pathname &path, const paths::pathname &subpath)
+        : plugin(plugin), parent_type(parent_type), m_path(path), m_subpath(subpath) {}
+
+    virtual std::shared_ptr<dir_type> copy() const {
+        return std::make_shared<sub_archive_dir_type>(*this);
+    }
+
+
+    virtual archive_lister * create_lister() const {
+        plugin->load();
+
+        // Use unique_ptr to automatically delete lister in case of an
+        // exception.
+        std::unique_ptr<lister> parent{parent_type->create_lister()};
+
+        archive_lister *listr = new sub_archive_lister(parent.get(), plugin, m_path);
+        parent.release();
+
+        return listr;
+    }
+
+    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+        // Use unique_ptr to automatically delete lister in case of an
+        // exception.
+        std::unique_ptr<archive_lister> listr{create_lister()};
+
+        tree_lister *tree_list = new archive_tree_lister(listr.get(), subpaths);
+        listr.release();
+
+        return tree_list;
+    }
+
+    virtual dir_tree * create_tree() const {
+        return new archive_tree(m_subpath);
+    }
+
+    virtual bool is_dir() const {
+        return false;
+    }
+
+    virtual paths::pathname path() const {
+        return parent_type->path();
+    }
+
+    virtual paths::pathname subpath() const {
+        return m_subpath;
+    }
+
+    virtual void subpath(const paths::pathname &subpath) {
+        m_subpath = subpath;
+    }
+
+    virtual paths::pathname logical_path() const {
+        return parent_type->logical_path().append(m_path).append(m_subpath);
     }
 };
 
@@ -249,6 +331,20 @@ std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path, const dir_e
     }
 }
 
+std::shared_ptr<dir_type> dir_type::get(std::shared_ptr<dir_type> dir, const nuc::dir_entry &ent) {
+    if (dir->is_dir()) {
+        return get(dir->path(), ent);
+    }
+    else {
+        if (ent.type() == dir_entry::type_reg) {
+            if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(ent.file_name())) {
+                return std::make_shared<sub_archive_dir_type>(plugin, dir, ent.subpath(), "");
+            }
+        }
+    }
+
+    return nullptr;
+}
 
 // Getting a directory writer object
 

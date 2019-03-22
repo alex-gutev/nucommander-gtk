@@ -147,6 +147,15 @@ namespace nuc {
         static std::shared_ptr<dir_type> get(const paths::pathname &path, const dir_entry &ent);
 
         /**
+         * Determines the directory type of the entry @a ent contained
+         * within the directory with type @a dir.
+         *
+         * @param dir The directory type of the parent directory.
+         * @param ent The child entry.
+         */
+        static std::shared_ptr<dir_type> get(std::shared_ptr<dir_type> dir, const dir_entry &ent);
+
+        /**
          * Returns a directory writer object for creating files in the
          * directory at @a path.
          *

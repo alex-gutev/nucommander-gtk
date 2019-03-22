@@ -136,7 +136,7 @@ bool vfs::descend(const dir_entry &ent, std::shared_ptr<delegate> del) {
         return true;
     }
     else {
-        if (auto type = dir_type::get(dtype->path(), ent)) {
+        if (auto type = dir_type::get(dtype, ent)) {
             cancel_update();
             add_read_task(type, false, del);
             return true;
