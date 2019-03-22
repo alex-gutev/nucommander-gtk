@@ -59,9 +59,12 @@ namespace nuc {
          * creates a input stream for the the archive, stored in
          * arch_stream.
          *
+         * If the file is not found in the archive an error is
+         * signalled.
+         *
          * @param subpath Subpath to the archive file.
          */
-        void find_entry(const paths::pathname &subpath);
+        void find_archive_file(const paths::pathname &subpath);
 
         /**
          * Reads a block of data from the archive file.

@@ -25,7 +25,7 @@ sub_archive_lister::sub_archive_lister(lister *parent, archive_plugin *plugin, c
     : archive_lister(plugin), parent_lister(parent) {
     int error = 0;
 
-    find_entry(subpath);
+    find_archive_file(subpath);
 
     if (!(handle = plugin->open_unpack(read_fn, nullptr, this, &error))) {
         raise_error(error);
@@ -37,15 +37,17 @@ sub_archive_lister::~sub_archive_lister() {
     if (parent_lister) delete parent_lister;
 }
 
-void sub_archive_lister::find_entry(const paths::pathname &subpath) {
+void sub_archive_lister::find_archive_file(const paths::pathname &subpath) {
     lister::entry ent;
 
     while (parent_lister->read_entry(ent)) {
-        if (subpath == paths::pathname(ent.name).canonicalize()) {
+        if (ent.type == DT_REG && subpath == paths::pathname(ent.name).canonicalize()) {
             arch_stream = parent_lister->open_entry();
-            break;
+            return;
         }
     }
+
+    throw file_error(ENOENT, error::type_general, false, subpath);
 }
 
 
