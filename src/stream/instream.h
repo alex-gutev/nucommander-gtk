@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ namespace nuc {
     public:
         typedef uint8_t byte;
 
-        virtual ~instream() = default;
+        virtual ~instream();
 
         /**
          * Closes the stream
@@ -59,6 +59,22 @@ namespace nuc {
          */
         virtual const byte *read_block(size_t &size, off_t &offset) = 0;
 
+        /**
+         * Reads a block of data from the input stream. Unlike
+         * read_block(size_t, off_t) this method does not return an
+         * offset to the start of the block. If the underlying data
+         * contains a "hole", a block initialized with null bytes is
+         * returned.
+         *
+         * @param size Reference to the location where the size of the
+         *   block, in bytes, is stored.
+         *
+         * @return Pointer to the byte array containing the data in
+         *    the block. If this is NULL then the end of file has been
+         *    reached.
+         */
+        const byte *read_block(size_t &size);
+
     protected:
         /**
          * Throws an error exception.
@@ -71,6 +87,14 @@ namespace nuc {
         void raise_error(int code, bool can_retry = true, error::type_code type = error::type_read_file) {
             throw error(code, can_retry, type);
         };
+
+    private:
+        // Used by read_block(size_t)
+        const byte *last_block = nullptr;
+        size_t last_block_size = 0;
+
+        byte *null_block = nullptr;
+        size_t gap_size = 0;
     };
 }
 

@@ -37,6 +37,9 @@ archive_lister::archive_lister(archive_plugin *plugin, const paths::string &path
     }
 }
 
+archive_lister::archive_lister(archive_plugin *plugin) : plugin(plugin), handle(nullptr) {}
+
+
 void archive_lister::close() {
     if (handle) plugin->close(handle);
     handle = nullptr;

@@ -48,6 +48,8 @@ nucommander_SOURCES = \
 	lister/dir_lister.cpp \
 	lister/archive_lister.h \
 	lister/archive_lister.cpp \
+	lister/sub_archive_lister.h \
+	lister/sub_archive_lister.cpp \
 	lister/tree_lister.h \
 	lister/tree_lister.cpp \
 	lister/dir_tree_lister.h \
@@ -70,6 +72,7 @@ nucommander_SOURCES = \
 	directory/dir_entry.cpp \
 	stream/error_macros.h \
 	stream/instream.h \
+	stream/instream.cpp \
 	stream/file_instream.h \
 	stream/file_instream.cpp \
 	stream/archive_instream.h \

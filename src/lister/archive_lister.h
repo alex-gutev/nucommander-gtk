@@ -30,6 +30,7 @@ namespace nuc {
      * Lists the contents of archives using an archive plugin.
      */
     class archive_lister : public lister {
+    protected:
         /**
          * Pointer to archive plugin with which the archive is read.
          */
@@ -53,6 +54,15 @@ namespace nuc {
          * @param path Path to the archive file.
          */
         archive_lister(archive_plugin *plugin, const paths::string &path);
+
+        /**
+         * Constructs an archive lister, however does not open any
+         * archive file, that is handle is set to nullptr. This is
+         * intended to be used only by subclasses.
+         *
+         * @param plugin The plugin for reading the archive.
+         */
+        archive_lister(archive_plugin *plugin);
 
         virtual ~archive_lister();
 
