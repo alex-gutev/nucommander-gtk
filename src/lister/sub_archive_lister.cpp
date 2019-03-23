@@ -34,7 +34,6 @@ sub_archive_lister::sub_archive_lister(lister *parent, archive_plugin *plugin, c
 
 sub_archive_lister::~sub_archive_lister() {
     if (arch_stream) delete arch_stream;
-    if (parent_lister) delete parent_lister;
 }
 
 void sub_archive_lister::find_archive_file(const paths::pathname &subpath) {

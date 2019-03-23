@@ -174,25 +174,11 @@ public:
     virtual archive_lister * create_lister() const {
         plugin->load();
 
-        // Use unique_ptr to automatically delete lister in case of an
-        // exception.
-        std::unique_ptr<lister> parent{parent_type->create_lister()};
-
-        archive_lister *listr = new sub_archive_lister(parent.get(), plugin, m_path);
-        parent.release();
-
-        return listr;
+        return new sub_archive_lister(parent_type->create_lister(), plugin, m_path);
     }
 
     virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
-        // Use unique_ptr to automatically delete lister in case of an
-        // exception.
-        std::unique_ptr<archive_lister> listr{create_lister()};
-
-        tree_lister *tree_list = new archive_tree_lister(listr.get(), subpaths);
-        listr.release();
-
-        return tree_list;
+        return new archive_tree_lister(create_lister(), subpaths);
     }
 
     virtual dir_tree * create_tree() const {

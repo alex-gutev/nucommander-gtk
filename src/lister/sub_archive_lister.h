@@ -47,7 +47,7 @@ namespace nuc {
         /**
          * Lister object for the archive containing this archive.
          */
-        lister *parent_lister;
+        std::unique_ptr<lister> parent_lister;
         /**
          * Input stream for the archive file.
          */
