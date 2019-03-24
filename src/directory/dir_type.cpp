@@ -289,17 +289,100 @@ static bool is_reg_dir(const paths::string &path) {
 
 // Getting a dir_type object
 
+/**
+ * Determines the directory type for the sub-directory @a dir nested
+ * within the archive with type @a dtype.
+ *
+ * If @a dir is a directory within the archive, @a dtype is returned
+ * with its subpath set to @a dir.
+ *
+ * If @a dir is an archive file stored within the archive, a new
+ * nested archive directory type is created (for the nested archive)
+ * and returned.
+ *
+ * @param dtype Directory type of the containing archive.
+ * @param dir Directory within the archive.'
+ *
+ * @return dir_type object of the archive directory.
+ */
+static std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const paths::pathname &dir);
+
+/**
+ * Searches the archive with type @a dtype for a regular file entry
+ * whose name is either equal to or a parent component of @a dir.
+ *
+ * @param dtype Type of the containing archive.
+ * @param dir Archive subpath.
+ *
+ * @return A pair where the first entry is the path to the archive
+ *   file found and the second entry is the remaining components of
+ *   the subpath, i.e. the subpath within the archive file.
+ */
+static std::pair<paths::pathname, paths::pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const paths::pathname &dir);
+
+
 std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path) {
     auto pair = canonicalize_case(canonicalize(path));
 
     if (!pair.second.empty() || !is_reg_dir(pair.first)) {
         if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(pair.first)) {
-            return std::make_shared<archive_dir_type>(plugin, pair.first, pair.second);
+            return get_archive_type(std::make_shared<archive_dir_type>(plugin, pair.first, ""), pair.second);
         }
     }
 
     return std::make_shared<reg_dir_type>(pair.first.append(pair.second));
 }
+
+std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const paths::pathname &dir) {
+    paths::pathname file, subpath;
+
+    if (!dir.empty()) {
+        std::tie(file, subpath) = find_archive_file(dtype, dir);
+
+        if (!file.empty()) {
+            if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(file.basename())) {
+                return get_archive_type(std::make_shared<sub_archive_dir_type>(plugin, dtype, file, ""), subpath);
+            }
+        }
+
+        dtype->subpath(dir);
+    }
+
+    return dtype;
+}
+
+std::pair<paths::pathname, paths::pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const paths::pathname &dir) {
+    // Longest subpath of dir that is actually in the archive.
+    paths::pathname subpath;
+
+    std::unique_ptr<lister> listr(dtype->create_lister());
+    lister::entry ent;
+
+    while (listr->read_entry(ent)) {
+        paths::pathname name = ent.name;
+        name = name.canonicalize();
+
+        if (dir == name) {
+            return std::make_pair(ent.type == DT_REG ? dir : "", "");
+        }
+
+        // If the current is a subpath of dir, then dir is a directory
+        // in the archive.
+        if (name.is_subpath(dir)) {
+            return std::make_pair("", "");
+        }
+
+        if (dir.is_subpath(name) && ent.type == DT_REG) {
+            // If name is longer than the previous subpath
+            if (name.path().length() > subpath.path().length()) {
+                subpath = name;
+            }
+        }
+    }
+
+    return subpath.empty() ? std::make_pair("","") : std::make_pair(subpath, dir.path().substr(subpath.path().length() + 1));
+}
+
 
 std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path, const dir_entry& ent) {
     switch (ent.type()) {
