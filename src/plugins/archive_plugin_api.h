@@ -167,6 +167,24 @@ void nuc_arch_set_callback(void *handle, nuc_arch_progress_fn callback, void *ct
  */
 
 /**
+ * Creates a packer for an archive where the actual archive data is
+ * written by calling the write callback function @a write_fn.
+ *
+ * @param write_fn Write callback function.
+ *
+ * @param ctx Context pointer which should be passed as the first
+ *   argument to the write callback.
+ *
+ * @param error Pointer to a integer which is set to an error constant
+ *   if an error occurs.
+ *
+ * @return Handle to the archive unpacker, or NULL if an error
+ *   occurred, in which case an appropriate NUC_AP_ error code should
+ *   be stored in the location pointed to by @a error.
+ */
+void *nuc_arch_open_pack(nuc_arch_write_callback write_fn, void *ctx, int *error);
+
+/**
  * Copies the archive type of the open, for unpacking, archive @a
  * src_handle to the destination archive, open for packing, @a
  * dest_handle.

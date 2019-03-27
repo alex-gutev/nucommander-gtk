@@ -172,6 +172,23 @@ typedef ssize_t(*nuc_arch_read_callback)(void *ctx, const void **buffer);
  */
 typedef off_t(*nuc_arch_skip_callback)(void *ctx, off_t n);
 
+/**
+ * Write callback function type.
+ *
+ * Called by the plugin to write a block of data to the medium in
+ * which the archive is stored.
+ *
+ * @param ctx Context pointer.
+ *
+ * @param buffer Pointer to the block of data to write.
+ *
+ * @param length The size of the buffer.
+ *
+ * @return The number of bytes actually written or -1 if an error
+ *   occurred.
+ */
+typedef ssize_t(*nuc_arch_write_callback)(void *ctx, const void *buffer, size_t length);
+
 #endif // NUC_ARCHIVE_PLUGIN_TYPES_H
 
 /* Local Variables: */
