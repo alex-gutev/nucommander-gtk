@@ -215,7 +215,11 @@ bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
 }
 
 outstream * archive_dir_writer::create(const paths::pathname &path, const struct stat *st, int flags) {
-    create_entry(path.path().c_str(), st);
+    // Default regular file stat structure
+    struct stat reg{};
+    reg.st_mode = S_IFREG | S_IRWXU;
+
+    create_entry(flags & stream_flag_exclusive, path.path().c_str(), st ? st : &reg);
 
     return new archive_outstream(plugin, out_handle);
 }
@@ -227,21 +231,25 @@ void archive_dir_writer::mkdir(const paths::pathname &path, bool defer) {
         struct stat st{};
 
         st.st_mode = S_IFDIR;
-        create_entry(path.path().c_str(), &st);
+        create_entry(false, path.path().c_str(), &st);
     }
 }
 
 void archive_dir_writer::symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st) {
-    create_entry(path.path().c_str(), st, target.path().c_str());
+    // Default symlink stat structure
+    struct stat lnk{};
+    lnk.st_mode = S_IFLNK;
+
+    create_entry(true, path.path().c_str(), st ? st : &lnk, target.path().c_str());
 }
 
 void archive_dir_writer::set_attributes(const paths::pathname &path, const struct stat *st) {
-    if (S_ISDIR(st->st_mode)) {
-        create_entry(path.path().c_str(), st);
+    if (st && S_ISDIR(st->st_mode)) {
+        create_entry(true, path.path().c_str(), st);
     }
 }
 
-void archive_dir_writer::create_entry(const char *path, const struct stat *st, const char *symlink_dest) {
+void archive_dir_writer::create_entry(bool check, const char *path, const struct stat *st, const char *symlink_dest) {
     nuc_arch_entry ent{};
 
     paths::pathname ent_path = subpath.append(path).canonicalize();
@@ -250,11 +258,14 @@ void archive_dir_writer::create_entry(const char *path, const struct stat *st, c
     ent.stat = st;
     ent.symlink_dest = symlink_dest;
 
-    create_entry(&ent);
+    create_entry(check, &ent);
 }
 
-void archive_dir_writer::create_entry(nuc_arch_entry *ent) {
-    check_exists(ent->path);
+void archive_dir_writer::create_entry(bool check, nuc_arch_entry *ent) {
+    if (check)
+        check_exists(ent->path);
+    else
+        remove_old_entry(paths::pathname(ent->path).canonicalize());
 
     try_op([&] {
         if (int err = plugin->create_entry(out_handle, ent))

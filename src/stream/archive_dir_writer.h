@@ -170,14 +170,14 @@ namespace nuc {
          * @param symlink_dest Path to the symlink target if the entry
          *   is a symbolic link.
          */
-        void create_entry(const char *path, const struct stat *st, const char *symlink_dest = nullptr);
+        void create_entry(bool check, const char *path, const struct stat *st, const char *symlink_dest = nullptr);
 
         /**
          * Adds an entry header to the archive.
          *
          * @param ent The entry to add.
          */
-        void create_entry(nuc_arch_entry *ent);
+        void create_entry(bool check, nuc_arch_entry *ent);
 
         /**
          * Checks whether the old archive contains an entry at the

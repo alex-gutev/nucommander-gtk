@@ -36,27 +36,12 @@ using namespace nuc;
 
 
 file_outstream::file_outstream(const char *path, int flags, int perms) : path(path) {
-    int excl = O_EXCL;
-
-    global_restart overwrite(overwrite_restart(excl));
-
-    TRY_OP(error::type_create_file, (fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
+    if ((fd = open(path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC, perms)) < 0)
+        raise_error(errno, error::type_create_file);
 }
 file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms) : path(path) {
-    int excl = O_EXCL;
-
-    global_restart overwrite(overwrite_restart(excl));
-
-    TRY_OP(error::type_create_file, (fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC | excl, perms)) < 0)
-}
-
-restart file_outstream::overwrite_restart(int &excl) {
-    return restart("overwrite", [&excl] (const nuc::error &e, boost::any) {
-        excl = 0;
-    },
-    [] (const nuc::error &e) {
-        return e.code() == EEXIST;
-    });
+    if ((fd = openat(dirfd, path, flags | O_WRONLY | O_CLOEXEC | O_CREAT | O_TRUNC, perms)) < 0)
+        raise_error(errno, error::type_create_file);
 }
 
 void file_outstream::close() {

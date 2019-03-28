@@ -39,6 +39,15 @@ class skip_attribute : public std::exception {};
 template <typename F>
 void with_skip_attrib(F op);
 
+/**
+ * Creates the "overwrite" restart.
+ *
+ * @param flags Reference to a variable which holds the flags passed
+ *   to open. When the restart is invoked, the O_EXCL flag is cleared.
+ *
+ * @return The restart.
+ */
+static restart overwrite_restart(int &flags);
 
 reg_dir_writer::reg_dir_writer(const char *path) {
     TRY_OP((fd = open(path, O_DIRECTORY)) < 0)
@@ -49,12 +58,30 @@ void reg_dir_writer::close() {
 }
 
 outstream * reg_dir_writer::create(const paths::pathname &path, const struct stat *st, int flags) {
-    file_outstream *stream = new file_outstream(fd, path.path().c_str(), flags);
+    int fflags = flags & stream_flag_exclusive ? O_EXCL : 0;
+
+    global_restart overwrite(overwrite_restart(fflags));
+
+    file_outstream *stream;
+
+    try_op([&] {
+        stream = new file_outstream(fd, path.path().c_str(), fflags);
+    });
 
     set_file_attributes(stream->get_fd(), path.path().c_str(), st);
 
     return stream;
 }
+
+restart overwrite_restart(int &flags) {
+    return restart("overwrite", [&flags] (const nuc::error &e, boost::any) {
+        flags &= ~O_EXCL;
+    },
+    [] (const nuc::error &e) {
+        return e.code() == EEXIST;
+    });
+}
+
 
 void reg_dir_writer::mkdir(const paths::pathname &path, bool) {
     TRY_OP_(mkdirat(fd, path.path().c_str(), S_IRWXU),

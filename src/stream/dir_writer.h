@@ -39,6 +39,18 @@ namespace nuc {
      */
     class dir_writer {
     public:
+        /**
+         * Stream Creation Flags
+         */
+        enum stream_creation_flags {
+            /**
+             * If set, the new file is only created if a file with the
+             * same name does not already exist, otherwise an error
+             * exception is thrown.
+             */
+            stream_flag_exclusive = 1,
+        };
+
         virtual ~dir_writer() = default;
 
         /**
@@ -59,7 +71,7 @@ namespace nuc {
          *
          * @return An outstream object for writing data to the file.
          */
-        virtual outstream *create(const paths::pathname &path, const struct stat *st = nullptr, int flags = 0) = 0;
+        virtual outstream *create(const paths::pathname &path, const struct stat *st, int flags = stream_flag_exclusive) = 0;
 
         /**
          * Creates a directory, with read, write and search
@@ -71,7 +83,7 @@ namespace nuc {
          *
          * @param defer If true the creation of the directory may be
          *   deferred until a file is created in it or its attributes
-         *   are set. 
+         *   are set.
          */
         virtual void mkdir(const paths::pathname &path, bool defer = true) = 0;
 

@@ -84,6 +84,15 @@ namespace nuc {
          * @return The target path.
          */
         const char *symlink_path() const;
+
+        /**
+         * Returns the plugin-specific handle to the archive.
+         *
+         * @return Plugin specific handle
+         */
+        void *arch_handle() {
+            return handle;
+        }
     };
 }
 
