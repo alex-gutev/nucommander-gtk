@@ -38,16 +38,19 @@ archive_dir_writer::archive_dir_writer(paths::pathname arch_path, archive_plugin
     }
 }
 
+archive_dir_writer::archive_dir_writer(archive_plugin *plugin, const paths::pathname &path, const paths::pathname &subpath) : plugin(plugin), path(path), subpath(subpath) {}
+
 void archive_dir_writer::open_old() {
     try_op([this] {
-        int err;
-
-        if (!(in_handle = plugin->open(path.path().c_str(), NUC_AP_MODE_UNPACK, &err)))
-            raise_error(errno, err);
+        in_lister = std::unique_ptr<archive_lister>(new archive_lister(plugin, path));
     });
 }
 
 void archive_dir_writer::open_temp() {
+    open_temp(path);
+}
+
+void archive_dir_writer::open_temp(const paths::pathname &path) {
     // Create temporary file name
 
     tmp_path = path;
@@ -87,11 +90,6 @@ archive_dir_writer::~archive_dir_writer() {
 
 
 void archive_dir_writer::close_handles() {
-    if (in_handle) {
-        plugin->close(in_handle);
-        in_handle = nullptr;
-    }
-
     if (out_handle) {
         plugin->close(out_handle);
         out_handle = nullptr;
@@ -102,12 +100,8 @@ void archive_dir_writer::close_handles() {
 }
 
 void archive_dir_writer::close() {
+    open_old();
     copy_old_entries();
-
-    if (in_handle) {
-        plugin->close(in_handle);
-        in_handle = nullptr;
-    }
 
     if (out_handle) {
         int err = plugin->close(out_handle);
@@ -126,13 +120,13 @@ void archive_dir_writer::close() {
 
 
 void archive_dir_writer::get_old_entries() {
-    nuc_arch_entry ent;
+    lister::entry ent;
     bool copied = false;;
 
-    while (next_entry(&ent)) {
-        paths::pathname cpath = paths::pathname(ent.path).canonicalize();
+    while (next_entry(ent)) {
+        paths::pathname cpath = paths::pathname(ent.name).canonicalize();
 
-        add_old_entry(cpath, IFTODT(ent.stat->st_mode));
+        add_old_entry(cpath, ent.type);
 
         add_parent_entries(cpath);
 
@@ -142,8 +136,7 @@ void archive_dir_writer::get_old_entries() {
         }
     }
 
-    plugin->close(in_handle);
-    in_handle = nullptr;
+    in_lister.reset();
 }
 
 void archive_dir_writer::add_parent_entries(paths::pathname path) {
@@ -169,33 +162,30 @@ bool archive_dir_writer::add_old_entry(const paths::pathname &path, int type) {
 
 void archive_dir_writer::copy_archive_type() {
     try_op([=] {
-        if (int err = plugin->copy_archive_type(out_handle, in_handle))
+        if (int err = plugin->copy_archive_type(out_handle, in_lister->arch_handle()))
             // TODO: Obtain error description
             raise_error(errno, err);
     });
 }
 
 void archive_dir_writer::copy_old_entries() {
-    nuc_arch_entry ent;
+    lister::entry ent;
     int err = 0;
 
-    open_old();
-
-    while (next_entry(&ent)) {
-        auto it = old_entries.find(paths::pathname(ent.path).canonicalize());
+    while (next_entry(ent)) {
+        auto it = old_entries.find(paths::pathname(ent.name).canonicalize());
 
         if (it != old_entries.end()) {
-            // Clear all fields of the nuc_arch_entry struct
-            ent = nuc_arch_entry();
+            nuc_arch_entry arch_ent{};
 
             // If the entry should be recreated at a new path, set it
             // in the nuc_arch_entry struct.
             if (!it->second.new_path.empty()) {
-                ent.path = it->second.new_path.path().c_str();
+                arch_ent.path = it->second.new_path.path().c_str();
             }
 
             try_op([=] {
-                if (plugin->copy_last_entry(out_handle, in_handle, &ent))
+                if (plugin->copy_last_entry(out_handle, in_lister->arch_handle(), &arch_ent))
                     // TODO: Obtain error description
                     raise_error(errno, err);
             });
@@ -203,15 +193,14 @@ void archive_dir_writer::copy_old_entries() {
     }
 }
 
-bool archive_dir_writer::next_entry(nuc_arch_entry *ent) {
-    int err;
+bool archive_dir_writer::next_entry(lister::entry &ent) {
+    bool more = false;
+
     try_op([&] {
-        err = plugin->next_entry(in_handle, ent);
-        if (err < 0)
-            raise_plugin_error(in_handle, err);
+        more = in_lister->read_entry(ent);
     });
 
-    return err == NUC_AP_OK;
+    return more;
 }
 
 outstream * archive_dir_writer::create(const paths::pathname &path, const struct stat *st, int flags) {

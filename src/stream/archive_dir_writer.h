@@ -21,11 +21,14 @@
 #define NUC_ARCHIVE_DIR_WRITER_H
 
 #include <map>
+#include <memory>
 
 #include "dir_writer.h"
 
 #include "paths/pathname.h"
 #include "plugins/archive_plugin.h"
+
+#include "lister/archive_lister.h"
 
 namespace nuc {
     /**
@@ -34,6 +37,84 @@ namespace nuc {
      * Writes to archives.
      */
     class archive_dir_writer : public dir_writer {
+    public:
+        /**
+         * Creates an archive directory writer for a particular
+         * subpath within a particular archive.
+         *
+         * @param path Path to the archive file.
+         * @param plugin Plugin for writing to the archive.
+         * @param subpath Subpath within the archive.
+         */
+        archive_dir_writer(paths::pathname path, archive_plugin *plugin, paths::pathname subpath = paths::pathname());
+
+        /**
+         * Closes any open archive handles, and deletes the new file
+         * created if it has not been renamed over the old file.
+         *
+         * Does not call close() as close() performs additional tasks:
+         * such as renaming the new archive file over the old archive
+         * file. In order for those tasks to be performed close() has
+         * to be called explicitly.
+         */
+        virtual ~archive_dir_writer();
+
+
+        /* Method Overrides */
+
+        /**
+         * Closes both archive handles and renames the new archive
+         * file over the old archive file, if its handle was closed
+         * successfully.
+         *
+         * This method should be called explicitly as it is not called
+         * from the destructor.
+         */
+        virtual void close();
+
+
+        virtual outstream *create(const paths::pathname &path, const struct stat *st, int flags);
+
+        virtual void mkdir(const paths::pathname &path, bool defer);
+
+        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st);
+
+        virtual void set_attributes(const paths::pathname &path, const struct stat *st);
+
+        virtual void rename(const paths::pathname &src, const paths::pathname &dest);
+
+        virtual void remove(const paths::pathname &path, bool relative);
+
+    protected:
+        /**
+         * Plugin for writing to the archive.
+         */
+        archive_plugin *plugin;
+
+        /**
+         * Handle of the existing archive (open for reading).
+         */
+        std::unique_ptr<archive_lister> in_lister;
+
+        /**
+         * Handle of the new archive file being created (open for
+         * writing).
+         */
+        void *out_handle = nullptr;
+
+
+        /**
+         * Path to the new archive file that is being created.
+         */
+        paths::string tmp_path;
+
+        /**
+         * Flag: True if the temporary file, into which the new
+         * archive is written has been created and has not been
+         * renamed over the old archive file.
+         */
+        bool tmp_exists = false;
+
         /**
          * Old entry information.
          */
@@ -56,18 +137,6 @@ namespace nuc {
          * Path to the archive file being written to.
          */
         paths::pathname path;
-        /**
-         * Path to the new archive file that is being created.
-         */
-        paths::string tmp_path;
-
-        /**
-         * Flag: True if the temporary file, into which the new
-         * archive is written has been created and has not been
-         * renamed over the old archive file.
-         */
-        bool tmp_exists = false;
-
 
         /**
          * Subpath within the archive, where all new entries are
@@ -76,28 +145,83 @@ namespace nuc {
         paths::pathname subpath;
 
         /**
-         * Plugin for writing to the archive.
-         */
-        archive_plugin *plugin;
-
-        /**
          * Map containing the entries already in the archive. Each key
          * is the canonicalized subpath to the entry and the
          * corresponding value is an old_entry struct.
          */
         std::map<paths::pathname, old_entry> old_entries;
 
+
         /**
-         * Handle of the existing archive (open for reading).
+         * Constructs an archive_dir_writer without opening an archive
+         * for writing, out_handle is set to NULL.
+         *
+         * @param plugin Plugin for writing to the archive.
+         * @param path Path to the archive file.
+         * @param subpath Subpath within the archive.
          */
-        void *in_handle = nullptr;
+        archive_dir_writer(archive_plugin *plugin, const paths::pathname &path, const paths::pathname &subpath);
+
         /**
-         * Handle of the new archive file being created (open for
-         * writing).
+         * Obtain the subpaths of all entries in the old archive and
+         * store them in old_entries.
          */
-        void *out_handle = nullptr;
+        void get_old_entries();
 
 
+        /**
+         * Creates a temporary at the location @a path, with the file
+         * name as the prefix, and opens a new archive handle for
+         * writing.
+         *
+         * @param path Location where the temporary file should be
+         * created.
+         */
+        void open_temp(const paths::pathname &path);
+
+        /**
+         * Copies all entries in the existing archive to the new
+         * archive.
+         */
+        void copy_old_entries();
+
+        /**
+         * Closes the two archive handles and deletes the new archive
+         * file created, if it was not renamed over the old archive
+         * file.
+         */
+        void close_handles();
+
+
+        using dir_writer::raise_error;
+
+        /**
+         * Throws an error exception for the error with code @a
+         * code. If @a type is NUC_AP_RETRY, the retry restart is
+         * enabled.
+         *
+         * @param code The error code.
+         * @param type Error type constant returned by the plugin.
+         */
+        void raise_error(int code, int type) {
+            dir_writer::raise_error(code, type == NUC_AP_RETRY);
+        }
+
+        /**
+         * Throws an error exception with the code and error
+         * description obtained using archive_plugin::error_code and
+         * archive::plugin_error_string.
+         *
+         * @param handle Handle of the archive in which the error was
+         *   triggered.
+         *
+         * @param type Error type constant returned by the plugin.
+         */
+        void raise_plugin_error(void *handle, int type) {
+            throw error(plugin->error_code(handle), error::type_general, type == NUC_AP_RETRY, plugin->error_string(handle));
+        }
+
+    private:
         /**
          * Opens the old archive for reading.
          */
@@ -108,12 +232,6 @@ namespace nuc {
          * the file's location.
          */
         void open_temp();
-
-        /**
-         * Obtain the subpaths of all entries in the old archive and
-         * store them in old_entries.
-         */
-        void get_old_entries();
 
         /**
          * Adds the parent directory entries of the entry with subpath
@@ -147,18 +265,12 @@ namespace nuc {
         void copy_archive_type();
 
         /**
-         * Copies all entries in the existing archive to the new
-         * archive.
-         */
-        void copy_old_entries();
-
-        /**
          * Retrieve the metadata of the the next entry.
          *
          * @param ent Pointer to the nuc_arch_entry struct into which
          *    the metadata is read.
          */
-        bool next_entry(nuc_arch_entry *ent);
+        bool next_entry(lister::entry &ent);
 
         /**
          * Adds an entry header to the archive.
@@ -196,91 +308,6 @@ namespace nuc {
          * @param path Subpath to the entry.
          */
         void remove_old_entry(paths::pathname path);
-
-        /**
-         * Closes the two archive handles and deletes the new archive
-         * file created, if it was not renamed over the old archive
-         * file.
-         */
-        void close_handles();
-
-    public:
-        /**
-         * Creates an archive directory writer for a particular
-         * subpath within a particular archive.
-         *
-         * @param path Path to the archive file.
-         * @param plugin Plugin for writing to the archive.
-         * @param subpath Subpath within the archive.
-         */
-        archive_dir_writer(paths::pathname path, archive_plugin *plugin, paths::pathname subpath = paths::pathname());
-
-        /**
-         * Closes any open archive handles, and deletes the new file
-         * created if it has not been renamed over the old file.
-         *
-         * Does not call close() as close() performs additional tasks:
-         * such as renaming the new archive file over the old archive
-         * file. In order for those tasks to be performed close() has
-         * to be called explicitly.
-         */
-        virtual ~archive_dir_writer();
-
-
-        /* Method Overrides */
-
-        /**
-         * Closes both archive handles and renames the new archive
-         * file over the old archive file, if its handle was closed
-         * successfully.
-         *
-         * This method should be called explicitly as it is not called
-         * from the destructor.
-         */
-        virtual void close();
-
-
-        virtual outstream *create(const paths::pathname &path, const struct stat *st = nullptr, int flags = 0);
-
-        virtual void mkdir(const paths::pathname &path, bool defer);
-
-        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st);
-
-        virtual void set_attributes(const paths::pathname &path, const struct stat *st);
-
-        virtual void rename(const paths::pathname &src, const paths::pathname &dest);
-
-        virtual void remove(const paths::pathname &path, bool relative);
-
-    private:
-
-        using dir_writer::raise_error;
-
-        /**
-         * Throws an error exception for the error with code @a
-         * code. If @a type is NUC_AP_RETRY, the retry restart is
-         * enabled.
-         *
-         * @param code The error code.
-         * @param type Error type constant returned by the plugin.
-         */
-        void raise_error(int code, int type) {
-            dir_writer::raise_error(code, type == NUC_AP_RETRY);
-        }
-
-        /**
-         * Throws an error exception with the code and error
-         * description obtained using archive_plugin::error_code and
-         * archive::plugin_error_string.
-         *
-         * @param handle Handle of the archive in which the error was
-         *   triggered.
-         *
-         * @param type Error type constant returned by the plugin.
-         */
-        void raise_plugin_error(void *handle, int type) {
-            throw error(plugin->error_code(handle), error::type_general, type == NUC_AP_RETRY, plugin->error_string(handle));
-        }
     };
 }
 
