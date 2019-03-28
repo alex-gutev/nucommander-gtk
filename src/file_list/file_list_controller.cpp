@@ -383,7 +383,10 @@ void file_list_controller::mark_row(Gtk::TreeRow row, bool marked) {
 //// Selection
 
 void file_list_controller::select_row(index_type index) {
-    m_signal_select.emit(cur_list->children()[index]);
+    auto row = cur_list->children()[index];
+    selected_row = row;
+
+    m_signal_select.emit(row);
 }
 
 
