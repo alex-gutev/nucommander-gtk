@@ -80,6 +80,13 @@ namespace nuc {
         virtual dir_tree * create_tree() const = 0;
 
         /**
+         * Create a directory writer for the directory.
+         *
+         * @return dir_writer object
+         */
+        virtual dir_writer * create_writer() const = 0;
+
+        /**
          * Returns true if the directory is a regular directory that
          * can be read directly using the OS's file system API.
          *

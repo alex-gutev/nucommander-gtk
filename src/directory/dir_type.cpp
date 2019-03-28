@@ -37,6 +37,7 @@
 
 #include "stream/reg_dir_writer.h"
 #include "stream/archive_dir_writer.h"
+#include "stream/sub_archive_dir_writer.h"
 
 using namespace nuc;
 
@@ -66,6 +67,10 @@ public:
 
     virtual dir_tree * create_tree() const {
         return new dir_tree();
+    }
+
+    virtual dir_writer * create_writer() const {
+        return new reg_dir_writer(m_path.path().c_str());
     }
 
     virtual bool is_dir() const {
@@ -118,6 +123,10 @@ public:
         return new archive_tree(m_subpath);
     }
 
+    virtual dir_writer * create_writer() const {
+        return new archive_dir_writer(m_path.path().c_str(), plugin, m_subpath);
+    }
+
     virtual bool is_dir() const {
         return false;
     }
@@ -164,7 +173,9 @@ class sub_archive_dir_type : public dir_type {
 
 public:
     sub_archive_dir_type(archive_plugin *plugin, std::shared_ptr<dir_type> parent_type, const paths::pathname &path, const paths::pathname &subpath)
-        : plugin(plugin), parent_type(parent_type), m_path(path), m_subpath(subpath) {}
+        : plugin(plugin), parent_type(parent_type->copy()), m_path(path), m_subpath(subpath) {
+        this->parent_type->subpath("");
+    }
 
     virtual std::shared_ptr<dir_type> copy() const {
         return std::make_shared<sub_archive_dir_type>(*this);
@@ -183,6 +194,10 @@ public:
 
     virtual dir_tree * create_tree() const {
         return new archive_tree(m_subpath);
+    }
+
+    virtual dir_writer *create_writer() const {
+        return new sub_archive_dir_writer(plugin, new sub_archive_dir_type(*this), parent_type->create_writer(), m_path, m_subpath);
     }
 
     virtual bool is_dir() const {
@@ -209,10 +224,26 @@ public:
 
 /// Path Canonicalization Utilities
 
+/**
+ * Canonicalizes a path by expanding leading tilde's and
+ * removing all '.' and '..' directory components.
+ *
+ * @param path The path to canonicalize.
+ *
+ * @return The canonicalized path.
+ */
 static paths::pathname canonicalize(const paths::pathname &path) {
     return path.expand_tilde().canonicalize();
 }
 
+/**
+ * Searches the directory, at @a dir, for an entry with a name
+ * that is equal to @a comp or the first entry with a name
+ * that matches, ignoring case, @a comp.
+ *
+ * @return The name of the matching entry or an empty string
+ *    if the directory @a dir could not be read.
+ */
 static paths::string find_match_comp(const paths::string &dir, const paths::string &comp) {
     if (comp == "/")
         return comp;
@@ -239,6 +270,21 @@ static paths::string find_match_comp(const paths::string &dir, const paths::stri
     }
 }
 
+/**
+ * Canonicalizes the case of a path.
+ *
+ * Each intermediate directory component is searched for an
+ * entry with a name which is either identical to the child
+ * component, in which case the the case is preserved, or the
+ * first entry with a name which matches (ignoring case) the
+ * name of the child component, in which case the child is
+ * replaced with the matching entry.
+ *
+ * @return A pair where the first value is the path with the
+ *    case canonicalized up to the last directory component
+ *    which can be read, the second value is the remainder of
+ *    the path, which has not been case-canonicalized.
+ */
 static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths::pathname &path) {
     paths::pathname cpath;
     auto comps(path.components());
@@ -260,6 +306,16 @@ static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths
 }
 
 
+/**
+ * Determines which initial components of a path refer to an
+ * existing file.
+ *
+ * @param path The path to check.
+ *
+ * @return A pair where the first value is the initial portion
+ *   of path which refers to an existing file and the second
+ *   value is the remaining non-existent portion.
+ */
 static std::pair<paths::string, paths::string> find_dir(const paths::string &path) {
     paths::string sub_path = path;
     size_t sep_index = paths::string::npos;
@@ -278,6 +334,13 @@ static std::pair<paths::string, paths::string> find_dir(const paths::string &pat
     );
 }
 
+/**
+ * Checks whether the file @a path is a regular directory.
+ *
+ * @path Path to the file.
+ *
+ * @return True if the file is a regular directory.
+ */
 static bool is_reg_dir(const paths::string &path) {
     struct stat st;
 
@@ -415,21 +478,11 @@ std::shared_ptr<dir_type> dir_type::get(std::shared_ptr<dir_type> dir, const nuc
     return nullptr;
 }
 
+
 // Getting a directory writer object
 
 dir_writer * dir_type::get_writer(const paths::pathname &path) {
-    paths::pathname cpath = path.expand_tilde();
-    std::pair<paths::string, paths::string> parts = find_dir(cpath);
-
-    struct stat st;
-
-    if (!stat(parts.first.c_str(), &st) && S_ISREG(st.st_mode)) {
-        if (archive_plugin *plugin = archive_plugin_loader::instance().get_plugin(parts.first)) {
-            return new archive_dir_writer(parts.first.c_str(), plugin, parts.second.c_str());
-        }
-    }
-
-    return new reg_dir_writer(cpath.path().c_str());
+    return get(path)->create_writer();
 }
 
 
