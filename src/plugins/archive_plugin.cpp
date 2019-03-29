@@ -43,16 +43,31 @@ void archive_plugin::load() {
 
         LOAD_CHECK_FN(open);
         LOAD_CHECK_FN(close);
+
         LOAD_CHECK_FN(open_unpack);
         LOAD_CHECK_FN(open_pack);
+
         LOAD_CHECK_FN(error_code);
         LOAD_CHECK_FN(error_string);
+
         LOAD_CHECK_FN(next_entry);
+        LOAD_CHECK_FN(entry_stat);
+        LOAD_CHECK_FN(entry_link_path);
+        LOAD_CHECK_FN(entry_symlink_path);
         LOAD_CHECK_FN(unpack);
+
         LOAD_CHECK_FN(copy_archive_type);
-        LOAD_CHECK_FN(copy_last_entry);
+        LOAD_CHECK_FN(copy_last_entry_header);
+        LOAD_CHECK_FN(copy_last_entry_data);
+
         LOAD_CHECK_FN(create_entry);
+        LOAD_CHECK_FN(entry_set_path);
+        LOAD_CHECK_FN(entry_set_stat);
+        LOAD_CHECK_FN(entry_set_link_path);
+        LOAD_CHECK_FN(entry_set_symlink_path);
+        LOAD_CHECK_FN(write_entry_header);
         LOAD_CHECK_FN(pack);
+
         LOAD_CHECK_FN(set_callback);
     }
 }

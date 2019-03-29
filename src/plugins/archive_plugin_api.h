@@ -114,20 +114,53 @@ const char * nuc_arch_error_string(void *handle);
  */
 void *nuc_arch_open_unpack(nuc_arch_read_callback read_fn, nuc_arch_skip_callback skip_fn, void *ctx, int *error);
 
+
 /**
- * Reads the next entry's metadata from the archive.
+ * Retrieves the next entry from the archive.
  *
  * @param handle The handle to the archive.
  *
- * @param entry  Pointer to a nuc_arch_entry struct where the
- *    entry metadata is read into.
+ * @param path Pointer to a cstring pointer which is set to the name
+ *   of the entry.
  *
  * @return NUC_AP_OK (0) if successful, NUC_AP_EOF if there
  *    are no more entries otherwise, a NUC_AP_ error constant
  *    value if there was an error. A detailed error code is
  *    stored in errno.
  */
-int nuc_arch_next_entry(void *handle, nuc_arch_entry *ent);
+int nuc_arch_next_entry(void *handle, const char ** path);
+
+/**
+ * Returns the stat attributes of the current entry, read using
+ * nuch_arch_next_entry.
+ *
+ * @param handle The handle to the archive.
+ *
+ * @return Pointer to a stat struct.
+ */
+const struct stat *nuc_arch_entry_stat(void *handle);
+
+/**
+ * Returns the path to the linked file, if the current entry is a hard
+ * link.
+ *
+ * @param handle The handle to the archive.
+ *
+ * @return Path to the linked file or null if the entry is not a hard
+ *   link.
+ */
+const char *nuc_arch_entry_link_path(void *handle);
+/**
+ * Returns the path to the target of the symbolic link, if the current
+ * entry is a symbolic link.
+ *
+ * @param handle The handle to the archive.
+ *
+ * @return The target of the link or null if the entry is not a
+ *   symbolic link.
+ */
+const char *nuc_arch_entry_symlink_path(void *handle);
+
 
 /**
  * Reads a block of data from the last entry read. Data can only be
@@ -205,43 +238,144 @@ void *nuc_arch_open_pack(nuc_arch_write_callback write_fn, void *ctx, int *error
 int nuc_arch_copy_archive_type(void *dest_handle, const void *src_handle);
 
 /**
- * Copies the last entry read from the archive @a src_handle to the
- * archive @a dest_handle.
+ * Copies the header, i.e. the metadata, of the last entry read from
+ * the archive with handle @a src_handle, into the archive handle @a
+ * dest_handle.
  *
- * @param src_handle The handle of the source archive, from which to
- *   copy the entry
+ * The entry header is not actually written to the archive, thus may
+ * be changed using nuc_arch_entry_set_X
+ * functions. nuc_arch_write_entry_header should be called to actually
+ * write the header to the archive.
  *
- * @param dest_handle The handle of the destination archive, to which
- *   to copy the entry.
+ * @param dest_handle Handle of the destination archive into which to
+ *   copy the entry header.
  *
- * @param ent If non-NULL, the attributes of the new entry are set to
- *   the values of the non-NULL fields in the struct.
+ * @param src_handle Handle of the source archive from which to copy
+ *   the header.
  *
- * @return NUC_AP_OK (0) if the last entry was copied successfully. A
+ * @return NUC_AP_OK (0) if the header was copied successfully. A
  *    NUC_AP_ error constant value is returned if there was an error,
  *    with a more detailed error code stored in errno.
  */
-int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nuc_arch_entry *ent);
+int nuc_arch_copy_last_entry_header(void *dest_handle, const void *src_handle);
+/**
+ * Copies the data of the last entry, read from the archive with
+ * handle @a src_handle, into the archive with handle @a dest_handle.
+ *
+ * The handle @a dest_handle must be in a state in which entry data
+ * can be written using nuc_arch_pack.
+ *
+ * @param dest_handle Handle of the destination archive into which to
+ *   write the data.
+ *
+ * @param src_handle Handle of the source archive from which to read
+ *   the data.
+ *
+ * @return NUC_AP_OK (0) if the data was copied successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_copy_last_entry_data(void *dest_handle, void *src_handle);
+
 
 /**
- * Creates an entry in the archive. This only creates the entry's
- * metadata, the actual contents of the entry should be written using
- * nuc_arch_pack (in the case of a regular file).
+ * Creates a new entry, the attributes of which can be set using the
+ * following functions:
+ *
+ *  - nuc_arch_entry_set_path
+ *  - nuc_arch_entry_set_stat
+ *  - nuc_arch_entry_set_link_path
+ *  - nuc_arch_entry_set_symlink_path
+ *
+ * Once the attributes have been set nuc_arch_write_entry_header must
+ * be called to actually create the entry in the archive. After the
+ * entry is created its data is written using nuc_arch_pack.
  *
  * @param handle Handle of the archive into which to create the entry.
- * @param ent The entry to create.
+ *
+ * @param path The entry's path, may be changed later using
+ *   nuc_arch_entry_set_path.
+ *
+ * @param st The entry's stat atttributes, may be changed later using
+ *   nuc_arch_entry_set_stat.
  *
  * @return NUC_AP_OK (0) if the entry was created successfully. A
  *    NUC_AP_ error constant value is returned if there was an error,
  *    with a more detailed error code stored in errno.
  */
-int nuc_arch_create_entry(void *handle, const nuc_arch_entry *ent);
+int nuc_arch_create_entry(void *handle, const char *path, const struct stat *st);
+/**
+ * Sets the path of the entry, created by nuc_arch_create_entry.
+ *
+ * This function must be called after nuc_arch_create_entry is called,
+ * and returns NUC_AP_OK, and before nuc_arch_write_entry_header is
+ * called.
+ *
+ * @param handle Handle to the archive.
+ * @param path The path to set.
+ */
+void nuc_arch_entry_set_path(void *handle, const char *path);
+/**
+ * Sets the stat attributes of the entry, created by
+ * nuc_arch_create_entry.
+ *
+ * This function must be called after nuc_arch_create_entry is called,
+ * and returns NUC_AP_OK, and before nuc_arch_write_entry_header is
+ * called.
+ *
+ * @param handle Handle to the archive.
+ * @param st Stat attributes to set.
+ */
+void nuc_arch_entry_set_stat(void *handle, const struct stat *st);
+/**
+ * Sets the path to the linked file of the entry, created by
+ * nuc_arch_create_entry. This effectively converts the entry to a
+ * hard link.
+ *
+ * This function must be called after nuc_arch_create_entry is called,
+ * and returns NUC_AP_OK, and before nuc_arch_write_entry_header is
+ * called.
+ *
+ * @param handle Handle to the archive.
+ * @param path Path to the linked file.
+ */
+void nuc_arch_entry_set_link_path(void *handle, const char *path);
+/**
+ * Sets the symbolic link target of the entry, created by
+ * nuc_arch_create_entry. This may only be called if the entry is a
+ * symbolic link.
+ *
+ * This function must be called after nuc_arch_create_entry is called,
+ * and returns NUC_AP_OK, and before nuc_arch_write_entry_header is
+ * called.
+ *
+ * @param handle Handle to the archive.
+ */
+void nuc_arch_entry_set_symlink_path(void *handle, const char *path);
+
+/**
+ * Writes the header, i.e. the metadata, of the entry, created by the
+ * last call to nuc_arch_create_entry, to the archive.
+ *
+ * The entry's attributes may not be changed after this function is
+ * called.
+ *
+ * Only after this function returns NUC_AP_OK may the entry's data be
+ * written (if any) using nuc_arch_pack.
+ *
+ * @param handle Handle to the archive.
+ *
+ * @return NUC_AP_OK (0) if the header was written successfully. A
+ *    NUC_AP_ error constant value is returned if there was an error,
+ *    with a more detailed error code stored in errno.
+ */
+int nuc_arch_write_entry_header(void *handle);
 
 /**
  * Writes data to the last entry created in the archive. This function
  * may only be used if the last entry created was a regular file.
  *
- * @param handle Handle of the archive into which to create the entry.
+ * @param handle Handle of the archive.
  *
  * @param buf Pointer to the block of data to write.
  *

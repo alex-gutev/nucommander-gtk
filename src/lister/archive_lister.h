@@ -41,11 +41,6 @@ namespace nuc {
          */
         void *handle = nullptr;
 
-        /**
-         * Last archive entry read.
-         */
-        nuc_arch_entry arch_entry;
-
     public:
         /**
          * Constructs an archive lister.

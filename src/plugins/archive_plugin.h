@@ -50,13 +50,24 @@ namespace nuc {
         typedef int(*error_code_fn)(void *);
         typedef const char *(*error_string_fn)(void *);
 
-        typedef int(*next_entry_fn)(void *, nuc_arch_entry *);
+        typedef int(*next_entry_fn)(void *, const char **);
+        typedef const struct stat *(*entry_stat_fn)(void *);
+        typedef const char *(*entry_link_path_fn)(void *);
+        typedef const char *(*entry_symlink_path_fn)(void *);
+
         typedef int(*unpack_fn)(void *, const char **, size_t *, off_t *);
 
         typedef int(*copy_archive_type_fn)(void *, const void *);
-        typedef int(*copy_last_entry_fn)(void *, const void *, const nuc_arch_entry *);
+        typedef int(*copy_last_entry_header_fn)(void *, const void *);
+        typedef int(*copy_last_entry_data_fn)(void *, const void *);
 
-        typedef int(*create_entry_fn)(void *, const nuc_arch_entry *);
+        typedef int(*create_entry_fn)(void *, const char *, const struct stat *);
+        typedef void(*entry_set_path_fn)(void *, const char *);
+        typedef void(*entry_set_stat_fn)(void *, const struct stat *);
+        typedef void(*entry_set_link_path_fn)(void *, const char *);
+        typedef void(*entry_set_symlink_path_fn)(void *, const char *);
+        typedef int(*write_entry_header_fn)(void *);
+
         typedef int(*pack_fn)(void *, const char *, size_t, off_t);
 
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
@@ -171,12 +182,22 @@ namespace nuc {
         error_string_fn error_string;
 
         next_entry_fn next_entry;
+        entry_stat_fn entry_stat;
+        entry_link_path_fn entry_link_path;
+        entry_symlink_path_fn entry_symlink_path;
+
         unpack_fn unpack;
 
         copy_archive_type_fn copy_archive_type;
-        copy_last_entry_fn copy_last_entry;
+        copy_last_entry_header_fn copy_last_entry_header;
+        copy_last_entry_data_fn copy_last_entry_data;
 
         create_entry_fn create_entry;
+        entry_set_path_fn entry_set_path;
+        entry_set_stat_fn entry_set_stat;
+        entry_set_link_path_fn entry_set_link_path;
+        entry_set_symlink_path_fn entry_set_symlink_path;
+        write_entry_header_fn write_entry_header;
         pack_fn pack;
 
         set_callback_fn set_callback;

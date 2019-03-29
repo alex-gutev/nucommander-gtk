@@ -284,12 +284,6 @@ namespace nuc {
          */
         void create_entry(bool check, const char *path, const struct stat *st, const char *symlink_dest = nullptr);
 
-        /**
-         * Adds an entry header to the archive.
-         *
-         * @param ent The entry to add.
-         */
-        void create_entry(bool check, nuc_arch_entry *ent);
 
         /**
          * Checks whether the old archive contains an entry at the

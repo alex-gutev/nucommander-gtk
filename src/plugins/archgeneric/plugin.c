@@ -43,6 +43,11 @@ typedef struct nuc_arch_handle {
      *  Libarchive handle and entry.
      */
     struct archive *ar;
+    /**
+     * Last entry read, if unpacking.
+     *
+     * Last entry created, if packing.
+     */
     struct archive_entry *ent;
 
     /**
@@ -83,6 +88,14 @@ typedef struct nuc_arch_handle {
 
 
 //// Function Prototypes
+
+/**
+ * Allocates a new zero-initialized, plugin handle.
+ *
+ * @return The handle, or NULL if the allocation failed.
+ */
+static nuc_arch_handle *alloc_handle();
+
 
 /**
  * Open archive for unpacking (reading).
@@ -173,6 +186,16 @@ ssize_t read_callback(struct archive *ar, void *ctx, const void **buffer);
 off_t skip_callback(struct archive *ar, void *ctx, off_t request);
 
 /**
+ * Creates a new archive_entry, and stores it in the ent member of the
+ * handle. If ent contains another entry it is freed first.
+ *
+ * Should only be called when packing.
+ *
+ * @param handle Archive handle.
+ */
+static void create_entry(nuc_arch_handle *handle);
+
+/**
  * Writes a block of zeroes to the archive.
  *
  * @param handle Handle to archive (open for packing).
@@ -202,17 +225,19 @@ static int err_code(const nuc_arch_handle *handle, int err);
 
 //// Opening Archives
 
+static nuc_arch_handle *alloc_handle() {
+    return calloc(1, sizeof(nuc_arch_handle));
+}
+
 EXPORT
 void *nuc_arch_open(const char *file, int mode, int *error) {
-    nuc_arch_handle *handle = malloc(sizeof(nuc_arch_handle));
+    nuc_arch_handle *handle = alloc_handle();
 
     if (!handle) {
         *error = NUC_AP_FATAL;
         return NULL;
     }
 
-    handle->callback = NULL;
-    handle->dest_file = NULL;
     handle->mode = mode;
 
     switch (mode) {
@@ -261,12 +286,8 @@ cleanup:
 }
 
 int open_pack(const char *file, nuc_arch_handle *handle) {
-    int len = strlen(file);
-
-    if (!(handle->dest_file = malloc(len)))
+    if (!(handle->dest_file = strdup(file)))
         return NUC_AP_FATAL;
-
-    memcpy(handle->dest_file, file, len + 1);
 
     if (!(handle->ar = archive_write_new())) {
         free(handle->dest_file);
@@ -281,7 +302,7 @@ int open_pack(const char *file, nuc_arch_handle *handle) {
 
 EXPORT
 void *nuc_arch_open_unpack(nuc_arch_read_callback read_fn, nuc_arch_skip_callback skip_fn, void *ctx, int *error) {
-    nuc_arch_handle *handle = malloc(sizeof(nuc_arch_handle));
+    nuc_arch_handle *handle = alloc_handle();
     int err;
 
     if (!handle) {
@@ -289,8 +310,6 @@ void *nuc_arch_open_unpack(nuc_arch_read_callback read_fn, nuc_arch_skip_callbac
         return NULL;
     }
 
-    handle->callback = NULL;
-    handle->dest_file = NULL;
     handle->mode = NUC_AP_MODE_UNPACK;
 
     handle->read_fn = read_fn;
@@ -357,17 +376,14 @@ off_t skip_callback(struct archive *ar, void *ctx, off_t request) {
 
 EXPORT
 void *nuc_arch_open_pack(nuc_arch_write_callback write_fn, void *ctx, int *error) {
-    nuc_arch_handle *handle = malloc(sizeof(nuc_arch_handle));
+    nuc_arch_handle *handle = alloc_handle();
 
     if (!handle) {
         *error = NUC_AP_FATAL;
         return NULL;
     }
 
-    handle->callback = NULL;
-    handle->dest_file = NULL;
     handle->mode = NUC_AP_MODE_PACK;
-
     handle->write_fn = write_fn;
     handle->callback_ctx = ctx;
 
@@ -426,7 +442,9 @@ int close_unpack(nuc_arch_handle *handle) {
 int close_pack(nuc_arch_handle *handle) {
     int err = err_code(handle, archive_write_close(handle->ar));
 
-    free(handle->dest_file);
+    if (handle->dest_file) free(handle->dest_file);
+    if (handle->ent) archive_entry_free(handle->ent);
+
     archive_write_free(handle->ar);
 
     return err;
@@ -462,7 +480,7 @@ void nuc_arch_set_callback(void *plg_ctx, nuc_arch_progress_fn callback, void *c
 //// Reading and Unpacking Entries
 
 EXPORT
-int nuc_arch_next_entry(void *ctx, nuc_arch_entry *ent) {
+int nuc_arch_next_entry(void *ctx, const char **path) {
     int err;
     nuc_arch_handle *handle = ctx;
 
@@ -470,15 +488,32 @@ int nuc_arch_next_entry(void *ctx, nuc_arch_entry *ent) {
 
     if (err) return err;
 
-    ent->path = archive_entry_pathname(handle->ent);
-
-    ent->link_dest = archive_entry_hardlink(handle->ent);
-    ent->symlink_dest = archive_entry_symlink(handle->ent);
-
-    ent->stat = archive_entry_stat(handle->ent);
+    *path = archive_entry_pathname(handle->ent);
 
     return NUC_AP_OK;
 }
+
+EXPORT
+const struct stat *nuc_arch_entry_stat(void *ctx) {
+    nuc_arch_handle *handle = ctx;
+
+    return archive_entry_stat(handle->ent);
+}
+
+EXPORT
+const char *nuc_arch_entry_link_path(void *ctx) {
+    nuc_arch_handle *handle = ctx;
+
+    return archive_entry_hardlink(handle->ent);
+}
+
+EXPORT
+const char *nuc_arch_entry_symlink_path(void *ctx) {
+    nuc_arch_handle *handle = ctx;
+
+    return archive_entry_symlink(handle->ent);
+}
+
 
 EXPORT
 int nuc_arch_unpack(void *ctx, const char **buf, size_t *size, off_t *offset) {
@@ -515,21 +550,25 @@ int nuc_arch_copy_archive_type(void *dest_handle, const void *src_handle) {
 
 
 EXPORT
-int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nuc_arch_entry *ent) {
+int nuc_arch_copy_last_entry_header(void *dest_handle, const void *src_handle) {
+    const nuc_arch_handle *src = src_handle;
+    nuc_arch_handle *dest = dest_handle;
+
+    if (dest->ent)
+        archive_entry_free(dest->ent);
+
+    if (!(dest->ent = archive_entry_clone(src->ent)))
+        return NUC_AP_FATAL;
+
+    return NUC_AP_OK;
+}
+
+EXPORT
+int nuc_arch_copy_last_entry_data(void *dest_handle, void *src_handle) {
     const nuc_arch_handle *src = src_handle;
     nuc_arch_handle *dest = dest_handle;
 
     int err;
-
-    // Update attributes if new attributes provided
-    if (ent) {
-        if (ent->path) archive_entry_set_pathname(src->ent, ent->path);
-        if (ent->stat) archive_entry_copy_stat(src->ent, ent->stat);
-    }
-
-    if ((err = err_code(dest, archive_write_header(dest->ar, src->ent)))) {
-        return err;
-    }
 
     const void *buf;
     size_t size;
@@ -551,31 +590,61 @@ int nuc_arch_copy_last_entry(void *dest_handle, const void *src_handle, const nu
         last_offset = offset + size;
     }
 
-    return err = NUC_AP_EOF ? NUC_AP_OK : err;
+    return err == NUC_AP_EOF ? NUC_AP_OK : err;
 }
 
 
 EXPORT
-int nuc_arch_create_entry(void *ctx, const nuc_arch_entry *ent) {
+int nuc_arch_create_entry(void *ctx, const char *path, const struct stat *st) {
     nuc_arch_handle *handle = ctx;
-    struct archive_entry *ar_ent = archive_entry_new();
 
-    int err;
+    create_entry(handle);
 
-    if (!ar_ent) return NUC_AP_FATAL;
+    if (!handle->ent) return NUC_AP_FATAL;
 
-    archive_entry_set_pathname(ar_ent, ent->path);
-    archive_entry_copy_stat(ar_ent, ent->stat);
+    archive_entry_set_pathname(handle->ent, path);
+    archive_entry_copy_stat(handle->ent, st);
 
-    if (S_ISLNK(ent->stat->st_mode) && ent->symlink_dest)
-        archive_entry_set_symlink(ar_ent, ent->symlink_dest);
-
-    err = err_code(handle, archive_write_header(handle->ar, ar_ent));
-
-    archive_entry_free(ar_ent);
-
-    return err;
+    return NUC_AP_OK;
 }
+
+void create_entry(nuc_arch_handle *handle) {
+    if (handle->ent)
+        archive_entry_free(handle->ent);
+
+    handle->ent = archive_entry_new();
+}
+
+EXPORT
+void nuc_arch_entry_set_path(void *ctx, const char *path) {
+    nuc_arch_handle *handle = ctx;
+    archive_entry_set_pathname(handle->ent, path);
+}
+
+EXPORT
+void nuc_arch_entry_set_stat(void *ctx, const struct stat *st) {
+    nuc_arch_handle *handle = ctx;
+    archive_entry_copy_stat(handle->ent, st);
+}
+
+EXPORT
+void nuc_arch_entry_set_link_path(void *ctx, const char *path) {
+    nuc_arch_handle *handle = ctx;
+    archive_entry_set_link(handle->ent, path);
+}
+
+EXPORT
+void nuc_arch_entry_set_symlink_path(void *ctx, const char *path) {
+    nuc_arch_handle *handle = ctx;
+    archive_entry_set_symlink(handle->ent, path);
+}
+
+EXPORT
+int nuc_arch_write_entry_header(void *ctx) {
+    nuc_arch_handle *handle = ctx;
+    return err_code(handle, archive_write_header(handle->ar, handle->ent));
+}
+
 
 EXPORT
 int nuc_arch_pack(void *ctx, const char *buf, size_t len, off_t offset) {

@@ -176,19 +176,21 @@ void archive_dir_writer::copy_old_entries() {
         auto it = old_entries.find(paths::pathname(ent.name).canonicalize());
 
         if (it != old_entries.end()) {
-            nuc_arch_entry arch_ent{};
+            // FIXME: Get proper error code and error description
 
-            // If the entry should be recreated at a new path, set it
-            // in the nuc_arch_entry struct.
+            TRY_OP_((err = plugin->copy_last_entry_header(out_handle, in_lister->arch_handle())),
+                    raise_error(errno, err));
+
+            // Set new path if the path has changed
             if (!it->second.new_path.empty()) {
-                arch_ent.path = it->second.new_path.path().c_str();
+                plugin->entry_set_path(out_handle, it->second.new_path.c_str());
             }
 
-            try_op([=] {
-                if (plugin->copy_last_entry(out_handle, in_lister->arch_handle(), &arch_ent))
-                    // TODO: Obtain error description
-                    raise_error(errno, err);
-            });
+            TRY_OP_((err = plugin->write_entry_header(out_handle)),
+                    raise_plugin_error(out_handle, err));
+
+            TRY_OP_((err = plugin->copy_last_entry_data(out_handle, in_lister->arch_handle())),
+                    raise_error(errno, err));
         }
     }
 }
@@ -239,27 +241,23 @@ void archive_dir_writer::set_attributes(const paths::pathname &path, const struc
 }
 
 void archive_dir_writer::create_entry(bool check, const char *path, const struct stat *st, const char *symlink_dest) {
-    nuc_arch_entry ent{};
-
     paths::pathname ent_path = subpath.append(path).canonicalize();
 
-    ent.path = ent_path.path().c_str();
-    ent.stat = st;
-    ent.symlink_dest = symlink_dest;
-
-    create_entry(check, &ent);
-}
-
-void archive_dir_writer::create_entry(bool check, nuc_arch_entry *ent) {
     if (check)
-        check_exists(ent->path);
+        check_exists(ent_path);
     else
-        remove_old_entry(paths::pathname(ent->path).canonicalize());
+        remove_old_entry(ent_path);
 
-    try_op([&] {
-        if (int err = plugin->create_entry(out_handle, ent))
-            raise_plugin_error(out_handle, err);
-    });
+    int err;
+
+    TRY_OP_((err = plugin->create_entry(out_handle, ent_path.c_str(), st)),
+            raise_plugin_error(out_handle, err));
+
+    if (symlink_dest)
+        plugin->entry_set_symlink_path(out_handle, symlink_dest);
+
+    TRY_OP_((err = plugin->write_entry_header(out_handle)),
+            raise_plugin_error(out_handle, err));
 }
 
 void archive_dir_writer::check_exists(paths::pathname path) {

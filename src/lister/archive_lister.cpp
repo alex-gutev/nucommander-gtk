@@ -47,7 +47,7 @@ void archive_lister::close() {
 
 
 bool archive_lister::read_entry(lister::entry &ent) {
-    int err = plugin->next_entry(handle, &arch_entry);
+    int err = plugin->next_entry(handle, &ent.name);
 
     if (err == NUC_AP_EOF)
         return false;
@@ -57,14 +57,15 @@ bool archive_lister::read_entry(lister::entry &ent) {
         raise_error(errno);
     }
 
-    ent.name = arch_entry.path;
-    ent.type = IFTODT(arch_entry.stat->st_mode & S_IFMT);
+    const struct stat *st = plugin->entry_stat(handle);
+
+    ent.type = IFTODT(st->st_mode & S_IFMT);
 
     return true;
 }
 
 bool archive_lister::entry_stat(struct stat& st) {
-    st = *arch_entry.stat;
+    st = *plugin->entry_stat(handle);
     return true;
 }
 
@@ -73,9 +74,9 @@ instream * archive_lister::open_entry() {
 }
 
 const char *archive_lister::symlink_path() const {
-    assert(S_ISLNK(arch_entry.stat->st_mode));
+    assert(S_ISLNK(plugin->entry_stat(handle)->st_mode));
 
-    return arch_entry.symlink_dest;
+    return plugin->entry_link_path(handle);
 }
 
 // Local Variables:

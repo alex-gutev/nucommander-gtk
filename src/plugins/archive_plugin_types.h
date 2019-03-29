@@ -68,28 +68,6 @@ typedef enum {
  * Unpacking types.
  */
 
-/**
- * Archive entry metadata.
- */
-typedef struct nuc_arch_entry {
-    /** Subpath of the entry within the archive */
-    const char *path;
-
-    /**
-     * Destination path of hardlink, NULL if the entry is not a
-     * hardlink.
-     */
-    const char *link_dest;
-    /**
-     * Destination path of symbolic link, NULL if the entry is not a
-     * symbolic link.
-     */
-    const char *symlink_dest;
-
-    /** Stat attributes */
-    const struct stat *stat;
-} nuc_arch_entry;
-
 /** (Un)packing operation stage */
 typedef enum {
     /**
