@@ -25,10 +25,15 @@
 using namespace nuc;
 
 archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const paths::pathname &base, const std::vector<paths::pathname> &paths)
-    : visit_paths(paths.begin(), paths.end()), listr(new archive_lister(plugin, base)) {}
+    : archive_tree_lister(new archive_lister(plugin, base), paths) {
+}
 
 archive_tree_lister::archive_tree_lister(archive_lister *listr, const std::vector<paths::pathname> &paths)
-    : visit_paths(paths.begin(), paths.end()), listr(listr) {}
+    : listr(listr) {
+    for (auto path : paths) {
+        visit_paths.emplace(path.canonicalize());
+    }
+}
 
 
 void archive_tree_lister::list_entries(const list_callback &fn) {
