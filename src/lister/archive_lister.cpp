@@ -65,8 +65,11 @@ bool archive_lister::read_entry(lister::entry &ent) {
 }
 
 bool archive_lister::entry_stat(struct stat& st) {
-    st = *plugin->entry_stat(handle);
-    return true;
+    const struct stat *s = plugin->entry_stat(handle);
+
+    if (s) st = *s;
+
+    return s;
 }
 
 instream * archive_lister::open_entry() {
