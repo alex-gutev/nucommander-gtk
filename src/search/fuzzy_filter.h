@@ -74,7 +74,7 @@ std::pair<bool, float> nuc::fuzzy_match(const T& string, const T& key) {
     if (kit == kend) {
         size_t end = std::distance(string.begin(), sit);
 
-        return std::make_pair(true,  key.length() / float(end - start));
+        return std::make_pair(true,  key.length() / float(end - start) * (1 - float(start) / string.length()));
     }
 
     return std::make_pair(false, 0);
