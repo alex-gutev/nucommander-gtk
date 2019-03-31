@@ -48,9 +48,12 @@ namespace nuc {
          * @param src The pane in which the command was triggered
          *   (i.e. the source pane).
          *
+         * @param e The event which triggered the command. May be
+         *   NULL.
+         *
          * @param arg Optional command argument.
          */
-        virtual void run(app_window *window, file_view *src, Glib::VariantBase arg) = 0;
+        virtual void run(app_window *window, file_view *src, const GdkEventAny *event, Glib::VariantBase arg) = 0;
 
         /**
          * Returns a description of the command.
@@ -124,9 +127,12 @@ namespace nuc {
          *
          * @param src The source pane (file_view).
          *
+         * @param e The event which triggered the command, may be
+         *   NULL.
+         *
          * @param arg Optional command argument.
          */
-        bool exec_command(const std::string &name, app_window *window, file_view *src, Glib::VariantBase arg = Glib::VariantBase());
+        bool exec_command(const std::string &name, app_window *window, file_view *src, const GdkEventAny *, Glib::VariantBase arg = Glib::VariantBase());
 
     private:
         /**

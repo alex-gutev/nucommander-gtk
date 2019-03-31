@@ -91,7 +91,7 @@ namespace nuc {
 
         virtual ~lua_command();
 
-        virtual void run(app_window *window, file_view *src, Glib::VariantBase arg);
+        virtual void run(app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg);
 
         virtual std::string description() {
             return desc;

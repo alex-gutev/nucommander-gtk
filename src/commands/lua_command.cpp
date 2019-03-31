@@ -79,7 +79,7 @@ lua_command::~lua_command() {
 
 //// Script Execution
 
-void lua_command::run(app_window *window, file_view *src, Glib::VariantBase arg) {
+void lua_command::run(app_window *window, file_view *src, const GdkEventAny *, Glib::VariantBase arg) {
     init_state();
 
     try_op([=] {

@@ -306,7 +306,7 @@ int exec_command(lua_State *L) {
     app_window *window = luaW_check<app_window>(L, 2);
     file_view *view = luaW_check<file_view>(L, 3);
 
-    command_keymap::instance().exec_command(cmd, window, view);
+    command_keymap::instance().exec_command(cmd, window, view, nullptr);
 
     return 0;
 }

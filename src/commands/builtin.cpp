@@ -70,7 +70,7 @@ static paths::pathname expand_dest_path(const paths::pathname &path, const paths
  * the directory.
  */
 struct copy_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Copy marked/selected files, in source pane, to a destination directory.");
@@ -87,7 +87,7 @@ struct copy_command : public command {
  * in the source path.
  */
 struct make_dir_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     /**
      * Make directory task function. Creates the directory @a name in the
@@ -112,7 +112,7 @@ struct make_dir_command : public command {
  * src, to the that directory.
  */
 struct move_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Move/Rename marked/selected files in the source pane.");
@@ -126,7 +126,7 @@ struct move_command : public command {
  * user for confirmation.
  */
 struct delete_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     /**
      * Creates the delete confirmation message.
@@ -148,7 +148,7 @@ struct delete_command : public command {
  * Moves the keyboard focus to the current path entry.
  */
 struct jump_path_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Jump to the current path text entry.");
@@ -161,7 +161,7 @@ struct jump_path_command : public command {
  * Shows the filter entry in the source pane.
  */
 struct begin_filter_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Begin filtering in the source pane.");
@@ -172,7 +172,7 @@ struct begin_filter_command : public command {
  * Open Key Binding Preferences Command.
  */
 struct open_key_prefs_command : public command {
-    virtual void run(nuc::app_window *, nuc::file_view *, Glib::VariantBase);
+    virtual void run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Open the keybinding preferences.");
@@ -185,7 +185,7 @@ struct open_key_prefs_command : public command {
  * Swaps the left and right file list panes.
  */
 struct swap_panes_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Swap source and destination panes' directories.");
@@ -198,7 +198,7 @@ struct swap_panes_command : public command {
  * Displays the open directory list popup.
  */
 struct change_dir_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Display the list of open directories, to choose a new directory to display in the source pane.");
@@ -212,7 +212,7 @@ struct change_dir_command : public command {
  * file_list_controller of the source pane.
  */
 struct open_dir_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Create a new directory buffer.");
@@ -226,7 +226,7 @@ struct open_dir_command : public command {
  * the file_list_controller at the top of the stack.
  */
 struct close_dir_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Close the source pane's current directory and return to the previously visited directory.");
@@ -239,7 +239,7 @@ struct close_dir_command : public command {
  * Cancels ongoing read tasks in the source pane.
  */
 struct cancel_command : public command {
-    virtual void run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase);
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
         return _("Cancel reading the directory in the source pane");
@@ -274,7 +274,7 @@ paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathn
 
 /// Builtin Command Implementations
 
-void copy_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
         auto entries = src->selected_entries();
 
@@ -296,7 +296,7 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Varia
     }
 }
 
-void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     using namespace std::placeholders;
 
     if (window && src) {
@@ -328,7 +328,7 @@ void make_dir_command::make_dir_task(cancel_state &state, const paths::string &d
 }
 
 
-void move_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
         auto entries = src->selected_entries();
 
@@ -351,7 +351,7 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, Glib::Varia
 }
 
 
-void delete_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void delete_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
         auto entries = src->selected_entries();
 
@@ -385,26 +385,27 @@ Glib::ustring delete_command::confirm_delete_msg(const std::vector<dir_entry *> 
 }
 
 
-void jump_path_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void jump_path_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (src) {
         src->focus_path();
     }
 }
 
-void begin_filter_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void begin_filter_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (src) {
         src->begin_filter();
     }
 }
 
-void open_key_prefs_command::run(nuc::app_window *, nuc::file_view *, Glib::VariantBase) {
+
+void open_key_prefs_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
     auto *window = key_prefs_window::instance();
 
     window->show();
     window->present();
 }
 
-void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     nuc::file_view *dest = src->next_file_view;
 
     auto fl_src = src->file_list();
@@ -417,7 +418,7 @@ void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, Glib:
     dest->file_list(fl_src);
 }
 
-void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto *popup = window->open_dirs_popup();
 
     popup->dir_chosen([=] (std::shared_ptr<file_list_controller> flist) {
@@ -428,7 +429,7 @@ void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib:
     popup->present();
 }
 
-void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto flist = directory_buffers::instance().new_buffer();
     auto old_path = src->path();
 
@@ -436,7 +437,7 @@ void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::V
     src->path(old_path);
 }
 
-void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto &buffers = directory_buffers::instance();
     std::shared_ptr<file_list_controller> flist;
 
@@ -465,7 +466,7 @@ void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, Glib::
     }
 }
 
-void cancel_command::run(nuc::app_window *window, nuc::file_view *src, Glib::VariantBase) {
+void cancel_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase) {
     if (src) {
         src->dir_vfs()->cancel();
     }
