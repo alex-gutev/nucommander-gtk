@@ -28,6 +28,19 @@
 
 using namespace nuc;
 
+/**
+ * Returns a generic keystring for the key event @a e which represents
+ * the type of key pressed, e.g. <char> is returned for keys which
+ * produce a printable character.
+ *
+ * @param e The key event.
+ *
+ * @return The keystring, empty if there is no generic keystring.
+ */
+static std::string generic_keystring(const GdkEventKey *e) {
+    return gdk_keyval_to_unicode(e->keyval) > 0x20 ? "<char>" : "";
+}
+
 /// command_keymap Implementation
 
 command_keymap::command_keymap() {
@@ -92,7 +105,9 @@ std::string command_keymap::command_name(const std::string &key) {
 }
 
 std::string command_keymap::command_name(const GdkEventKey *e) {
-    return command_name(event_keystring(e));
+    auto cmd = command_name(event_keystring(e));
+
+    return cmd.length() ? cmd : command_name(generic_keystring(e));
 }
 
 std::string command_keymap::event_keystring(const GdkEventKey *e) {
