@@ -406,6 +406,14 @@ void file_view::begin_filter() {
     }
 }
 
+void file_view::begin_filter(const Glib::ustring &str) {
+    begin_filter();
+
+    filter_entry->set_text(str);
+    filter_entry->set_position(1);
+}
+
+
 bool file_view::filtering() const {
     return m_filtering;
 }

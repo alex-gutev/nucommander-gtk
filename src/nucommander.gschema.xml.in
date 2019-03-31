@@ -12,6 +12,7 @@
     </key>
     <key name="keybindings" type="a{ss}">
       <default>
+        <![CDATA[
         {
         "F3": "view",
         "F5": "copy",
@@ -20,6 +21,7 @@
         "F8": "delete",
         "F9": "open-terminal",
         "/": "jump-path",
+        "<char>": "begin-filter-type",
         "C-s": "begin-filter",
         "C-,": "open-key-prefs",
         "C-u": "swap-panes",
@@ -28,6 +30,7 @@
         "C-w": "close-directory",
         "Escape": "cancel"
         }
+        ]]>
       </default>
       <description>
         Dictionary of command key-bindings. Each key is the

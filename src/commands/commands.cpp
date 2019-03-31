@@ -38,7 +38,7 @@ using namespace nuc;
  * @return The keystring, empty if there is no generic keystring.
  */
 static std::string generic_keystring(const GdkEventKey *e) {
-    return gdk_keyval_to_unicode(e->keyval) > 0x20 ? "<char>" : "";
+    return Glib::Unicode::isprint(gdk_keyval_to_unicode(e->keyval)) ? "<char>" : "";
 }
 
 /// command_keymap Implementation

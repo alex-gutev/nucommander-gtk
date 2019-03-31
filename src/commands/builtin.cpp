@@ -169,6 +169,16 @@ struct begin_filter_command : public command {
 };
 
 /**
+ * Begin filter with character command.
+ *
+ * Begins filtering and sets the character, corresponding to the event
+ * if any, as is the contents of the filter text entry.
+ */
+struct begin_filter_type_command : public begin_filter_command {
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
+};
+
+/**
  * Open Key Binding Preferences Command.
  */
 struct open_key_prefs_command : public command {
@@ -256,6 +266,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("delete", std::make_shared<delete_command>());
     table.emplace("jump-path", std::make_shared<jump_path_command>());
     table.emplace("begin-filter", std::make_shared<begin_filter_command>());
+    table.emplace("begin-filter-type", std::make_shared<begin_filter_type_command>());
     table.emplace("open-key-prefs", std::make_shared<open_key_prefs_command>());
     table.emplace("swap-panes", std::make_shared<swap_panes_command>());
     table.emplace("change-directory", std::make_shared<change_dir_command>());
@@ -397,6 +408,20 @@ void begin_filter_command::run(nuc::app_window *window, nuc::file_view *src, con
     }
 }
 
+void begin_filter_type_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase) {
+    if (src) {
+        if (e->type == GDK_KEY_PRESS) {
+            GdkEventKey *key_event = (GdkEventKey*)e;
+            gunichar chr = gdk_keyval_to_unicode(key_event->keyval);
+
+            if (Glib::Unicode::isprint(chr))
+                src->begin_filter(Glib::ustring(1, chr));
+        }
+        else {
+            src->begin_filter();
+        }
+    }
+}
 
 void open_key_prefs_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
     auto *window = key_prefs_window::instance();

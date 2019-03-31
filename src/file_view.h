@@ -437,6 +437,13 @@ namespace nuc {
          */
         void begin_filter();
 
+        /**
+         * Begins filtering and sets the contents of the filter text
+         * entry.
+         *
+         * @param str The contents of the filter entry.
+         */
+        void begin_filter(const Glib::ustring &str);
 
         /* Signals */
 
