@@ -26,10 +26,16 @@ app_settings &app_settings::instance() {
     return inst;
 }
 
+app_settings::app_settings() : m_settings(Gio::Settings::create(settings_id)) {
+    m_dir_refresh_timeout = m_settings->get_int("dir-refresh-timeout");
+}
+
+
 int app_settings::dir_refresh_timeout() const {
-    return m_settings->get_int("dir-refresh-timeout");
+    return m_dir_refresh_timeout;
 }
 
 void app_settings::dir_refresh_timeout(int timeout) {
     m_settings->set_int("dir-refresh-timeout", timeout);
+    m_dir_refresh_timeout = timeout;
 }

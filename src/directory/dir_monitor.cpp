@@ -23,9 +23,6 @@
 
 using namespace nuc;
 
-dir_monitor::dir_monitor()
-    : interval(app_settings::instance().dir_refresh_timeout()) {}
-
 dir_monitor::event_signal_type dir_monitor::signal_event() {
     return m_signal_event;
 }
@@ -172,7 +169,7 @@ void dir_monitor::create_timer() {
     stop_timer();
 
     // Can also use connect_seconds
-    timer = Glib::signal_timeout().connect(sigc::mem_fun(this, &dir_monitor::on_timer_elapsed), interval);
+    timer = Glib::signal_timeout().connect(sigc::mem_fun(this, &dir_monitor::on_timer_elapsed), app_settings::instance().dir_refresh_timeout());
 }
 
 void dir_monitor::stop_timer() {

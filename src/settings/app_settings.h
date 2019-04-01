@@ -24,24 +24,13 @@
 
 namespace nuc {
     class app_settings {
-        /**
-         * ID of the GSettings schema of the application's settings.
-         */
-        static constexpr const char *settings_id = "org.agware.NuCommander";
-
-        /**
-         * GSettings object.
-         */
-        Glib::RefPtr<Gio::Settings> m_settings;
-
     public:
-
         /**
          * GSettings path where the plugins' settings are stored.
          */
         static constexpr const char *settings_path = "/org/agware/NuCommander/";
 
-        app_settings() : m_settings(Gio::Settings::create(settings_id)) {}
+        app_settings();
 
         static app_settings &instance();
 
@@ -65,6 +54,22 @@ namespace nuc {
          * @param timeout The timeout value to set.
          */
         void dir_refresh_timeout(int timeout);
+
+    private:
+        /**
+         * ID of the GSettings schema of the application's settings.
+         */
+        static constexpr const char *settings_id = "org.agware.NuCommander";
+
+        /**
+         * GSettings object.
+         */
+        Glib::RefPtr<Gio::Settings> m_settings;
+
+        /**
+         * Cached value of the directory refresh timeout.
+         */
+        int m_dir_refresh_timeout;
     };
 }
 

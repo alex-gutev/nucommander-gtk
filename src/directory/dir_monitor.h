@@ -156,8 +156,6 @@ namespace nuc {
         typedef sigc::signal<void, event> event_signal_type;
 
 
-        dir_monitor();
-
         /**
          * Event signal.
          */
@@ -199,27 +197,7 @@ namespace nuc {
         void resume();
 
 
-        /**
-         * Returns the event block timer interval.
-         */
-        unsigned int timeout() const {
-            return interval;
-        };
-        /**
-         * Sets the event block timer interval.
-         */
-        void timeout(unsigned int time) {
-            interval = time;
-        }
-
-
     private:
-        /**
-         * Interval in milliseconds, during which if no event is
-         * received, the callback is called with EVENTS_END.
-         */
-        unsigned int interval = 1000;
-
         /**
          * Flag indicating whether a directory is being monitored
          * (true) with detailed events describing the changes to each
