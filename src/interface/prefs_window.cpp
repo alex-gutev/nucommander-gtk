@@ -111,8 +111,8 @@ void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
 
     bindings_view->set_model(bindings_list);
 
-    bindings_view->append_column_editable("Command", kb_model.command);
-    bindings_view->append_column_editable("Shortcut", kb_model.key);
+    bindings_view->append_column_editable(_("Command"), kb_model.command);
+    bindings_view->append_column_editable(_("Shortcut"), kb_model.key);
 
     bindings_view->get_column(0)->set_sort_column(kb_model.command);
     bindings_view->get_column(1)->set_sort_column(kb_model.key);
