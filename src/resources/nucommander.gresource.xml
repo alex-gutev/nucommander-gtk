@@ -6,7 +6,7 @@
         <file preprocess="xml-stripblanks">error_dialog.glade</file>
         <file preprocess="xml-stripblanks">dest_dialog.glade</file>
         <file preprocess="xml-stripblanks">progress_dialog.glade</file>
-        <file preprocess="xml-stripblanks">key_prefs_window.glade</file>
+        <file preprocess="xml-stripblanks">prefs_window.glade</file>
         <file preprocess="xml-stripblanks">open_dirs_popup.glade</file>
         <file>styles.css</file>
     </gresource>

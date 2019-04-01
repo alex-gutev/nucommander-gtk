@@ -25,6 +25,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/spinbutton.h>
 
 #include "paths/pathname.h"
 
@@ -32,7 +33,43 @@ namespace nuc {
     /**
      * Key bindings Preferences Dialog
      */
-    class key_prefs_window : public Gtk::Window {
+    class prefs_window : public Gtk::Window {
+    public:
+        /** constructor */
+        prefs_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Creates a new instance of the key-bindings preferences
+         * dialog.
+         *
+         * @return The key_prefs_dialog instance.
+         */
+        static prefs_window *create();
+
+        /**
+         * Returns the shared instance of the dialog.
+         *
+         * @return The shared instance.
+         */
+        static prefs_window *instance();
+
+        /**
+         * Shows the dialog.
+         *
+         * Refreshes the key-bindings list if the dialog is not
+         * already visible.
+         */
+        void show();
+
+    private:
+        /* General Preferences */
+
+        /**
+         * Directory Refresh Timeout Spinbutton.
+         */
+        Gtk::SpinButton *refresh_timeout_entry;
+
+
         /* Key Binding Preferences */
 
         /**
@@ -70,7 +107,33 @@ namespace nuc {
         Gtk::Button *cancel_button;
 
 
+        /* General Prefrences */
+
+        /**
+         * Initializes the widgets on the general page.
+         *
+         * @param builder The builder object.
+         */
+        void init_general(const Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Retrieves the general settings from GSettings.
+         */
+        void get_general_settings();
+        /**
+         * Stores the general settings in GSettings.
+         */
+        void store_general_settings();
+
+
         /* Key Binding Preferences */
+
+        /**
+         * Initializes the widgets on the key bindings page.
+         *
+         * @param builder The builder object
+         */
+        void init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder);
 
         /**
          * Retrieves the key bindings from settings and stores them in
@@ -124,33 +187,6 @@ namespace nuc {
          * @return     True if the event was handled.
          */
         bool on_key_press_event(GdkEventKey *e);
-
-    public:
-        /** constructor */
-        key_prefs_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
-
-        /**
-         * Creates a new instance of the key-bindings preferences
-         * dialog.
-         *
-         * @return The key_prefs_dialog instance.
-         */
-        static key_prefs_window *create();
-
-        /**
-         * Returns the shared instance of the dialog.
-         *
-         * @return The shared instance.
-         */
-        static key_prefs_window *instance();
-
-        /**
-         * Shows the dialog.
-         *
-         * Refreshes the key-bindings list if the dialog is not
-         * already visible.
-         */
-        void show();
     };
 }
 

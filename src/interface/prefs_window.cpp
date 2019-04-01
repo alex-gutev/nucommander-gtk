@@ -17,7 +17,7 @@
  *
  */
 
-#include "key_prefs_window.h"
+#include "prefs_window.h"
 
 #include "settings/app_settings.h"
 
@@ -25,23 +25,17 @@
 
 using namespace nuc;
 
-
-key_prefs_window::model_columns::model_columns() {
-    add(command);
-    add(key);
-}
-
-key_prefs_window *key_prefs_window::instance() {
-    static key_prefs_window *inst = key_prefs_window::create();
+prefs_window *prefs_window::instance() {
+    static prefs_window *inst = prefs_window::create();
     return inst;
 }
 
-key_prefs_window *key_prefs_window::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/key_prefs_window.glade");
+prefs_window *prefs_window::create() {
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/prefs_window.glade");
 
-    key_prefs_window *window = nullptr;
+    prefs_window *window = nullptr;
 
-    builder->get_widget_derived("key_prefs_window", window);
+    builder->get_widget_derived("prefs_window", window);
 
     if (!window)
         throw std::runtime_error("No \"key_prefs_dialog\" object in key_pref_dialog.glade");
@@ -49,16 +43,60 @@ key_prefs_window *key_prefs_window::create() {
     return window;
 }
 
-key_prefs_window::key_prefs_window(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) : Gtk::Window(cobject) {
+prefs_window::prefs_window(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder) : Gtk::Window(cobject) {
+    // Get Widgets
+
+    builder->get_widget("ok_button", ok_button);
+    builder->get_widget("apply_button", apply_button);
+    builder->get_widget("cancel_button", cancel_button);
+
+    // Initialize Buttons
+
+    apply_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::apply_clicked));
+    ok_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::ok_clicked));
+    cancel_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::cancel_clicked));
+
+    init_general(builder);
+    init_keybindings(builder);
+}
+
+
+void prefs_window::show() {
+    if (!is_visible()) {
+        get_general_settings();
+        get_bindings();
+
+        Gtk::Window::show();
+    }
+}
+
+
+//// General Settings
+
+void prefs_window::init_general(const Glib::RefPtr<Gtk::Builder> &builder) {
+    builder->get_widget("refresh_timeout_entry", refresh_timeout_entry);
+
+    refresh_timeout_entry->set_range(100, 10000);
+    refresh_timeout_entry->set_increments(100, 1000);
+}
+
+void prefs_window::get_general_settings() {
+    refresh_timeout_entry->set_value(app_settings::instance().dir_refresh_timeout());
+}
+
+void prefs_window::store_general_settings() {
+    app_settings::instance().dir_refresh_timeout(refresh_timeout_entry->get_value_as_int());
+}
+
+
+//// Keybinding Settings
+
+void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
     // Get Widgets
 
     builder->get_widget("bindings_tree_view", bindings_view);
     builder->get_widget("kb_add_button", kb_add_button);
     builder->get_widget("kb_remove_button", kb_remove_button);
-
-    builder->get_widget("ok_button", ok_button);
-    builder->get_widget("apply_button", apply_button);
-    builder->get_widget("cancel_button", cancel_button);
 
     // Create List Model
 
@@ -80,15 +118,17 @@ key_prefs_window::key_prefs_window(BaseObjectType *cobject, const Glib::RefPtr<G
 
     // Initialize Buttons
 
-    kb_add_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::add_binding));
-    kb_remove_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::remove_binding));
-
-    apply_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::apply_clicked));
-    ok_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::ok_clicked));
-    cancel_button->signal_clicked().connect(sigc::mem_fun(this, &key_prefs_window::cancel_clicked));
+    kb_add_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::add_binding));
+    kb_remove_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::remove_binding));
 }
 
-void key_prefs_window::get_bindings() {
+
+prefs_window::model_columns::model_columns() {
+    add(command);
+    add(key);
+}
+
+void prefs_window::get_bindings() {
     Glib::Variant<std::map<Glib::ustring, Glib::ustring>> key_map;
 
     app_settings::instance().settings()->get_value("keybindings", key_map);
@@ -103,7 +143,7 @@ void key_prefs_window::get_bindings() {
     }
 }
 
-void key_prefs_window::store_bindings() {
+void prefs_window::store_bindings() {
     std::map<Glib::ustring, Glib::ustring> key_map;
 
     for (auto row : bindings_list->children()) {
@@ -114,38 +154,41 @@ void key_prefs_window::store_bindings() {
 }
 
 
-void key_prefs_window::add_binding() {
+void prefs_window::add_binding() {
     auto row = bindings_list->append();
 
     bindings_view->set_cursor(bindings_list->get_path(row), *bindings_view->get_column(0), true);
 }
 
-void key_prefs_window::remove_binding() {
+void prefs_window::remove_binding() {
     if (auto row = bindings_view->get_selection()->get_selected())
         bindings_list->erase(row);
 }
 
 
-void key_prefs_window::apply_clicked() {
+//// Window Signal Handlers
+
+void prefs_window::apply_clicked() {
+    store_general_settings();
     store_bindings();
 }
 
-void key_prefs_window::ok_clicked() {
-    store_bindings();
+void prefs_window::ok_clicked() {
+    apply_clicked();
     hide();
 }
 
-void key_prefs_window::cancel_clicked() {
+void prefs_window::cancel_clicked() {
     hide();
 }
 
 
-bool key_prefs_window::on_delete(const GdkEventAny *e) {
+bool prefs_window::on_delete(const GdkEventAny *e) {
     gtk_widget_hide_on_delete((GtkWidget*)this->gobj());
     return true;
 }
 
-bool key_prefs_window::on_key_press_event(GdkEventKey *e) {
+bool prefs_window::on_key_press_event(GdkEventKey *e) {
     if (!Gtk::Window::on_key_press_event(e)) {
         switch (e->keyval) {
         case GDK_KEY_Escape:
@@ -155,12 +198,4 @@ bool key_prefs_window::on_key_press_event(GdkEventKey *e) {
     }
 
     return false;
-}
-
-
-void key_prefs_window::show() {
-    if (!is_visible()) {
-        get_bindings();
-        Gtk::Window::show();
-    }
 }

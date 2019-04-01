@@ -114,8 +114,8 @@ nucommander_SOURCES = \
 	interface/dest_dialog.cpp \
 	interface/progress_dialog.h \
 	interface/progress_dialog.cpp \
-	interface/key_prefs_window.h \
-	interface/key_prefs_window.cpp \
+	interface/prefs_window.h \
+	interface/prefs_window.cpp \
 	interface/open_dirs_popup.h \
 	interface/open_dirs_popup.cpp \
 	util/util.h \
@@ -144,7 +144,7 @@ nucommander_RESOURCES = \
 	resources/error_dialog.glade \
 	resources/dest_dialog.glade \
 	resources/progress_dialog.glade \
-	resources/key_prefs_window.glade \
+	resources/prefs_window.glade \
 	resources/open_dirs_popup.glade \
 	resources/nucommander.gresource.xml \
 	resources/styles.css

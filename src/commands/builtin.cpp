@@ -25,7 +25,7 @@
 #include "app_window.h"
 #include "file_view.h"
 
-#include "interface/key_prefs_window.h"
+#include "interface/prefs_window.h"
 #include "interface/dest_dialog.h"
 
 #include "operations/copy.h"
@@ -424,7 +424,7 @@ void begin_filter_type_command::run(nuc::app_window *window, nuc::file_view *src
 }
 
 void open_key_prefs_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
-    auto *window = key_prefs_window::instance();
+    auto *window = prefs_window::instance();
 
     window->show();
     window->present();
