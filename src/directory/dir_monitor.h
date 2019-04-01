@@ -38,21 +38,6 @@ namespace nuc {
      * change.
      */
     class dir_monitor {
-        /**
-         * Interval in milliseconds, during which if no event is
-         * received, the callback is called with EVENTS_END.
-         */
-        unsigned int interval = 2000;
-
-        /**
-         * Flag indicating whether a directory is being monitored
-         * (true) with detailed events describing the changes to each
-         * file in the directory, or a regular file is being monitored
-         * (false) with events describing changes to the file as a
-         * whole.
-         */
-        bool dir_events = false;
-        
     public:
         /**
          * Event type.
@@ -131,7 +116,7 @@ namespace nuc {
         public:
 
             /** Constructors */
-            
+
             event(event_type type) : m_type(type) {}
 
             template <typename Arg1, typename Arg2>
@@ -140,7 +125,7 @@ namespace nuc {
 
 
             /* Accessors */
-            
+
             const event_type type() const {
                 return m_type;
             }
@@ -170,11 +155,14 @@ namespace nuc {
          */
         typedef sigc::signal<void, event> event_signal_type;
 
+
+        dir_monitor();
+
         /**
          * Event signal.
          */
         event_signal_type signal_event();
-        
+
         /**
          * Begins monitoring a directory.
          *
@@ -210,7 +198,7 @@ namespace nuc {
          */
         void resume();
 
-        
+
         /**
          * Returns the event block timer interval.
          */
@@ -223,14 +211,29 @@ namespace nuc {
         void timeout(unsigned int time) {
             interval = time;
         }
-        
-        
+
+
     private:
+        /**
+         * Interval in milliseconds, during which if no event is
+         * received, the callback is called with EVENTS_END.
+         */
+        unsigned int interval = 1000;
+
+        /**
+         * Flag indicating whether a directory is being monitored
+         * (true) with detailed events describing the changes to each
+         * file in the directory, or a regular file is being monitored
+         * (false) with events describing changes to the file as a
+         * whole.
+         */
+        bool dir_events = false;
+
         /**
          * Directory being monitored.
          */
         Glib::RefPtr<Gio::File> dir_file;
-        
+
         /**
          * Monitors the directory for changes.
          */
@@ -238,7 +241,7 @@ namespace nuc {
         /**
          * Monitor timer connection object.
          */
-        sigc::connection timer;        
+        sigc::connection timer;
 
         /**
          * Event signal.
@@ -249,8 +252,8 @@ namespace nuc {
          * Queue where events are stored when the monitor is paused.
          */
         std::deque<event> event_queue;
-        
-        
+
+
         /**
          * True if the directory is currently being modified, that is
          * the timer started since the last event has not yet elapsed.
@@ -261,7 +264,7 @@ namespace nuc {
          * True if the monitor is paused.
          */
         bool paused = true;
-        
+
         /**
          * File system event signal handler.
          */
@@ -275,19 +278,19 @@ namespace nuc {
          * Returns true if the event applies to the directory file
          * itself.
          */
-        bool is_dir_event(const Glib::RefPtr<Gio::File> &file);        
+        bool is_dir_event(const Glib::RefPtr<Gio::File> &file);
 
         /**
          * Emits the EVENTS_END event, stops the timer and sets the
          * changing flag to false.
          */
         void end_events();
-        
+
         /**
          * Creates the timer
          */
         void create_timer();
-        
+
         /**
          * Stops the current timer if any.
          */

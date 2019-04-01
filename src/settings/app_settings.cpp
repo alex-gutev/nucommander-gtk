@@ -25,3 +25,11 @@ app_settings &app_settings::instance() {
     static app_settings inst;
     return inst;
 }
+
+int app_settings::dir_refresh_timeout() const {
+    return m_settings->get_int("dir-refresh-timeout");
+}
+
+void app_settings::dir_refresh_timeout(int timeout) {
+    m_settings->set_int("dir-refresh-timeout", timeout);
+}

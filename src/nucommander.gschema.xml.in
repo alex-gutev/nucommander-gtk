@@ -10,6 +10,14 @@
 	plugin's configuration.
       </description>
     </key>
+    <key name="dir-refresh-timeout" type="i">
+      <default>1000</default>
+      <summary>
+        The timeout (in milliseconds) to wait for, following the last
+        file system event, before refreshing the file list, which is
+        displayed to the user.
+      </summary>
+    </key>
     <key name="keybindings" type="a{ss}">
       <default>
         <![CDATA[

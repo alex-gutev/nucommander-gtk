@@ -48,6 +48,23 @@ namespace nuc {
         Glib::RefPtr<Gio::Settings> settings() {
             return m_settings;
         }
+
+
+        /* Retrieving and Setting Settings */
+
+        /**
+         * Retrieves the directory refresh timeout from settings.
+         *
+         * @return The timeout.
+         */
+        int dir_refresh_timeout() const;
+        /**
+         * Sets the value of the directory refresh timeout in
+         * settings.
+         *
+         * @param timeout The timeout value to set.
+         */
+        void dir_refresh_timeout(int timeout);
     };
 }
 

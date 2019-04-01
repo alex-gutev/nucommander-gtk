@@ -19,7 +19,12 @@
 
 #include "dir_monitor.h"
 
+#include "settings/app_settings.h"
+
 using namespace nuc;
+
+dir_monitor::dir_monitor()
+    : interval(app_settings::instance().dir_refresh_timeout()) {}
 
 dir_monitor::event_signal_type dir_monitor::signal_event() {
     return m_signal_event;
