@@ -23,6 +23,8 @@
 
 #include <map>
 
+#include <glib/gi18n.h>
+
 using namespace nuc;
 
 prefs_window *prefs_window::instance() {
@@ -58,6 +60,7 @@ prefs_window::prefs_window(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
 
     init_general(builder);
     init_keybindings(builder);
+    init_plugins(builder);
 }
 
 
@@ -65,6 +68,7 @@ void prefs_window::show() {
     if (!is_visible()) {
         get_general_settings();
         get_bindings();
+        get_plugins();
 
         Gtk::Window::show();
     }
@@ -100,18 +104,18 @@ void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
 
     // Create List Model
 
-    bindings_list = Gtk::ListStore::create(model);
-    bindings_list->set_sort_column(model.command, Gtk::SortType::SORT_ASCENDING);
+    bindings_list = Gtk::ListStore::create(kb_model);
+    bindings_list->set_sort_column(kb_model.command, Gtk::SortType::SORT_ASCENDING);
 
     // Initialize Tree View
 
     bindings_view->set_model(bindings_list);
 
-    bindings_view->append_column_editable("Command", model.command);
-    bindings_view->append_column_editable("Shortcut", model.key);
+    bindings_view->append_column_editable("Command", kb_model.command);
+    bindings_view->append_column_editable("Shortcut", kb_model.key);
 
-    bindings_view->get_column(0)->set_sort_column(model.command);
-    bindings_view->get_column(1)->set_sort_column(model.key);
+    bindings_view->get_column(0)->set_sort_column(kb_model.command);
+    bindings_view->get_column(1)->set_sort_column(kb_model.key);
 
     bindings_view->get_column(0)->set_resizable(true);
     bindings_view->get_column(1)->set_resizable(true);
@@ -123,7 +127,7 @@ void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
 }
 
 
-prefs_window::model_columns::model_columns() {
+prefs_window::kb_model_columns::kb_model_columns() {
     add(command);
     add(key);
 }
@@ -138,8 +142,8 @@ void prefs_window::get_bindings() {
     for (auto binding : key_map.get()) {
         Gtk::TreeRow row = *bindings_list->append();
 
-        row[model.key] = binding.first;
-        row[model.command] = binding.second;
+        row[kb_model.key] = binding.first;
+        row[kb_model.command] = binding.second;
     }
 }
 
@@ -147,7 +151,7 @@ void prefs_window::store_bindings() {
     std::map<Glib::ustring, Glib::ustring> key_map;
 
     for (auto row : bindings_list->children()) {
-        key_map[row[model.key]] = row[model.command];
+        key_map[row[kb_model.key]] = row[kb_model.command];
     }
 
     app_settings::instance().settings()->set_value("keybindings", Glib::Variant<std::map<Glib::ustring, Glib::ustring>>::create(key_map));
@@ -166,11 +170,86 @@ void prefs_window::remove_binding() {
 }
 
 
+//// Plugin Settings
+
+prefs_window::plugin_model_columns::plugin_model_columns() {
+    add(path);
+    add(regex);
+}
+
+void prefs_window::init_plugins(const Glib::RefPtr<Gtk::Builder> &builder) {
+    // Get Widgets
+
+    builder->get_widget("plugins_treeview", plugins_view);
+    builder->get_widget("plugin_add_button", plugin_add_button);
+    builder->get_widget("plugin_remove_button", plugin_remove_button);
+
+    // Create List Store Model
+
+    plugins_list = Gtk::ListStore::create(plugin_model);
+    plugins_list->set_sort_column(plugin_model.path, Gtk::SortType::SORT_ASCENDING);
+
+    // Initialize Tree View
+
+    plugins_view->set_model(plugins_list);
+
+    plugins_view->append_column_editable(_("Plugin Path"), plugin_model.path);
+    plugins_view->append_column_editable(_("Regex"), plugin_model.regex);
+
+    plugins_view->get_column(0)->set_sort_column(plugin_model.path);
+    plugins_view->get_column(1)->set_sort_column(plugin_model.regex);
+
+    plugins_view->get_column(0)->set_resizable(true);
+    plugins_view->get_column(1)->set_resizable(true);
+
+    // Initialize Buttons
+
+    plugin_add_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::add_plugin));
+    plugin_remove_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::remove_plugin));
+}
+
+void prefs_window::get_plugins() {
+    Glib::Variant<std::vector<std::pair<Glib::ustring, Glib::ustring>>> plugins;
+    app_settings::instance().settings()->get_value("plugins", plugins);
+
+    plugins_list->clear();
+
+    for (auto plugin : plugins.get()) {
+        Gtk::TreeRow row = *plugins_list->append();
+
+        row[plugin_model.path] = plugin.first;
+        row[plugin_model.regex] = plugin.second;
+    }
+}
+
+void prefs_window::store_plugins() {
+    std::vector<std::tuple<Glib::ustring, Glib::ustring>> plugins;
+
+    for (auto row : plugins_list->children()) {
+        plugins.emplace_back(row[plugin_model.path], row[plugin_model.regex]);
+    }
+
+    app_settings::instance().settings()->set_value("plugins", Glib::Variant<std::vector<std::tuple<Glib::ustring, Glib::ustring>>>::create(plugins));
+}
+
+void prefs_window::add_plugin() {
+    auto row = plugins_list->append();
+
+    plugins_view->set_cursor(plugins_list->get_path(row), *plugins_view->get_column(0), true);
+}
+
+void prefs_window::remove_plugin() {
+    if (auto row = plugins_view->get_selection()->get_selected())
+        plugins_list->erase(row);
+}
+
+
 //// Window Signal Handlers
 
 void prefs_window::apply_clicked() {
     store_general_settings();
     store_bindings();
+    store_plugins();
 }
 
 void prefs_window::ok_clicked() {

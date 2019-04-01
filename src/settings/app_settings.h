@@ -22,6 +22,10 @@
 
 #include <giomm/settings.h>
 
+#if GLIBMM_MAJOR_VERSION == 2 && GLIBMM_MINOR_VERSION < 54
+#include "variant.h"
+#endif
+
 namespace nuc {
     class app_settings {
     public:

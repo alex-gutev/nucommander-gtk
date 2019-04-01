@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-03-05 22:13+0100\n"
+"POT-Creation-Date: 2019-04-01 19:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -53,28 +53,32 @@ msgstr ""
 msgid "Begin filtering in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:178
+#: src/commands/builtin.cpp:188
 msgid "Open the keybinding preferences."
 msgstr ""
 
-#: src/commands/builtin.cpp:191
+#: src/commands/builtin.cpp:201
 msgid "Swap source and destination panes' directories."
 msgstr ""
 
-#: src/commands/builtin.cpp:204
+#: src/commands/builtin.cpp:214
 msgid ""
 "Display the list of open directories, to choose a new directory to display "
 "in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:218
+#: src/commands/builtin.cpp:228
 msgid "Create a new directory buffer."
 msgstr ""
 
-#: src/commands/builtin.cpp:232
+#: src/commands/builtin.cpp:242
 msgid ""
 "Close the source pane's current directory and return to the previously "
 "visited directory."
+msgstr ""
+
+#: src/commands/builtin.cpp:255
+msgid "Cancel reading the directory in the source pane"
 msgstr ""
 
 #: nucommander.desktop:6

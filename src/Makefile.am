@@ -110,6 +110,7 @@ nucommander_SOURCES = \
 	luawrapper/luawrapper.hpp \
 	settings/app_settings.h \
 	settings/app_settings.cpp \
+	settings/variant.h \
 	interface/dest_dialog.h \
 	interface/dest_dialog.cpp \
 	interface/progress_dialog.h \

@@ -64,40 +64,43 @@ namespace nuc {
     private:
         /* General Preferences */
 
-        /**
-         * Directory Refresh Timeout Spinbutton.
-         */
         Gtk::SpinButton *refresh_timeout_entry;
 
 
         /* Key Binding Preferences */
 
-        /**
-         * Model Columns for the key
-         */
-        struct model_columns : public Gtk::TreeModelColumnRecord {
+        struct kb_model_columns : public Gtk::TreeModelColumnRecord {
             Gtk::TreeModelColumn<Glib::ustring> command;
             Gtk::TreeModelColumn<Glib::ustring> key;
 
-            model_columns();
+            kb_model_columns();
         };
 
-        /** Column Model */
-        model_columns model;
+        kb_model_columns kb_model;
 
-        /**
-         * List store model - storing the list of key bindings.
-         */
         Glib::RefPtr<Gtk::ListStore> bindings_list;
-
-        /**
-         * Key bindings tree view.
-         */
         Gtk::TreeView *bindings_view;
 
-        /* Add and remove binding buttons */
         Gtk::Button *kb_add_button;
         Gtk::Button *kb_remove_button;
+
+
+        /* Plugin Settings */
+
+        struct plugin_model_columns : public Gtk::TreeModelColumnRecord {
+            Gtk::TreeModelColumn<Glib::ustring> path;
+            Gtk::TreeModelColumn<Glib::ustring> regex;
+
+            plugin_model_columns();
+        };
+
+        plugin_model_columns plugin_model;
+
+        Glib::RefPtr<Gtk::ListStore> plugins_list;
+        Gtk::TreeView *plugins_view;
+
+        Gtk::Button *plugin_add_button;
+        Gtk::Button *plugin_remove_button;
 
 
         /** Buttons */
@@ -128,34 +131,24 @@ namespace nuc {
 
         /* Key Binding Preferences */
 
-        /**
-         * Initializes the widgets on the key bindings page.
-         *
-         * @param builder The builder object
-         */
         void init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder);
 
-        /**
-         * Retrieves the key bindings from settings and stores them in
-         * bindings_list.
-         */
         void get_bindings();
-
-        /**
-         * Saves the key bindings in bindings_list to settings.
-         */
         void store_bindings();
 
-        /**
-         * Add a new key binding to the tree model and set the tree
-         * views's cursor to the created row.
-         */
         void add_binding();
-
-        /**
-         * Remove the selected key binding from the tree model.
-         */
         void remove_binding();
+
+
+        /* Plugin Settings */
+
+        void init_plugins(const Glib::RefPtr<Gtk::Builder> &builder);
+
+        void get_plugins();
+        void store_plugins();
+
+        void add_plugin();
+        void remove_plugin();
 
 
         /* Signal Handlers */
