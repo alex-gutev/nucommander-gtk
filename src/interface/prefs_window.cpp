@@ -27,6 +27,27 @@
 
 using namespace nuc;
 
+//// Utility Function Prototypes
+
+/**
+ * Adds a row to the model @a model and begins editing it.
+ *
+ * @param view The treeview.
+ * @param model The Liststore model.
+ */
+static void add_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> model);
+/**
+ * Removes the currently selected row of the treeview @a view from the
+ * model @a model.
+ *
+ * @param view The treeview.
+ * @param model The Liststore model.
+ */
+static void remove_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> model);
+
+
+//// Implementation
+
 prefs_window *prefs_window::instance() {
     static prefs_window *inst = prefs_window::create();
     return inst;
@@ -60,6 +81,7 @@ prefs_window::prefs_window(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
 
     init_general(builder);
     init_keybindings(builder);
+    init_error_handlers(builder);
     init_plugins(builder);
 }
 
@@ -68,6 +90,7 @@ void prefs_window::show() {
     if (!is_visible()) {
         get_general_settings();
         get_bindings();
+        get_error_handlers();
         get_plugins();
 
         Gtk::Window::show();
@@ -122,8 +145,8 @@ void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
 
     // Initialize Buttons
 
-    kb_add_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::add_binding));
-    kb_remove_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::remove_binding));
+    kb_add_button->signal_clicked().connect(std::bind(add_row, bindings_view, bindings_list));
+    kb_remove_button->signal_clicked().connect(std::bind(remove_row, bindings_view, bindings_list));
 }
 
 
@@ -155,18 +178,6 @@ void prefs_window::store_bindings() {
     }
 
     app_settings::instance().settings()->set_value("keybindings", Glib::Variant<std::map<Glib::ustring, Glib::ustring>>::create(key_map));
-}
-
-
-void prefs_window::add_binding() {
-    auto row = bindings_list->append();
-
-    bindings_view->set_cursor(bindings_list->get_path(row), *bindings_view->get_column(0), true);
-}
-
-void prefs_window::remove_binding() {
-    if (auto row = bindings_view->get_selection()->get_selected())
-        bindings_list->erase(row);
 }
 
 
@@ -204,8 +215,8 @@ void prefs_window::init_plugins(const Glib::RefPtr<Gtk::Builder> &builder) {
 
     // Initialize Buttons
 
-    plugin_add_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::add_plugin));
-    plugin_remove_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::remove_plugin));
+    plugin_add_button->signal_clicked().connect(std::bind(add_row, plugins_view, plugins_list));
+    plugin_remove_button->signal_clicked().connect(std::bind(remove_row, plugins_view, plugins_list));
 }
 
 void prefs_window::get_plugins() {
@@ -232,15 +243,75 @@ void prefs_window::store_plugins() {
     app_settings::instance().settings()->set_value("plugins", Glib::Variant<std::vector<std::tuple<Glib::ustring, Glib::ustring>>>::create(plugins));
 }
 
-void prefs_window::add_plugin() {
-    auto row = plugins_list->append();
 
-    plugins_view->set_cursor(plugins_list->get_path(row), *plugins_view->get_column(0), true);
+//// Error Handler Settings
+
+prefs_window::eh_model_columns::eh_model_columns() {
+    add(type);
+    add(code);
+    add(restart);
 }
 
-void prefs_window::remove_plugin() {
-    if (auto row = plugins_view->get_selection()->get_selected())
-        plugins_list->erase(row);
+void prefs_window::init_error_handlers(const Glib::RefPtr<Gtk::Builder> &builder) {
+    // Get Widgets
+
+    builder->get_widget("eh_tree_view", eh_view);
+    builder->get_widget("eh_add_button", eh_add_button);
+    builder->get_widget("eh_remove_button", eh_remove_button);
+
+    // Create List Model
+
+    eh_list = Gtk::ListStore::create(eh_model);
+    eh_list->set_sort_column(eh_model.type, Gtk::SortType::SORT_ASCENDING);
+
+    // Initialize Tree View
+
+    eh_view->set_model(eh_list);
+
+    eh_view->append_column_editable(_("Error Type"), eh_model.type);
+    eh_view->append_column_editable(_("Error Code"), eh_model.code);
+    eh_view->append_column_editable(_("Handler"), eh_model.restart);
+
+    eh_view->get_column(0)->set_sort_column(eh_model.type);
+    eh_view->get_column(1)->set_sort_column(eh_model.code);
+    eh_view->get_column(2)->set_sort_column(eh_model.restart);
+
+    eh_view->get_column(0)->set_resizable(true);
+    eh_view->get_column(1)->set_resizable(true);
+    eh_view->get_column(2)->set_resizable(true);
+
+    // Initialize Buttons
+
+    eh_add_button->signal_clicked().connect(std::bind(add_row, eh_view, eh_list));
+    eh_remove_button->signal_clicked().connect(std::bind(remove_row, eh_view, eh_list));
+}
+
+void prefs_window::get_error_handlers() {
+    Glib::Variant<std::vector<std::tuple<std::string, int, std::string>>> handlers;
+
+    app_settings::instance().settings()->get_value("auto-error-handlers", handlers);
+
+    eh_list->clear();
+
+    for (auto handler : handlers.get()) {
+        Gtk::TreeRow row = *eh_list->append();
+
+        row[eh_model.type] = std::get<0>(handler);
+        row[eh_model.code] = std::get<1>(handler);
+        row[eh_model.restart] = std::get<2>(handler);
+    }
+}
+
+void prefs_window::store_error_handlers() {
+    std::vector<std::tuple<Glib::ustring, int, Glib::ustring>> handlers;
+
+    for (auto row : eh_list->children()) {
+        handlers.emplace_back(row[eh_model.type], row[eh_model.code], row[eh_model.restart]);
+    }
+
+    app_settings::instance().settings()->set_value(
+        "auto-error-handlers",
+        Glib::Variant<std::vector<std::tuple<Glib::ustring, int, Glib::ustring>>>::create(handlers));
 }
 
 
@@ -249,6 +320,7 @@ void prefs_window::remove_plugin() {
 void prefs_window::apply_clicked() {
     store_general_settings();
     store_bindings();
+    store_error_handlers();
     store_plugins();
 }
 
@@ -277,4 +349,18 @@ bool prefs_window::on_key_press_event(GdkEventKey *e) {
     }
 
     return false;
+}
+
+
+//// Utility Functions
+
+void add_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> list) {
+    auto row = list->append();
+
+    view->set_cursor(list->get_path(row), *view->get_column(0), true);
+}
+
+void remove_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> list) {
+    if (auto row = view->get_selection()->get_selected())
+        list->erase(row);
 }

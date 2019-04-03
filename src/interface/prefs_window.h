@@ -103,6 +103,25 @@ namespace nuc {
         Gtk::Button *plugin_remove_button;
 
 
+        /* Error Handler Settings */
+
+        struct eh_model_columns : public Gtk::TreeModelColumnRecord {
+            Gtk::TreeModelColumn<Glib::ustring> type;
+            Gtk::TreeModelColumn<int> code;
+            Gtk::TreeModelColumn<Glib::ustring> restart;
+
+            eh_model_columns();
+        };
+
+        eh_model_columns eh_model;
+
+        Glib::RefPtr<Gtk::ListStore> eh_list;
+        Gtk::TreeView *eh_view;
+
+        Gtk::Button *eh_add_button;
+        Gtk::Button *eh_remove_button;
+
+
         /** Buttons */
 
         Gtk::Button *ok_button;
@@ -136,9 +155,6 @@ namespace nuc {
         void get_bindings();
         void store_bindings();
 
-        void add_binding();
-        void remove_binding();
-
 
         /* Plugin Settings */
 
@@ -147,8 +163,13 @@ namespace nuc {
         void get_plugins();
         void store_plugins();
 
-        void add_plugin();
-        void remove_plugin();
+
+        /* Error Handler Settings */
+
+        void init_error_handlers(const Glib::RefPtr<Gtk::Builder> &builder);
+
+        void get_error_handlers();
+        void store_error_handlers();
 
 
         /* Signal Handlers */
