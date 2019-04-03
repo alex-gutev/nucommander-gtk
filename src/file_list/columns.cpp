@@ -99,20 +99,40 @@ struct date_column : public column_descriptor {
 /* Column Descriptor Instances */
 
 /**
+ * Returns the map, mapping column names to their integer identifiers.
+ *
+ * @return An unordered_map.
+ */
+static std::unordered_map<std::string, int> & column_name_map();
+
+
+/**
  * Creates the column descriptors of the builtin Columns.
  *
  * @return Vector of column descriptors.
  */
 static std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns();
 
-/* Column Descriptor Map */
-std::vector<std::unique_ptr<column_descriptor>> nuc::file_column_descriptors = make_builtin_columns();
-
 
 
 /* Implementations */
 
-static std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
+std::unordered_map<std::string, int> & column_name_map() {
+    static std::unordered_map<std::string, int> map({
+            std::make_pair("name", 0),
+            std::make_pair("size", 1),
+            std::make_pair("date-modified", 2)
+    });
+
+    return map;
+}
+
+std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
+    static std::vector<std::unique_ptr<column_descriptor>> array = make_builtin_columns();
+    return array;
+}
+
+std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     std::vector<std::unique_ptr<column_descriptor>> columns;
 
     columns.emplace_back(new name_column(0));
@@ -120,6 +140,22 @@ static std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     columns.emplace_back(new date_column(2));
 
     return columns;
+}
+
+
+column_descriptor * nuc::get_column(const std::string &name) {
+    auto &names = column_name_map();
+    auto it = names.find(name);
+
+    if (it != names.end()) {
+        return get_column(it->second);
+    }
+
+    return nullptr;
+}
+
+column_descriptor * nuc::get_column(int id) {
+    return column_descriptors()[id].get();
 }
 
 

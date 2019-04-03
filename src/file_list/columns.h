@@ -20,6 +20,8 @@
 #ifndef FILE_LIST_COLUMNS_H
 #define FILE_LIST_COLUMNS_H
 
+#include <unordered_map>
+
 #include <glibmm.h>
 
 #include <gtkmm/treeview.h>
@@ -69,13 +71,32 @@ namespace nuc {
     };
 
     /**
-     * Contains all file column descriptors.
+     * Returns the column descriptor for the column with name @a name.
      *
-     * Automatically initialized with the built-in descriptors. The
-     * id's of the built-in descriptors match the indices at which
-     * they are located within the vector.
+     * @param name The column's name.
+     *
+     * @return Pointer to the column_descriptor or NULL if there is no
+     *   column with name @a name.
      */
-    extern std::vector<std::unique_ptr<column_descriptor>> file_column_descriptors;
+    column_descriptor * get_column(const std::string &name);
+    /**
+     * Returns the column descriptor for the column with integer
+     * identifier @a id.
+     *
+     * @param id The column's integer identifier.
+     *
+     * @return Pointer to the column_descriptor.
+     */
+    column_descriptor * get_column(int id);
+
+    /**
+     * Returns an array of all column descriptors. The indices at
+     * which the descriptors are located correspond to the integer
+     * id's of the columns.
+     *
+     * @return Vector containing all columns.
+     */
+    std::vector<std::unique_ptr<column_descriptor>> & column_descriptors();
 };
 
 #endif

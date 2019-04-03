@@ -26,6 +26,9 @@
 
 #include "search/fuzzy_filter.h"
 
+#include "settings/app_settings.h"
+
+
 #include <gdk/gdkkeysyms.h>
 
 #include <algorithm>
@@ -66,17 +69,12 @@ void file_view::init_file_list() {
 }
 
 void file_view::init_columns() {
-    // Name and Icon
+    std::vector<std::string> columns = app_settings::instance().settings()->get_string_array("columns");
 
-    file_list_view->append_column(*file_column_descriptors[0]->create());
-
-    // File Size
-
-    file_list_view->append_column(*file_column_descriptors[1]->create());
-
-    // Last Modified Date
-
-    file_list_view->append_column(*file_column_descriptors[2]->create());
+    for (auto &name : columns) {
+        if (auto column = get_column(name))
+            file_list_view->append_column(*column->create());
+    }
 }
 
 void file_view::init_scroll_adjustments() {

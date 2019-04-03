@@ -122,7 +122,7 @@ void file_list_controller::init_liststore(Glib::RefPtr<Gtk::ListStore> list_stor
     // Set "Name" as the default sort column
     list_store->set_sort_column(file_model_columns::instance().name, Gtk::SortType::SORT_ASCENDING);
 
-    for (auto &col : file_column_descriptors) {
+    for (auto &col : column_descriptors()) {
         list_store->set_sort_func(col->id, col->sort_func());
     }
 }
@@ -344,10 +344,12 @@ void sort_changed(Gtk::ListStore *list_store) {
 
     list_store->get_sort_column_id(id, order);
 
+    auto &columns = column_descriptors();
+
     // Reset sort function making sure the order of the invariant sort
     // functions is preserved.
-    if (id >= 0 && id < file_column_descriptors.size())
-        list_store->set_sort_func(id, file_column_descriptors[id]->sort_func(order));
+    if (id >= 0 && id < columns.size())
+        list_store->set_sort_func(id, columns[id]->sort_func(order));
 }
 
 
