@@ -62,11 +62,53 @@ Glib::ustring nuc::error::explanation() const noexcept {
 }
 
 
+std::unordered_map<std::string, int> &nuc::error_type_map() {
+    static std::unordered_map<std::string, int> map({
+            std::make_pair("general", error::type_general),
+
+            std::make_pair("create-file", error::type_create_file),
+            std::make_pair("write-file", error::type_write_file),
+            std::make_pair("read-file", error::type_read_file),
+            std::make_pair("rename-file", error::type_rename_file),
+            std::make_pair("delete-file", error::type_delete_file),
+
+            std::make_pair("create-dir", error::type_create_dir),
+            std::make_pair("set-mode", error::type_set_mode),
+            std::make_pair("set-owner", error::type_set_owner),
+            std::make_pair("set-times", error::type_set_times)
+    });
+
+    return map;
+}
+
+std::unordered_map<std::string, int> &nuc::error_code_map() {
+    static std::unordered_map<std::string, int> map;
+
+    return map;
+}
+
+/**
+ * Retrieves the error type code corresponding to the error type
+ * identifier @a type.
+ *
+ * @return The error type code or -1 if there is no such error type.
+ */
+static int get_error_type(const std::string &type) {
+    auto &map = error_type_map();
+    auto it = map.find(type);
+
+    if (it != map.end()) {
+        return it->second;
+    }
+
+    return -1;
+}
+
 /**
  * Retrieves the map of default automatic error handlers from
  * settings.
  */
-std::map<nuc::error, std::string> get_auto_error_handlers() {
+static std::map<nuc::error, std::string> get_auto_error_handlers() {
     auto settings = app_settings::instance().settings();
     Glib::VariantContainerBase handlers; // Array of handlers
 
@@ -79,15 +121,18 @@ std::map<nuc::error, std::string> get_auto_error_handlers() {
 
         handlers.get_child(handler, i);
 
-        Glib::Variant<int> type;
+        Glib::Variant<std::string> vtype;
         Glib::Variant<int> code;
         Glib::Variant<std::string> restart;
 
-        handler.get_child(type, 0);
+        handler.get_child(vtype, 0);
         handler.get_child(code, 1);
         handler.get_child(restart, 2);
 
-        handler_map[error(type.get(), code.get(), false)] = restart.get();
+        int type = get_error_type(vtype.get());
+
+        if (type >= 0)
+            handler_map[error(type, code.get(), false)] = restart.get();
     }
 
     return handler_map;

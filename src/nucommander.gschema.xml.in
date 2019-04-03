@@ -46,8 +46,19 @@
         command to execute.
       </description>
     </key>
-    <key name="auto-error-handlers" type="a(iis)">
-      <default>[(7, 0, "skip attribute"), (8, 0, "skip attribute"), (9 , 0, "skip attribute")]</default>
+    <key name="auto-error-handlers" type="a(sis)">
+      <default>[("set-mode", 0, "skip attribute"), ("set-owner", 0, "skip attribute"), ("set-times" , 0, "skip attribute")]</default>
+      <summary>
+        Array of default error handlers.
+      </summary>
+      <description>
+        Each element of the array if a a tuple where the first element
+        is a code describing the type of error, e.g. file creation
+        error, etc., the second element is the actual error code and
+        the third element is the identifier string of the error
+        handler that will be invoked automatically when this error
+        occurs.
+      </description>
     </key>
   </schema>
 </schemalist>

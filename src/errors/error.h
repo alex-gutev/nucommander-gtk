@@ -343,6 +343,19 @@ namespace nuc {
         throw;
     });
 
+    /**
+     * Returns a map mapping error type names to type codes.
+     *
+     * @return An unordered_map.
+     */
+    std::unordered_map<std::string, int> &error_type_map();
+    /**
+     * Returns a map mapping error names to error codes.
+     *
+     * @return An unordered_map.
+     */
+    std::unordered_map<std::string, int> &error_code_map();
+
 
     /* Automatic Error Handlers */
 
