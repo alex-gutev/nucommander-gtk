@@ -21,9 +21,14 @@
 
 #include "settings/app_settings.h"
 
+#include "file_list/columns.h"
+
+
 #include <map>
 
 #include <glib/gi18n.h>
+
+#include <gtkmm/cellrenderercombo.h>
 
 using namespace nuc;
 
@@ -83,6 +88,7 @@ prefs_window::prefs_window(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Buil
     init_keybindings(builder);
     init_error_handlers(builder);
     init_plugins(builder);
+    init_column_settings(builder);
 }
 
 
@@ -92,6 +98,7 @@ void prefs_window::show() {
         get_bindings();
         get_error_handlers();
         get_plugins();
+        get_column_settings();
 
         Gtk::Window::show();
     }
@@ -315,6 +322,123 @@ void prefs_window::store_error_handlers() {
 }
 
 
+//// Column Settings
+
+prefs_window::column_model_columns::column_model_columns() {
+    add(visible);
+    add(name);
+    add(order);
+}
+
+
+void prefs_window::init_column_settings(const Glib::RefPtr<Gtk::Builder> &builder) {
+    // Get Widgets
+
+    builder->get_widget("columns_tree_view", column_view);
+    builder->get_widget("column_up_button", column_up_button);
+    builder->get_widget("column_down_button", column_down_button);
+    builder->get_widget("column_add_button", column_add_button);
+    builder->get_widget("column_remove_button", column_remove_button);
+
+    // Create List Model
+
+    column_list = Gtk::ListStore::create(column_model);
+
+    column_name_list = Gtk::ListStore::create(column_model);
+    column_name_list->set_sort_column(column_model.name, Gtk::SortType::SORT_ASCENDING);
+    get_column_names(column_name_list);
+
+    // Initialize Tree View
+
+    column_view->set_model(column_list);
+
+    auto column = Gtk::manage(new Gtk::TreeViewColumn(_("Column")));
+    auto cell = Gtk::manage(new Gtk::CellRendererCombo());
+
+    column->pack_start(*cell);
+    column_view->append_column(*column);
+
+    cell->property_model() = column_name_list;
+    cell->property_editable() = true;
+    cell->property_has_entry() = false;
+    cell->property_text_column() = column_model.name.index();
+    cell->signal_edited().connect(sigc::mem_fun(this, &prefs_window::on_cellrenderer_choice_edited));
+
+    column->add_attribute(cell->property_text(), column_model.name);
+
+    // Initialize Buttons
+
+    column_up_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::up_column));
+    column_down_button->signal_clicked().connect(sigc::mem_fun(this, &prefs_window::down_column));;
+
+    column_add_button->signal_clicked().connect(std::bind(add_row, column_view, column_list));
+    column_remove_button->signal_clicked().connect(std::bind(remove_row, column_view, column_list));
+}
+
+void prefs_window::on_cellrenderer_choice_edited(const Glib::ustring &path_str, const Glib::ustring &new_text) {
+    Gtk::TreePath path(path_str);
+
+    if (auto it = column_list->get_iter(path)) {
+        (*it)[column_model.name] = new_text;
+    }
+}
+
+void prefs_window::get_column_names(Glib::RefPtr<Gtk::ListStore> list) {
+    for (auto &column : column_descriptors()) {
+        Gtk::TreeRow row = *list->append();
+
+        row[column_model.name] = column->name;
+    }
+}
+
+
+void prefs_window::get_column_settings() {
+    std::vector<std::string> columns = app_settings::instance().settings()->get_string_array("columns");
+
+    column_list->clear();
+
+    size_t i = 0;
+
+    for (auto &name : columns) {
+        Gtk::TreeRow row = *column_list->append();
+
+        row[column_model.name] = name;
+        row[column_model.visible] = true;
+        row[column_model.order] = i++;
+    }
+}
+
+void prefs_window::store_column_settings() {
+    std::vector<Glib::ustring> columns;
+
+    for (auto row : column_list->children()) {
+        columns.emplace_back(row[column_model.name]);
+    }
+
+    app_settings::instance().settings()->set_string_array("columns", columns);
+}
+
+void prefs_window::up_column() {
+    if (auto it = column_view->get_selection()->get_selected()) {
+        auto prev = it;
+
+        if (--prev) {
+            column_list->iter_swap(it, prev);
+        }
+    }
+}
+
+void prefs_window::down_column() {
+    if (auto it = column_view->get_selection()->get_selected()) {
+        auto next = it;
+
+        if (++next) {
+            column_list->iter_swap(it, next);
+        }
+    }
+}
+
+
 //// Window Signal Handlers
 
 void prefs_window::apply_clicked() {
@@ -322,6 +446,7 @@ void prefs_window::apply_clicked() {
     store_bindings();
     store_error_handlers();
     store_plugins();
+    store_column_settings();
 }
 
 void prefs_window::ok_clicked() {

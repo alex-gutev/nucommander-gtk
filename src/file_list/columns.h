@@ -39,16 +39,30 @@ namespace nuc {
      */
     struct column_descriptor {
         /**
-         * Column Identifier
+         * Column identifier.
          */
         const int id;
 
         /**
+         * Column string identifier.
+         */
+        std::string name;
+
+        /**
+         * The column title that is displayed to the user.
+         */
+        Glib::ustring title;
+
+
+        /**
          * Constructor.
          *
-         * @param id Column Identifier
+         * @param id Column identifier
+         * @param name Column string identifier.
+         * @param title Column title that is displayed.
          */
-        column_descriptor(int id) : id(id) {}
+        column_descriptor(int id, const std::string &name, const Glib::ustring &title)
+            : id(id), name(name), title(title) {}
 
         virtual ~column_descriptor() = default;
 

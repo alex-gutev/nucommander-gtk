@@ -135,9 +135,9 @@ std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
 std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     std::vector<std::unique_ptr<column_descriptor>> columns;
 
-    columns.emplace_back(new name_column(0));
-    columns.emplace_back(new size_column(1));
-    columns.emplace_back(new date_column(2));
+    columns.emplace_back(new name_column(0, "name", _("Name")));
+    columns.emplace_back(new size_column(1, "size", _("Size")));
+    columns.emplace_back(new date_column(2, "date-modified", _("Date Modified")));
 
     return columns;
 }
@@ -216,7 +216,7 @@ Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
 
 Gtk::TreeView::Column *name_column::create() {
     auto &columns = file_model_columns::instance();
-    auto *column = create_column(_("Name"));
+    auto *column = create_column(title);
 
     column->pack_start(columns.icon, false);
     auto *cell = add_text_cell(column, columns.name);
@@ -237,7 +237,7 @@ Gtk::TreeSortable::SlotCompare name_column::sort_func(Gtk::SortType order) {
 /* File Size Column */
 
 Gtk::TreeView::Column *size_column::create() {
-    auto *column = create_column(_("Size"));
+    auto *column = create_column(title);
     auto *cell = add_text_cell(column);
 
     column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
@@ -306,7 +306,7 @@ void size_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
 /* Last Modified Date Column */
 
 Gtk::TreeView::Column *date_column::create() {
-    auto *column = create_column(_("Date Modified"));
+    auto *column = create_column(title);
     auto *cell = add_text_cell(column);
 
     column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));

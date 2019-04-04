@@ -122,6 +122,29 @@ namespace nuc {
         Gtk::Button *eh_remove_button;
 
 
+        /* Column Settings */
+
+        struct column_model_columns : public Gtk::TreeModelColumnRecord {
+            Gtk::TreeModelColumn<Glib::ustring> name;
+            Gtk::TreeModelColumn<bool> visible;
+            Gtk::TreeModelColumn<int> order;
+
+            column_model_columns();
+        };
+
+        column_model_columns column_model;
+
+        Glib::RefPtr<Gtk::ListStore> column_list;
+        Glib::RefPtr<Gtk::ListStore> column_name_list;
+
+        Gtk::TreeView *column_view;
+
+        Gtk::Button *column_up_button;
+        Gtk::Button *column_down_button;
+
+        Gtk::Button *column_add_button;
+        Gtk::Button *column_remove_button;
+
         /** Buttons */
 
         Gtk::Button *ok_button;
@@ -170,6 +193,30 @@ namespace nuc {
 
         void get_error_handlers();
         void store_error_handlers();
+
+
+        /* Column Settings */
+
+        void init_column_settings(const Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Retrieves the string identifiers of all columns.
+         *
+         * @param list The list store model to which to add the names.
+         */
+        void get_column_names(Glib::RefPtr<Gtk::ListStore> list);
+
+        /**
+         * Signal handler for the cell edited of the column name
+         * combo-box cell renderer.
+         */
+        void on_cellrenderer_choice_edited(const Glib::ustring &path, const Glib::ustring &new_text);
+
+        void get_column_settings();
+        void store_column_settings();
+
+        void up_column();
+        void down_column();
 
 
         /* Signal Handlers */
