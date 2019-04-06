@@ -72,6 +72,16 @@ struct name_column : public column_descriptor {
 };
 
 /**
+ * File Icon Column.
+ */
+struct icon_column : public column_descriptor {
+    using column_descriptor::column_descriptor;
+
+    virtual Gtk::TreeView::Column * create();
+    virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+};
+
+/**
  * File Size Column.
  */
 struct size_column : public column_descriptor {
@@ -160,6 +170,7 @@ std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     columns.emplace_back(new size_column(1, "size", _("Size")));
     columns.emplace_back(new date_column(2, "date-modified", _("Date Modified")));
     columns.emplace_back(new extension_column(3, "extension", _("Ext")));
+    columns.emplace_back(new icon_column(4, "icon", ""));
 
     return columns;
 }
@@ -239,8 +250,6 @@ Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
 Gtk::TreeView::Column *name_column::create() {
     auto &columns = file_model_columns::instance();
     auto *column = create_column(title);
-
-    column->pack_start(columns.icon, false);
     auto *cell = add_text_cell(column, columns.name);
 
     cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
@@ -253,6 +262,22 @@ Gtk::TreeView::Column *name_column::create() {
 
 Gtk::TreeSortable::SlotCompare name_column::sort_func(Gtk::SortType order) {
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
+}
+
+Gtk::TreeView::Column *icon_column::create() {
+    auto &columns = file_model_columns::instance();
+    auto *column = create_column(title);
+
+    column->pack_start(columns.icon, false);
+    column->set_resizable(false);
+
+    return column;
+}
+
+Gtk::TreeSortable::SlotCompare icon_column::sort_func(Gtk::SortType order) {
+    // Currently the icon columns doesn't even have a sort column
+    // associated with it thus an empty slot is returned.
+    return Gtk::TreeSortable::SlotCompare();
 }
 
 

@@ -61,7 +61,7 @@
       </description>
     </key>
     <key name="columns" type="as">
-      <default>["name", "size", "date-modified"]</default>
+      <default>["icon", "name", "size", "date-modified"]</default>
       <summary>
         Array of the columns which are displayed.
       </summary>
