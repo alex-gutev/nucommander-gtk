@@ -54,6 +54,11 @@ namespace nuc  {
      */
     int sort_mtime(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b);
 
+    /**
+     * Sort by file extension.
+     */
+    int sort_extension(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b);
+
     /* Sort Utilities */
 
     /**

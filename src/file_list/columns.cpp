@@ -95,6 +95,18 @@ struct date_column : public column_descriptor {
     static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
 };
 
+/**
+ * Extension Column
+ */
+struct extension_column : public column_descriptor {
+    using column_descriptor::column_descriptor;
+
+    virtual Gtk::TreeView::Column * create();
+    virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+
+    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+};
+
 
 /* Column Descriptor Instances */
 
@@ -121,7 +133,8 @@ std::unordered_map<std::string, int> & column_name_map() {
     static std::unordered_map<std::string, int> map({
             std::make_pair("name", 0),
             std::make_pair("size", 1),
-            std::make_pair("date-modified", 2)
+            std::make_pair("date-modified", 2),
+            std::make_pair("extension", 3),
     });
 
     return map;
@@ -138,6 +151,7 @@ std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     columns.emplace_back(new name_column(0, "name", _("Name")));
     columns.emplace_back(new size_column(1, "size", _("Size")));
     columns.emplace_back(new date_column(2, "date-modified", _("Date Modified")));
+    columns.emplace_back(new extension_column(3, "extension", _("Ext")));
 
     return columns;
 }
@@ -340,4 +354,34 @@ void date_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterato
 
         return "";
     }));
+}
+
+
+/* Extension Column */
+
+Gtk::TreeView::Column *extension_column::create() {
+    auto *column = create_column(title);
+    auto *cell = add_text_cell(column);
+
+    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
+    column->set_expand(false);
+    cell->property_ellipsize() = Pango::ELLIPSIZE_END;
+    column->set_sort_column(id);
+
+    return column;
+}
+
+Gtk::TreeSortable::SlotCompare extension_column::sort_func(Gtk::SortType order) {
+    return combine_sort(make_invariant_sort(sort_entry_type, order), sort_extension, make_invariant_sort(sort_name, order));
+}
+
+void extension_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
+    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+
+    auto row = *iter;
+    dir_entry *ent = row[file_model_columns::instance().ent];
+
+    text_cell.property_text() = cached_value(ent, "ext", [=] {
+        return ent->subpath().extension();
+    });
 }

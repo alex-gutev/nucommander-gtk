@@ -76,3 +76,16 @@ int nuc::sort_mtime(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::ite
 
     return tm1 > tm2 ? 1 : (tm1 < tm2 ? -1 : 0);
 }
+
+#include <iostream>
+int nuc::sort_extension(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b) {
+    file_model_columns &columns = file_model_columns::instance();
+
+    dir_entry *ent1 = (*a)[columns.ent];
+    dir_entry *ent2 = (*b)[columns.ent];
+
+    Glib::ustring ext1 = ent1->subpath().extension();
+    Glib::ustring ext2 = ent2->subpath().extension();
+
+    return ext1.uppercase().compare(ext2.uppercase());
+}
