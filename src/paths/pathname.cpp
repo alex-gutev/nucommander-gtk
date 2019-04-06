@@ -214,16 +214,27 @@ string pathname::basename() const {
     return m_path;
 }
 
+/**
+ * Returns the index of the last '.' character. If the last '.'
+ * character is at the beginning or end of the string, string npos is
+ * returned.
+ */
+static size_t extension_offset(const nuc::paths::string &str) {
+    size_t pos = str.rfind('.');
+
+    return pos && pos != (str.length() - 1) ? pos : string::npos;
+}
+
+string pathname::filename() const {
+    string name = basename();
+    return name.substr(0, extension_offset(name));
+}
+
 string pathname::extension() const {
     string name = basename();
+    size_t pos = extension_offset(name);
 
-    size_t pos = name.rfind('.');
-
-    if (pos != string::npos && pos != 0) {
-        return name.substr(pos + 1);
-    }
-
-    return string();
+    return pos != string::npos ? name.substr(pos + 1) : string();
 }
 
 size_t pathname::basename_offset() const {

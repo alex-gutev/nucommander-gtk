@@ -194,6 +194,15 @@ namespace nuc {
              * @return The last component.
              */
             string basename() const;
+
+            /**
+             * Returns the portion of the basename preceding the
+             * extension.
+             *
+             * @return The file name.
+             */
+            string filename() const;
+
             /**
              * Returns the extension of the basename component if any.
              *

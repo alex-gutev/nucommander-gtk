@@ -219,6 +219,52 @@ BOOST_AUTO_TEST_CASE(extension5) {
 
     BOOST_CHECK_EQUAL(path.extension(), "");
 }
+BOOST_AUTO_TEST_CASE(extension6) {
+    pathname path("file.");
+
+    BOOST_CHECK_EQUAL(path.extension(), "");
+}
+BOOST_AUTO_TEST_CASE(extension7) {
+    pathname path("hello.txt.gz");
+
+    BOOST_CHECK_EQUAL(path.extension(), "gz");
+}
+
+BOOST_AUTO_TEST_CASE(filename1) {
+    pathname path("hello.txt");
+
+    BOOST_CHECK_EQUAL(path.filename(), "hello");
+}
+BOOST_AUTO_TEST_CASE(filename2) {
+    pathname path("dir.ext/hello.txt");
+
+    BOOST_CHECK_EQUAL(path.filename(), "hello");
+}
+BOOST_AUTO_TEST_CASE(filename3) {
+    pathname path("no_extension");
+
+    BOOST_CHECK_EQUAL(path.filename(), "no_extension");
+}
+BOOST_AUTO_TEST_CASE(filename4) {
+    pathname path(".config");
+
+    BOOST_CHECK_EQUAL(path.filename(), ".config");
+}
+BOOST_AUTO_TEST_CASE(filename5) {
+    pathname path("/dir/.config");
+
+    BOOST_CHECK_EQUAL(path.filename(), ".config");
+}
+BOOST_AUTO_TEST_CASE(filename6) {
+    pathname path("file.");
+
+    BOOST_CHECK_EQUAL(path.filename(), "file.");
+}
+BOOST_AUTO_TEST_CASE(filename7) {
+    pathname path("hello.txt.gz");
+
+    BOOST_CHECK_EQUAL(path.filename(), "hello.txt");
+}
 
 
 BOOST_AUTO_TEST_CASE(is_root1) {
