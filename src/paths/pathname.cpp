@@ -219,7 +219,7 @@ string pathname::extension() const {
 
     size_t pos = name.rfind('.');
 
-    if (pos != string::npos) {
+    if (pos != string::npos && pos != 0) {
         return name.substr(pos + 1);
     }
 

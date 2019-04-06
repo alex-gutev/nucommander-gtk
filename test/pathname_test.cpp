@@ -194,6 +194,32 @@ BOOST_AUTO_TEST_CASE(basename5) {
     BOOST_CHECK_EQUAL(path.basename(), "");
 }
 
+BOOST_AUTO_TEST_CASE(extension1) {
+    pathname path("hello.txt");
+
+    BOOST_CHECK_EQUAL(path.extension(), "txt");
+}
+BOOST_AUTO_TEST_CASE(extension2) {
+    pathname path("dir.ext/hello.txt");
+
+    BOOST_CHECK_EQUAL(path.extension(), "txt");
+}
+BOOST_AUTO_TEST_CASE(extension3) {
+    pathname path("no_extension");
+
+    BOOST_CHECK_EQUAL(path.extension(), "");
+}
+BOOST_AUTO_TEST_CASE(extension4) {
+    pathname path(".config");
+
+    BOOST_CHECK_EQUAL(path.extension(), "");
+}
+BOOST_AUTO_TEST_CASE(extension5) {
+    pathname path("/dir/.config");
+
+    BOOST_CHECK_EQUAL(path.extension(), "");
+}
+
 
 BOOST_AUTO_TEST_CASE(is_root1) {
     pathname path = pathname("/foo");
@@ -283,7 +309,6 @@ BOOST_AUTO_TEST_CASE(is_subpath6) {
 
     BOOST_CHECK(child.is_subpath(parent));
 }
-
 
 BOOST_AUTO_TEST_CASE(is_child_of1) {
     pathname parent = pathname("/foo/bar");
