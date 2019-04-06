@@ -129,13 +129,21 @@ static std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns();
 
 /* Implementations */
 
+static std::unordered_map<std::string, int> make_column_name_map();
+
 std::unordered_map<std::string, int> & column_name_map() {
-    static std::unordered_map<std::string, int> map({
-            std::make_pair("name", 0),
-            std::make_pair("size", 1),
-            std::make_pair("date-modified", 2),
-            std::make_pair("extension", 3),
-    });
+    static std::unordered_map<std::string, int> map = make_column_name_map();
+
+    return map;
+}
+
+std::unordered_map<std::string, int> make_column_name_map() {
+    std::unordered_map<std::string, int> map;
+
+    size_t i = 0;
+    for (auto &column : column_descriptors()) {
+        map.emplace(column->name, i++);
+    }
 
     return map;
 }
