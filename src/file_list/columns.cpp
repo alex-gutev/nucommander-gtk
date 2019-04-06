@@ -62,13 +62,25 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col);
 /* Column Descriptors for built-in columns */
 
 /**
- * Name and Icon Column.
+ * Name and Extension Column.
+ */
+struct full_name_column : public column_descriptor {
+    using column_descriptor::column_descriptor;
+
+    virtual Gtk::TreeView::Column * create();
+    virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+};
+
+/**
+ * Name without extension column.
  */
 struct name_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+
+    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
 };
 
 /**
@@ -166,11 +178,12 @@ std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
 std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     std::vector<std::unique_ptr<column_descriptor>> columns;
 
-    columns.emplace_back(new name_column(0, "name", _("Name")));
-    columns.emplace_back(new size_column(1, "size", _("Size")));
-    columns.emplace_back(new date_column(2, "date-modified", _("Date Modified")));
+    columns.emplace_back(new full_name_column(0, "name+extension", _("Name")));
+    columns.emplace_back(new name_column(1, "name", _("Name")));
+    columns.emplace_back(new icon_column(2, "icon", ""));
     columns.emplace_back(new extension_column(3, "extension", _("Ext")));
-    columns.emplace_back(new icon_column(4, "icon", ""));
+    columns.emplace_back(new size_column(4, "size", _("Size")));
+    columns.emplace_back(new date_column(5, "date-modified", _("Date Modified")));
 
     return columns;
 }
@@ -245,9 +258,9 @@ Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
 }
 
 
-/* Name and Icon Column */
+/* Full Name Column */
 
-Gtk::TreeView::Column *name_column::create() {
+Gtk::TreeView::Column *full_name_column::create() {
     auto &columns = file_model_columns::instance();
     auto *column = create_column(title);
     auto *cell = add_text_cell(column, columns.name);
@@ -260,9 +273,42 @@ Gtk::TreeView::Column *name_column::create() {
     return column;
 }
 
+Gtk::TreeSortable::SlotCompare full_name_column::sort_func(Gtk::SortType order) {
+    return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
+}
+
+
+/* Name Column */
+
+Gtk::TreeView::Column *name_column::create() {
+    auto *column = create_column(title);
+    auto *cell = add_text_cell(column);
+
+    cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
+
+    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
+    column->set_expand(true);
+    column->set_sort_column(id);
+
+    return column;
+}
+
 Gtk::TreeSortable::SlotCompare name_column::sort_func(Gtk::SortType order) {
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
 }
+
+void name_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
+    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+
+    auto row = *iter;
+    dir_entry *ent = row[file_model_columns::instance().ent];
+
+    text_cell.property_text() = cached_value(ent, "filename", [=] {
+        return ent->subpath().filename();
+    });
+}
+
+/* Icon Column */
 
 Gtk::TreeView::Column *icon_column::create() {
     auto &columns = file_model_columns::instance();
