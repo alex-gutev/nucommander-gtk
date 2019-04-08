@@ -19,7 +19,28 @@
 
 #include "file_model_columns.h"
 
+#include "settings/app_settings.h"
+
 using namespace nuc;
+
+static void init_columns(std::vector<column_descriptor*> &columns, file_model_columns &model) {
+    for (auto &name : app_settings::instance().columns()) {
+        if (auto col = get_column(name)) {
+            col->add_column(model);
+            columns.push_back(col);
+        }
+    }
+}
+
+file_model_columns::file_model_columns() {
+    add(ent);
+    add(marked);
+    add(score);
+    add(color);
+
+    init_columns(columns, *this);
+}
+
 
 file_model_columns &file_model_columns::instance() {
     static file_model_columns inst;

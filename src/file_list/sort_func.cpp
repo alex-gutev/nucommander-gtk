@@ -47,10 +47,13 @@ int nuc::sort_entry_type(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel
 int nuc::sort_name(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b) {
     file_model_columns &columns = file_model_columns::instance();
 
-    Glib::ustring name_a = (*a)[columns.name];
-    Glib::ustring name_b = (*b)[columns.name];
+    dir_entry *ent1 = (*a)[columns.ent];
+    dir_entry *ent2 = (*b)[columns.ent];
 
-    return name_a.compare(name_b);
+    Glib::ustring name1 = ent1->file_name();
+    Glib::ustring name2 = ent2->file_name();
+
+    return name1.uppercase().compare(name2.uppercase());
 }
 
 int nuc::sort_size(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b) {

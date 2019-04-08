@@ -27,10 +27,11 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
 
-#include "file_model_columns.h"
-#include "sort_func.h"
+#include "directory/dir_entry.h"
 
 namespace nuc {
+    class file_model_columns;
+
     /**
      * Column Descriptor.
      *
@@ -39,9 +40,9 @@ namespace nuc {
      */
     struct column_descriptor {
         /**
-         * Column identifier.
+         * Column array index.
          */
-        const int id;
+        const int index;
 
         /**
          * Column string identifier.
@@ -62,10 +63,16 @@ namespace nuc {
          * @param title Column title that is displayed.
          */
         column_descriptor(int id, const std::string &name, const Glib::ustring &title)
-            : id(id), name(name), title(title) {}
+            : index(id), name(name), title(title) {}
 
         virtual ~column_descriptor() = default;
 
+        /**
+         * Adds the column to the column model.
+         *
+         * @param columns The model.
+         */
+        virtual void add_column(file_model_columns &columns) = 0;
 
         /**
          * Creates a new instance of the column.
@@ -82,6 +89,22 @@ namespace nuc {
          * @return The sort function.
          */
         virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order = Gtk::SortType::SORT_ASCENDING) = 0;
+
+        /**
+         * Sets the value of the column for the row @a row.
+         *
+         * @param row The row whose column value to set.
+         * @param ent The entry corresponding to the row.
+         */
+        virtual void set_data(Gtk::TreeRow row, const dir_entry &ent) = 0;
+
+        /**
+         * Returns the index of the column within the
+         * TreeModelColumnRecord.
+         *
+         * @return The index.
+         */
+        virtual int model_index() const = 0;
     };
 
     /**

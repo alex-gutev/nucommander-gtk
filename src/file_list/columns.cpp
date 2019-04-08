@@ -20,6 +20,7 @@
 #include "columns.h"
 
 #include "sort_func.h"
+#include "file_model_columns.h"
 
 #include <glib/gi18n.h>
 
@@ -67,8 +68,17 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col);
 struct full_name_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
+
+    virtual int model_index() const {
+        return column.index();
+    }
+
+private:
+    Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
 /**
@@ -77,10 +87,17 @@ struct full_name_column : public column_descriptor {
 struct name_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
 
-    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+    virtual int model_index() const {
+        return column.index();
+    }
+
+private:
+    Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
 /**
@@ -89,8 +106,14 @@ struct name_column : public column_descriptor {
 struct icon_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
+
+    virtual int model_index() const {
+        return file_model_columns::instance().icon.index();
+    }
 };
 
 /**
@@ -99,10 +122,17 @@ struct icon_column : public column_descriptor {
 struct size_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
 
-    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+    virtual int model_index() const {
+        return column.index();
+    }
+
+private:
+    Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
 /**
@@ -111,10 +141,17 @@ struct size_column : public column_descriptor {
 struct date_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
 
-    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+    virtual int model_index() const {
+        return column.index();
+    }
+
+private:
+    Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
 /**
@@ -123,10 +160,17 @@ struct date_column : public column_descriptor {
 struct extension_column : public column_descriptor {
     using column_descriptor::column_descriptor;
 
+    virtual void add_column(file_model_columns &columns);
     virtual Gtk::TreeView::Column * create();
     virtual Gtk::TreeSortable::SlotCompare sort_func(Gtk::SortType order);
+    virtual void set_data(Gtk::TreeRow row, const dir_entry &ent);
 
-    static void on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter);
+    virtual int model_index() const {
+        return column.index();
+    }
+
+private:
+    Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
 
@@ -178,12 +222,12 @@ std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
 std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     std::vector<std::unique_ptr<column_descriptor>> columns;
 
-    columns.emplace_back(new full_name_column(0, "name+extension", _("Name")));
-    columns.emplace_back(new name_column(1, "name", _("Name")));
-    columns.emplace_back(new icon_column(2, "icon", ""));
-    columns.emplace_back(new extension_column(3, "extension", _("Ext")));
-    columns.emplace_back(new size_column(4, "size", _("Size")));
-    columns.emplace_back(new date_column(5, "date-modified", _("Date Modified")));
+    columns.emplace_back(new full_name_column(columns.size(), "name+extension", _("Name")));
+    columns.emplace_back(new name_column(columns.size(), "name", _("Name")));
+    columns.emplace_back(new icon_column(columns.size(), "icon", ""));
+    columns.emplace_back(new extension_column(columns.size(), "extension", _("Ext")));
+    columns.emplace_back(new date_column(columns.size(), "date-modified", _("Date Modified")));
+    columns.emplace_back(new size_column(columns.size(), "size", _("Size")));
 
     return columns;
 }
@@ -260,15 +304,18 @@ Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
 
 /* Full Name Column */
 
+void full_name_column::add_column(file_model_columns &columns) {
+    columns.add(column);
+}
+
 Gtk::TreeView::Column *full_name_column::create() {
-    auto &columns = file_model_columns::instance();
     auto *column = create_column(title);
-    auto *cell = add_text_cell(column, columns.name);
+    auto *cell = add_text_cell(column, this->column);
 
     cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
 
     column->set_expand(true);
-    column->set_sort_column(id);
+    column->set_sort_column(this->column.index());
 
     return column;
 }
@@ -277,18 +324,24 @@ Gtk::TreeSortable::SlotCompare full_name_column::sort_func(Gtk::SortType order) 
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
 }
 
+void full_name_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+    row[column] = ent.file_name();
+}
 
 /* Name Column */
 
+void name_column::add_column(file_model_columns &columns) {
+    columns.add(column);
+}
+
 Gtk::TreeView::Column *name_column::create() {
     auto *column = create_column(title);
-    auto *cell = add_text_cell(column);
+    auto *cell = add_text_cell(column, this->column);
 
     cell->property_ellipsize().set_value(Pango::ELLIPSIZE_END);
 
-    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
     column->set_expand(true);
-    column->set_sort_column(id);
+    column->set_sort_column(this->column.index());
 
     return column;
 }
@@ -297,18 +350,16 @@ Gtk::TreeSortable::SlotCompare name_column::sort_func(Gtk::SortType order) {
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_name);
 }
 
-void name_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
-
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
-
-    text_cell.property_text() = cached_value(ent, "filename", [=] {
-        return ent->subpath().filename();
-    });
+void name_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+    row[column] = ent.subpath().filename();
 }
 
+
 /* Icon Column */
+
+void icon_column::add_column(file_model_columns &columns) {
+    columns.add(columns.icon);
+}
 
 Gtk::TreeView::Column *icon_column::create() {
     auto &columns = file_model_columns::instance();
@@ -326,16 +377,21 @@ Gtk::TreeSortable::SlotCompare icon_column::sort_func(Gtk::SortType order) {
     return Gtk::TreeSortable::SlotCompare();
 }
 
+void icon_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+}
 
 /* File Size Column */
 
+void size_column::add_column(file_model_columns &columns) {
+    columns.add(column);
+}
+
 Gtk::TreeView::Column *size_column::create() {
     auto *column = create_column(title);
-    auto *cell = add_text_cell(column);
+    add_text_cell(column, this->column);
 
-    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
     column->set_expand(false);
-    column->set_sort_column(id);
+    column->set_sort_column(this->column.index());
 
     return column;
 }
@@ -344,67 +400,63 @@ Gtk::TreeSortable::SlotCompare size_column::sort_func(Gtk::SortType order) {
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_size, make_invariant_sort(sort_name, order));
 }
 
-void size_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+void size_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+    switch (ent.type()) {
+    case dir_entry::type_reg: {
+        const char *unit = "";
 
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
+        size_t size = ent.attr().st_size;
+        float frac = 0;
 
-    text_cell.property_text().set_value(cached_value(ent, "size", [=] () -> Glib::ustring {
-        switch (ent->type()) {
-        case dir_entry::type_reg: {
-            const char *unit = "";
+        if (size >= 1073741824) {
+            unit = "GB";
 
-            size_t size = ent->attr().st_size;
-            float frac = 0;
-
-            if (size >= 1073741824) {
-                unit = "GB";
-
-                frac = (size % 1073741824) / 1073741824.0;
-                size /= 1073741824;
-            }
-            else if (size >= 1048576) {
-                unit = "MB";
-
-                frac = (size % 1048576) / 1048576.0;
-                size /= 1048576;
-            }
-            else if (size >= 1024) {
-                unit = "KB";
-
-                frac = (size % 1024) / 1024.0;
-                size /= 1024;
-            }
-
-            if (int rem = (int)floorf(frac * 10)) {
-                return Glib::ustring::compose("%1.%2 %3", size, rem, unit);
-            }
-            else {
-                return Glib::ustring::compose("%1 %2", size, unit);
-            }
-        } break;
-
-        case dir_entry::type_dir:
-            return "<DIR>";
-            break;
-
-        default:
-            return "";
+            frac = (size % 1073741824) / 1073741824.0;
+            size /= 1073741824;
         }
-    }));
+        else if (size >= 1048576) {
+            unit = "MB";
+
+            frac = (size % 1048576) / 1048576.0;
+            size /= 1048576;
+        }
+        else if (size >= 1024) {
+            unit = "KB";
+
+            frac = (size % 1024) / 1024.0;
+            size /= 1024;
+        }
+
+        if (int rem = (int)floorf(frac * 10)) {
+            row[column] = Glib::ustring::compose("%1.%2 %3", size, rem, unit);
+        }
+        else {
+            row[column] = Glib::ustring::compose("%1 %2", size, unit);
+        }
+    } break;
+
+    case dir_entry::type_dir:
+        row[column] = "<DIR>";
+        break;
+
+    default:
+        row[column] = "";
+    }
 }
 
 
 /* Last Modified Date Column */
 
+void date_column::add_column(file_model_columns &columns) {
+    columns.add(column);
+}
+
 Gtk::TreeView::Column *date_column::create() {
     auto *column = create_column(title);
-    auto *cell = add_text_cell(column);
+    add_text_cell(column, this->column);
 
-    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
     column->set_expand(false);
-    column->set_sort_column(id);
+    column->set_sort_column(this->column.index());
 
     return column;
 }
@@ -413,39 +465,36 @@ Gtk::TreeSortable::SlotCompare date_column::sort_func(Gtk::SortType order) {
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_mtime, make_invariant_sort(sort_name, order));
 }
 
-void date_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
+void date_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+    if (ent.ent_type() != dir_entry::type_parent) {
+        // localtime is NOT THREAD SAFE
+        auto tm = localtime(&ent.attr().st_mtime);
 
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
+        const size_t buf_size = 17;
+        char buf[buf_size]  = {0};
 
-    text_cell.property_text().set_value(cached_value(ent, "mtime", [=] () -> Glib::ustring {
-        if (ent->ent_type() != dir_entry::type_parent) {
-            // localtime is NOT THREAD SAFE
-            auto tm = localtime(&ent->attr().st_mtime);
-
-            const size_t buf_size = 17;
-            char buf[buf_size]  = {0};
-
-            strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
-            return buf;
-        }
-
-        return "";
-    }));
+        strftime(buf, buf_size, "%d/%m/%Y %H:%M", tm);
+        row[column] = buf;
+    }
+    else {
+        row[column] = "";
+    }
 }
 
 
 /* Extension Column */
 
+void extension_column::add_column(file_model_columns &columns) {
+    columns.add(column);
+}
+
 Gtk::TreeView::Column *extension_column::create() {
     auto *column = create_column(title);
-    auto *cell = add_text_cell(column);
+    auto *cell = add_text_cell(column, this->column);
 
-    column->set_cell_data_func(*cell, sigc::ptr_fun(on_data));
     column->set_expand(false);
     cell->property_ellipsize() = Pango::ELLIPSIZE_END;
-    column->set_sort_column(id);
+    column->set_sort_column(this->column.index());
 
     return column;
 }
@@ -454,13 +503,6 @@ Gtk::TreeSortable::SlotCompare extension_column::sort_func(Gtk::SortType order) 
     return combine_sort(make_invariant_sort(sort_entry_type, order), sort_extension, make_invariant_sort(sort_name, order));
 }
 
-void extension_column::on_data(Gtk::CellRenderer *cell, const Gtk::TreeModel::iterator &iter) {
-    Gtk::CellRendererText &text_cell = dynamic_cast<Gtk::CellRendererText&>(*cell);
-
-    auto row = *iter;
-    dir_entry *ent = row[file_model_columns::instance().ent];
-
-    text_cell.property_text() = cached_value(ent, "ext", [=] {
-        return ent->subpath().extension();
-    });
+void extension_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
+    row[column] = ent.subpath().extension();
 }

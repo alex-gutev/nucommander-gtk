@@ -119,11 +119,10 @@ Glib::RefPtr<Gtk::ListStore> file_list_controller::make_liststore() {
 }
 
 void file_list_controller::init_liststore(Glib::RefPtr<Gtk::ListStore> list_store) {
-    // Set "Name" as the default sort column
-    list_store->set_sort_column(file_model_columns::instance().name, Gtk::SortType::SORT_ASCENDING);
+    auto &model = file_model_columns::instance();
 
-    for (auto &col : column_descriptors()) {
-        list_store->set_sort_func(col->id, col->sort_func());
+    for (auto *col : model.columns) {
+        list_store->set_sort_func(col->model_index(), col->sort_func());
     }
 }
 
@@ -167,11 +166,14 @@ void file_list_controller::read_delegate::new_entry(dir_entry &ent) {
 void create_row(Gtk::TreeRow row, dir_entry &ent) {
     auto &columns = file_model_columns::instance();
 
-    row[columns.name] = ent.file_name();
     row[columns.ent] = &ent;
     row[columns.marked] = false;
 
     ent.context.row = row;
+
+    for (auto *col : columns.columns) {
+        col->set_data(row, ent);
+    }
 }
 
 void file_list_controller::read_delegate::finish(bool cancelled, int error) {
@@ -342,14 +344,16 @@ void sort_changed(Gtk::ListStore *list_store) {
     int id;
     Gtk::SortType order;
 
+    auto &model = file_model_columns::instance();
+
     list_store->get_sort_column_id(id, order);
 
-    auto &columns = column_descriptors();
+    int col_id = id - model.first_column_index();
 
     // Reset sort function making sure the order of the invariant sort
     // functions is preserved.
-    if (id >= 0 && id < columns.size())
-        list_store->set_sort_func(id, columns[id]->sort_func(order));
+    if (col_id >= 0 && col_id < model.columns.size())
+        list_store->set_sort_func(id, model.columns[col_id]->sort_func(order));
 }
 
 

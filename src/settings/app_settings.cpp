@@ -39,3 +39,12 @@ void app_settings::dir_refresh_timeout(int timeout) {
     m_settings->set_int("dir-refresh-timeout", timeout);
     m_dir_refresh_timeout = timeout;
 }
+
+
+std::vector<std::string> app_settings::columns() const {
+    return m_settings->get_string_array("columns");
+}
+
+void app_settings::columns(const std::vector<std::string> &columns) {
+    m_settings->set_string_array("columns", columns);
+}

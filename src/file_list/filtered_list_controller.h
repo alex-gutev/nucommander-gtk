@@ -92,21 +92,6 @@ namespace nuc {
         virtual void on_selection_changed(Gtk::TreeRow row);
 
     private:
-        /**
-         * Filtered list columns.
-         */
-        struct filter_model : public file_model_columns {
-            /** Accuracy score */
-            Gtk::TreeModelColumn<float> score;
-
-            filter_model() : file_model_columns() {
-                add(score);
-            }
-        };
-
-        /** Model Columns */
-        filter_model columns;
-
         /** Filter Function */
         filter_fn m_filter;
 

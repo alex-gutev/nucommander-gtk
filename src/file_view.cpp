@@ -376,8 +376,8 @@ void file_view::focus_path() {
 
 void file_view::make_filter_model() {
     auto filter_list = filtered_list_controller::create(flist, [this] (Gtk::TreeRow row) {
-        Glib::ustring name = row[file_model_columns::instance().name];
-        return fuzzy_match(name, filter_entry->get_text());
+        dir_entry *ent = row[file_model_columns::instance().ent];
+        return fuzzy_match(static_cast<Glib::ustring>(ent->file_name()), filter_entry->get_text());
     });
 
     signals.model_change.disconnect();

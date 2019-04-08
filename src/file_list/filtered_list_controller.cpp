@@ -28,7 +28,7 @@ std::shared_ptr<filtered_list_controller> filtered_list_controller::create(std::
 }
 
 filtered_list_controller::filtered_list_controller(std::shared_ptr<list_controller> flist, filter_fn filter) :
-    m_filter(filter), flist(flist), m_list(Gtk::ListStore::create(columns)) {
+    m_filter(filter), flist(flist), m_list(Gtk::ListStore::create(file_model_columns::instance())) {
 
     flist->signal_change_model().connect(sigc::mem_fun(this, &filtered_list_controller::change_model));
     flist->signal_select().connect(sigc::mem_fun(this, &filtered_list_controller::select_row));
@@ -64,7 +64,7 @@ void filtered_list_controller::refilter(Gtk::TreeRow selection) {
         }
     }
 
-    m_list->set_sort_column(columns.score, Gtk::SortType::SORT_DESCENDING);
+    m_list->set_sort_column(file_model_columns::instance().score, Gtk::SortType::SORT_DESCENDING);
     selected_row = select_row;
 }
 
@@ -72,13 +72,13 @@ Gtk::TreeRow filtered_list_controller::add_row(Gtk::TreeRow row, float score) {
     Gtk::TreeRow new_row = *m_list->append();
 
     copy_columns(row, new_row);
-    new_row[columns.score] = score;
+    new_row[file_model_columns::instance().score] = score;
 
     return new_row;
 }
 
 void filtered_list_controller::copy_columns(Gtk::TreeRow src, Gtk::TreeRow dest) {
-    for (size_t i = 0, sz = columns.size() - 1; i < sz; i++) {
+    for (size_t i = 0, sz = file_model_columns::instance().size(); i < sz; i++) {
         Glib::ValueBase value;
 
         gtk_tree_model_get_value((GtkTreeModel*)flist->list()->gobj(), src.gobj(), i, value.gobj());
@@ -104,7 +104,7 @@ std::vector<dir_entry*> filtered_list_controller::selected_entries() const {
     }
 
     if (entries.empty() && selected_row) {
-        dir_entry *ent = selected_row[columns.ent];
+        dir_entry *ent = selected_row[file_model_columns::instance().ent];
 
         if (ent->ent_type() != dir_entry::type_parent)
             entries.push_back(ent);
@@ -115,7 +115,7 @@ std::vector<dir_entry*> filtered_list_controller::selected_entries() const {
 
 void filtered_list_controller::mark_row(Gtk::TreeRow row) {
     if (row) {
-        dir_entry *ent = row[columns.ent];
+        dir_entry *ent = row[file_model_columns::instance().ent];
         flist->mark_row(ent->context.row);
 
         copy_columns(ent->context.row, row);
@@ -126,7 +126,7 @@ void filtered_list_controller::on_selection_changed(Gtk::TreeRow row) {
     if (row) {
         selected_row = row;
 
-        dir_entry *ent = row[columns.ent];
+        dir_entry *ent = row[file_model_columns::instance().ent];
         flist->on_selection_changed(ent->context.row);
     }
 }

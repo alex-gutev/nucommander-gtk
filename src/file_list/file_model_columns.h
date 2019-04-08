@@ -25,6 +25,7 @@
 #include <gdkmm/pixbuf.h>
 
 #include "directory/dir_entry.h"
+#include "columns.h"
 
 namespace nuc {
     /**
@@ -32,11 +33,6 @@ namespace nuc {
      */
     class file_model_columns : public Gtk::TreeModelColumnRecord {
     public:
-        /**
-         * File name.
-         */
-        Gtk::TreeModelColumn<Glib::ustring> name;
-
         /**
          * Pointer to the directory entry.
          */
@@ -46,7 +42,12 @@ namespace nuc {
          * Flag: true if the row is marked.
          */
         Gtk::TreeModelColumn<bool> marked;
-        
+
+        /**
+         * Filter match score.
+         */
+        Gtk::TreeModelColumn<float> score;
+
         /**
          * Text colour of the row.
          */
@@ -56,21 +57,32 @@ namespace nuc {
          * File icon.
          */
         Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf>> icon;
-        
-        /** Constructor */
-        file_model_columns() {
-            add(name);
-            add(ent);
-            add(marked);
-            add(color);
-            add(icon);
+
+        /**
+         * Array of column descriptors of the columns which are
+         * displayed.
+         */
+        std::vector<column_descriptor*> columns;
+
+        /**
+         * Returns the index of the TreeModelColumn corresponding to
+         * the value displayed in the first column.
+         *
+         * @param The index.
+         */
+        size_t first_column_index() const {
+            return color.index() + 1;
         }
 
         /**
          * Returns the singleton instance.
          */
         static file_model_columns &instance();
-    };    
+
+    private:
+        /** Constructor */
+        file_model_columns();
+    };
 }
 
 #endif // FILEMODELCOLUMNS_H

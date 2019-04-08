@@ -59,6 +59,22 @@ namespace nuc {
          */
         void dir_refresh_timeout(int timeout);
 
+        /**
+         * Returns the array of the identifiers of the columns which
+         * should be displayed.
+         *
+         * @return Vector of column string identifiers.
+         */
+        std::vector<std::string> columns() const;
+
+        /**
+         * Sets the array of the identifiers of the columns which
+         * should be displayed.
+         *
+         * @param columns Vector of column string identifiers.
+         */
+        void columns(const std::vector<std::string> &columns);
+
     private:
         /**
          * ID of the GSettings schema of the application's settings.
