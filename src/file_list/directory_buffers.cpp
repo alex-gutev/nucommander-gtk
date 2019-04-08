@@ -19,6 +19,8 @@
 
 #include "directory_buffers.h"
 
+#include "settings/app_settings.h"
+
 using namespace nuc;
 
 directory_buffers &directory_buffers::instance() {
@@ -30,8 +32,25 @@ directory_buffers::buffer_set &directory_buffers::buffers() {
     return bufs;
 }
 
+/**
+ * Sets the sort column of @a model to the default sort column
+ * preference.
+ *
+ * @param model The model of which to set the sort column.
+ */
+static void init_sort_column(Glib::RefPtr<Gtk::ListStore> model) {
+    auto *column = get_column(app_settings::instance().default_sort_column());
+
+    if (column && column->model_index() >= 0) {
+        model->set_sort_column(column->model_index(), Gtk::SortType::SORT_ASCENDING);
+    }
+}
+
 std::shared_ptr<file_list_controller> directory_buffers::new_buffer() {
-    return *bufs.emplace(file_list_controller::create()).first;
+    auto flist = *bufs.emplace(file_list_controller::create()).first;
+    init_sort_column(flist->list());
+
+    return flist;
 }
 
 void directory_buffers::close_buffer(std::shared_ptr<file_list_controller> flist) {

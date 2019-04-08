@@ -75,6 +75,22 @@ namespace nuc {
          */
         void columns(const std::vector<std::string> &columns);
 
+        /**
+         * Returns the name of the column by which file lists should
+         * be sorted initially.
+         *
+         * @return The column name.
+         */
+        std::string default_sort_column() const;
+
+        /**
+         * Sets the name of the column by which file lists should
+         * be sorted initially.
+         *
+         * @param column The column name.
+         */
+        void default_sort_column(const std::string &column);
+
     private:
         /**
          * ID of the GSettings schema of the application's settings.

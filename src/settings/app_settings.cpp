@@ -48,3 +48,12 @@ std::vector<std::string> app_settings::columns() const {
 void app_settings::columns(const std::vector<std::string> &columns) {
     m_settings->set_string_array("columns", columns);
 }
+
+
+std::string app_settings::default_sort_column() const {
+    return m_settings->get_string("default-sort-column");
+}
+
+void app_settings::default_sort_column(const std::string &column) {
+    m_settings->set_string("default-sort-column", column);
+}

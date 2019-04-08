@@ -67,8 +67,19 @@
       </summary>
       <description>
         Each element of the array is a column identifier. The columns
-        are displayed in the order their identifiers appears in the
+        are displayed in the order their identifiers appear in the
         array.
+      </description>
+    </key>
+    <key name="default-sort-column" type="s">
+      <default>"name"</default>
+      <summary>
+        The column by which the file lists will be sorted initially.
+      </summary>
+      <description>
+        The name of the column which will be used to sort newly
+        created file lists. This must be the name of the column that
+        is actually displayed, i.e. it must appear in 'columns'.
       </description>
     </key>
   </schema>
