@@ -276,31 +276,7 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col) {
 }
 
 
-/* Column Descriptors Implementations */
-
-/**
- * Returns either a cached formatted display string of an attribute
- * or, if there is no cached value, calls @a fn to generate the
- * formatted display string and saves into in the entry's formatted
- * value cache.
- *
- * @param ent The entry.
- *
- * @param key The attribute's key within the cache.
- *
- * @param fn A function of 0 arguments which should return a
- *   formatted display string of the attribute.
- *
- * @return The display string of the attribute.
- */
-template<typename F>
-Glib::ustring cached_value(dir_entry *ent, const std::string &key, F fn) {
-    auto &cache = ent->context.format_cache;
-    auto cit = cache.find(key);
-
-    return cit == cache.end() ? (cache[key] = fn()) : cit->second;
-}
-
+/* Column Descriptor Implementations */
 
 /* Full Name Column */
 

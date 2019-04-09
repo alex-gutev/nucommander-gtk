@@ -56,15 +56,6 @@ namespace nuc {
          * guaranteed to remain the same even after sorting.
          */
         Gtk::TreeRow row;
-
-        /**
-         * A hash map storing a cache of attribute displays strings.
-         *
-         * Each key is a unique string identifying the attribute and
-         * the corresponding value is the string which is displayed in
-         * the file tree view.
-         */
-        std::unordered_map<std::string, Glib::ustring> format_cache;
     };
 
     /**
