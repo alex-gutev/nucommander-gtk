@@ -59,10 +59,7 @@ namespace nuc {
 
         /* Method Overrides */
 
-        virtual void close() {
-            // Does nothing as it is the responsibility of the creator
-            // of this object to close the handle.
-        }
+        virtual void close();
 
         virtual void write(const byte *buf, size_t n, off_t offset);
     };

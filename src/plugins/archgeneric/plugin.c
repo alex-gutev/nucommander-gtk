@@ -22,6 +22,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -59,6 +63,18 @@ typedef struct nuc_arch_handle {
      * NUC_AP_MODE_PACK).
      */
     char *dest_file;
+
+    /**
+     * File descriptor of a temporary file to which the current
+     * entry's data is written.
+     */
+    FILE* tmp_file;
+    /**
+     * Size of the entry currently being written. This is only used if
+     * the size of the entry is unknown, and its data was written to a
+     * temporary file first.
+     */
+    size_t ent_size;
 
     /**
      * Callback function and context pointer.
@@ -444,6 +460,7 @@ int close_pack(nuc_arch_handle *handle) {
 
     if (handle->dest_file) free(handle->dest_file);
     if (handle->ent) archive_entry_free(handle->ent);
+    if (handle->tmp_file) fclose(handle->tmp_file);
 
     archive_write_free(handle->ar);
 
@@ -575,22 +592,16 @@ int nuc_arch_copy_last_entry_data(void *dest_handle, void *src_handle) {
     off_t offset, last_offset = 0;
 
     while (!(err = err_code(src, archive_read_data_block(src->ar, &buf, &size, &offset)))) {
-
-        if (offset - last_offset) {
-            if ((err = write_hole(dest, offset - last_offset))) {
-                return err;
-            }
-        }
-
-        if (archive_write_data(dest->ar, buf, size) < 0) {
-            errno = archive_errno(dest->ar);
+        if (nuc_arch_pack(dest, buf, size, offset - last_offset))
             return NUC_AP_FAILED;
-        }
 
         last_offset = offset + size;
     }
 
-    return err == NUC_AP_EOF ? NUC_AP_OK : err;
+    if (err == NUC_AP_EOF)
+        return nuc_arch_pack_finish(dest);
+
+    return err == NUC_AP_OK || err == NUC_AP_EOF ? NUC_AP_OK : NUC_AP_FAILED;
 }
 
 
@@ -642,13 +653,85 @@ void nuc_arch_entry_set_symlink_path(void *ctx, const char *path) {
 EXPORT
 int nuc_arch_write_entry_header(void *ctx) {
     nuc_arch_handle *handle = ctx;
-    return err_code(handle, archive_write_header(handle->ar, handle->ent));
+
+    // If size is unknown, create a temporary file to which the data
+    // will be written. The data will be written to the actual archive
+    // in nuc_arch_pack_finish.
+
+    if (!archive_entry_size(handle->ent)) {
+        char name[] = "/tmp/nucommander-tmpXXXXXX";
+        int fd = mkstemp(name);
+
+        if (fd >= 0) {
+            handle->tmp_file = fdopen(fd, "wb+");
+            unlink(name);
+
+            return NUC_AP_OK;
+        }
+        else {
+            return NUC_AP_FAILED;
+        }
+    }
+    else {
+        return err_code(handle, archive_write_header(handle->ar, handle->ent));
+    }
 }
 
+/**
+ * Writes a hole of size @a len to a file.
+ *
+ * @param f The file to write the hole to.
+ * @param len The size of the hole.
+ *
+ * @return NUC_AP_OK if the hole was written successfully,
+ *   NUC_AP_FAILED otherwise.
+ */
+static int write_hole_to_file(FILE *f, size_t len) {
+    while (len--) {
+        if (fputc(0, f) == EOF)
+            return NUC_AP_FAILED;
+    }
+
+    return NUC_AP_OK;
+}
+
+/**
+ * Writes a block of data to the temporary file storing the current
+ * entry's data.
+ *
+ * @param handle Archive handle.
+ *
+ * @param buf Block of data to write.
+ *
+ * @param len Size of the block.
+ *
+ * @param offset Offset from the end of the last block at which to
+ *   write the current block.
+ *
+ * @return NUC_AP_OK if the data was written successfully,
+ *   NUC_AP_FAILED if there was an error.
+ */
+static int write_to_file(nuc_arch_handle *handle, const char *buf, size_t len, off_t offset) {
+    if (offset) {
+        if (write_hole_to_file(handle->tmp_file, offset))
+            return NUC_AP_FAILED;
+    }
+
+    if (fwrite(buf, 1, len, handle->tmp_file) != len) {
+        return NUC_AP_FAILED;
+    }
+
+    handle->ent_size += offset + len;
+    return NUC_AP_OK;
+}
 
 EXPORT
 int nuc_arch_pack(void *ctx, const char *buf, size_t len, off_t offset) {
     nuc_arch_handle *handle = ctx;
+
+    // If a temporary file was created, write the data to it.
+    if (handle->tmp_file)
+        return write_to_file(handle, buf, len, offset);
 
     if (offset) {
         int err = write_hole(handle, offset);
@@ -663,10 +746,9 @@ int nuc_arch_pack(void *ctx, const char *buf, size_t len, off_t offset) {
     return NUC_AP_OK;
 }
 
-
 static int write_hole(nuc_arch_handle *handle, size_t len) {
     size_t buf_size = len < HOLE_BUF_SIZE ? len : HOLE_BUF_SIZE;
-    char *zeros = calloc(len, buf_size);
+    char *zeros = calloc(buf_size, 1);
 
     if (!zeros)
         return NUC_AP_FATAL;
@@ -678,6 +760,58 @@ static int write_hole(nuc_arch_handle *handle, size_t len) {
         }
 
         len -= buf_size;
+    }
+
+    return NUC_AP_OK;
+}
+
+EXPORT
+int nuc_arch_pack_finish(void *ctx) {
+    nuc_arch_handle *handle = ctx;
+
+    if (handle->tmp_file) {
+        FILE *f = handle->tmp_file;
+        int err = NUC_AP_OK;
+
+        archive_entry_set_size(handle->ent, handle->ent_size);
+
+        handle->tmp_file = NULL;
+        handle->ent_size = 0;
+
+        if (err_code(handle, archive_write_header(handle->ar, handle->ent))) {
+            err = NUC_AP_FAILED;
+            goto cleanup;
+        }
+
+        if (fseek(f, 0L, SEEK_SET)) {
+            err = NUC_AP_FAILED;
+            goto cleanup;
+        }
+
+        char *buf = malloc(HOLE_BUF_SIZE);
+
+        if (!buf) {
+            err = NUC_AP_FATAL;
+            goto cleanup;
+        }
+
+        ssize_t n;
+        while ((n = fread(buf, 1, HOLE_BUF_SIZE, f))) {
+            if (nuc_arch_pack(ctx, buf, n, 0)) {
+                err = NUC_AP_FAILED;
+                break;
+            }
+        }
+
+        if (ferror(f))
+            err = NUC_AP_FAILED;
+
+        free(buf);
+
+    cleanup:
+
+        fclose(f);
+        return err;
     }
 
     return NUC_AP_OK;

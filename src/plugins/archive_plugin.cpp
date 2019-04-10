@@ -67,6 +67,7 @@ void archive_plugin::load() {
         LOAD_CHECK_FN(entry_set_symlink_path);
         LOAD_CHECK_FN(write_entry_header);
         LOAD_CHECK_FN(pack);
+        LOAD_CHECK_FN(pack_finish);
 
         LOAD_CHECK_FN(set_callback);
     }

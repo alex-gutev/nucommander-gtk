@@ -390,6 +390,20 @@ int nuc_arch_write_entry_header(void *handle);
  */
 int nuc_arch_pack(void *handle, const char *buf, size_t len, off_t offset);
 
+/**
+ * Finishes writing data to the entry. This signals to the plugin that
+ * no more data will be written, and that all data, passed to the
+ * plugin, in the preceding pack calls should be written to the
+ * archive file.
+ *
+ * @param handle Handle of the archive.
+ *
+ * @return NUC_AP_OK (0) if this was written successful. A NUC_AP_
+ *    error constant value is returned if there was an error, with a
+ *    more detailed error code stored in errno.
+ */
+int nuc_arch_pack_finish(void *handle);
+
 #endif
 
 // Local Variables:

@@ -29,3 +29,10 @@ void archive_outstream::write(const byte *buf, size_t n, off_t off) {
         }
     });
 }
+
+void archive_outstream::close() {
+    plugin->pack_finish(handle);
+
+    // Does not close the handle as closing it is the responsibility
+    // of the creator of the handle.
+}

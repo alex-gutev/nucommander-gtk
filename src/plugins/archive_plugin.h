@@ -69,6 +69,7 @@ namespace nuc {
         typedef int(*write_entry_header_fn)(void *);
 
         typedef int(*pack_fn)(void *, const char *, size_t, off_t);
+        typedef int(*pack_finish_fn)(void *);
 
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
 
@@ -199,6 +200,7 @@ namespace nuc {
         entry_set_symlink_path_fn entry_set_symlink_path;
         write_entry_header_fn write_entry_header;
         pack_fn pack;
+        pack_finish_fn pack_finish;
 
         set_callback_fn set_callback;
     };
