@@ -36,7 +36,8 @@
         "C-b": "change-directory",
         "C-t": "open-new-directory",
         "C-w": "close-directory",
-        "Escape": "cancel"
+        "Escape": "cancel",
+        "C-q": "quit"
         }
         ]]>
       </default>

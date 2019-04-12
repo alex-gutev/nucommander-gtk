@@ -22,6 +22,7 @@
 #include <glib/gi18n.h>
 #include <gtkmm/messagedialog.h>
 
+#include "nucommander.h"
 #include "app_window.h"
 #include "file_view.h"
 
@@ -256,6 +257,18 @@ struct cancel_command : public command {
     }
 };
 
+/**
+ * Quit Command.
+ *
+ * Quits the application.
+ */
+struct quit_command : public command {
+    virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
+
+    virtual std::string description() {
+        return _("Quit the application");
+    }
+};
 
 //// Implementations
 
@@ -273,6 +286,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("open-new-directory", std::make_shared<open_dir_command>());
     table.emplace("close-directory", std::make_shared<close_dir_command>());
     table.emplace("cancel", std::make_shared<cancel_command>());
+    table.emplace("quit", std::make_shared<quit_command>());
 }
 
 
@@ -495,4 +509,9 @@ void cancel_command::run(nuc::app_window *window, nuc::file_view *src, const Gdk
     if (src) {
         src->dir_vfs()->cancel();
     }
+}
+
+
+void quit_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase) {
+    NuCommander::instance()->quit();
 }
