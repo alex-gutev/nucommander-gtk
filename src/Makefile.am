@@ -149,7 +149,8 @@ nucommander_RESOURCES = \
 	resources/open_dirs_popup.glade \
 	resources/main_menu.ui \
 	resources/nucommander.gresource.xml \
-	resources/styles.css
+	resources/styles.css \
+	resources/license.txt
 
 
 $(srcdir)/resources.c: $(nucommander_RESOURCES)

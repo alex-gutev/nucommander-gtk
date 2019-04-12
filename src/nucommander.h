@@ -22,6 +22,7 @@
 
 #include <gtkmm/application.h>
 #include <gtkmm/window.h>
+#include <gtkmm/aboutdialog.h>
 #include <glibmm.h>
 
 namespace nuc {
@@ -48,6 +49,11 @@ namespace nuc {
         void quit();
 
         /**
+         * Shows the about dialog.
+         */
+        void show_about();
+
+        /**
          * Opens the preferences dialog.
          */
         static void preferences();
@@ -66,6 +72,11 @@ namespace nuc {
         void on_startup() override;
 
     private:
+        /**
+         * The about dialog
+         */
+        std::unique_ptr<Gtk::AboutDialog> about;
+
         /**
          * Adds the menu item actions.
          */
