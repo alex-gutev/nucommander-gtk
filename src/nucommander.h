@@ -31,24 +31,56 @@ namespace nuc {
      * Application class.
      */
     class NuCommander : public Gtk::Application {
-    protected:
-        NuCommander();
-    
-        void on_activate() override;
-        
-    private:
-        /**
-         * Creates a new application window.
-         */
-        app_window *create_app_window();
-        
-        void on_hide_window(app_window* window);
-        
     public:
+        /**
+         * Returns the singleton instance.
+         */
+        static Glib::RefPtr<NuCommander> instance();
+
         /**
          * Creates a new NuCommander application object.
          */
         static Glib::RefPtr<NuCommander> create();
+
+        /**
+         * Quits the application.
+         */
+        void quit();
+
+    protected:
+        NuCommander();
+
+        /**
+         * Activate signal handler.
+         */
+        void on_activate() override;
+
+        /**
+         * Startup signal handler.
+         */
+        void on_startup() override;
+
+    private:
+        /**
+         * Adds the menu item actions.
+         */
+        void add_actions();
+        /**
+         * Sets the application menu.
+         */
+        void set_menu();
+
+        /**
+         * Creates a new application window.
+         */
+        app_window *create_app_window();
+
+        /**
+         * Window hide signal handler.
+         *
+         * @param window The window.
+         */
+        void on_hide_window(app_window* window);
     };
 }
 

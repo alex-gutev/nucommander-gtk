@@ -28,7 +28,10 @@
 #include <gtkmm/styleprovider.h>
 #include <gtkmm/cssprovider.h>
 
-nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {}
+Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::instance() {
+    static Glib::RefPtr<nuc::NuCommander> app = create();
+    return app;
+}
 
 Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::create() {
     auto app = Glib::RefPtr<NuCommander>(new NuCommander());
@@ -43,14 +46,15 @@ Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::create() {
     return app;
 }
 
-nuc::app_window *nuc::NuCommander::create_app_window() {
-    auto window = app_window::create();
 
-    add_window(*window);
+nuc::NuCommander::NuCommander() : Gtk::Application("org.agware.nucommander") {}
 
-    window->signal_hide().connect(sigc::bind<app_window*>(sigc::mem_fun(*this, &NuCommander::on_hide_window), window));
 
-    return window;
+void nuc::NuCommander::on_startup() {
+    Gtk::Application::on_startup();
+
+    add_actions();
+    set_menu();
 }
 
 void nuc::NuCommander::on_activate() {
@@ -64,8 +68,43 @@ void nuc::NuCommander::on_activate() {
     window->present();
 }
 
+
+void nuc::NuCommander::add_actions() {
+    add_action("quit", sigc::mem_fun(this, &NuCommander::quit));
+}
+
+void nuc::NuCommander::set_menu() {
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/main_menu.ui");
+
+    auto object = builder->get_object("appmenu");
+    auto menu = Glib::RefPtr<Gio::Menu>::cast_dynamic(object);
+
+    set_app_menu(menu);
+}
+
+
+nuc::app_window *nuc::NuCommander::create_app_window() {
+    auto window = app_window::create();
+
+    add_window(*window);
+
+    window->signal_hide().connect(sigc::bind<app_window*>(sigc::mem_fun(*this, &NuCommander::on_hide_window), window));
+
+    return window;
+}
+
 void nuc::NuCommander::on_hide_window(app_window *window) {
     window->cleanup([=] {
         delete window;
     });
+}
+
+
+void nuc::NuCommander::quit() {
+    auto windows = get_windows();
+
+    for (auto window : windows)
+        window->hide();
+
+    Gtk::Application::quit();
 }

@@ -147,6 +147,7 @@ nucommander_RESOURCES = \
 	resources/progress_dialog.glade \
 	resources/prefs_window.glade \
 	resources/open_dirs_popup.glade \
+	resources/main_menu.ui \
 	resources/nucommander.gresource.xml \
 	resources/styles.css
 

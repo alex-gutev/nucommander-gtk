@@ -27,6 +27,6 @@ int main(int argc, char **argv) {
     bindtextdomain(PACKAGE, LOCALEDIR);
     textdomain(PACKAGE);
 
-    auto application = nuc::NuCommander::create();
+    auto application = nuc::NuCommander::instance();
     return application->run(argc, argv);
 }
