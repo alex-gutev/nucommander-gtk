@@ -47,6 +47,11 @@ namespace nuc {
          */
         void quit();
 
+        /**
+         * Opens the preferences dialog.
+         */
+        static void preferences();
+
     protected:
         NuCommander();
 

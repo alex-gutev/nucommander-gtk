@@ -180,9 +180,9 @@ struct begin_filter_type_command : public begin_filter_command {
 };
 
 /**
- * Open Key Binding Preferences Command.
+ * Open Preferences Command.
  */
-struct open_key_prefs_command : public command {
+struct preferences_command : public command {
     virtual void run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase);
 
     virtual std::string description() {
@@ -280,7 +280,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("jump-path", std::make_shared<jump_path_command>());
     table.emplace("begin-filter", std::make_shared<begin_filter_command>());
     table.emplace("begin-filter-type", std::make_shared<begin_filter_type_command>());
-    table.emplace("open-key-prefs", std::make_shared<open_key_prefs_command>());
+    table.emplace("preferences", std::make_shared<preferences_command>());
     table.emplace("swap-panes", std::make_shared<swap_panes_command>());
     table.emplace("change-directory", std::make_shared<change_dir_command>());
     table.emplace("open-new-directory", std::make_shared<open_dir_command>());
@@ -437,11 +437,8 @@ void begin_filter_type_command::run(nuc::app_window *window, nuc::file_view *src
     }
 }
 
-void open_key_prefs_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
-    auto *window = prefs_window::instance();
-
-    window->show();
-    window->present();
+void preferences_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
+    NuCommander::preferences();
 }
 
 void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {

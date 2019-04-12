@@ -28,6 +28,8 @@
 #include <gtkmm/styleprovider.h>
 #include <gtkmm/cssprovider.h>
 
+#include "interface/prefs_window.h"
+
 Glib::RefPtr<nuc::NuCommander> nuc::NuCommander::instance() {
     static Glib::RefPtr<nuc::NuCommander> app = create();
     return app;
@@ -71,6 +73,7 @@ void nuc::NuCommander::on_activate() {
 
 void nuc::NuCommander::add_actions() {
     add_action("quit", sigc::mem_fun(this, &NuCommander::quit));
+    add_action("preferences", sigc::ptr_fun(preferences));
 }
 
 void nuc::NuCommander::set_menu() {
@@ -107,4 +110,12 @@ void nuc::NuCommander::quit() {
         window->hide();
 
     Gtk::Application::quit();
+}
+
+
+void nuc::NuCommander::preferences() {
+    auto *window = prefs_window::instance();
+
+    window->show();
+    window->present();
 }

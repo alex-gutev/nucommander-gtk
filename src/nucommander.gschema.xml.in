@@ -31,7 +31,7 @@
         "/": "jump-path",
         "<char>": "begin-filter-type",
         "C-s": "begin-filter",
-        "C-,": "open-key-prefs",
+        "C-,": "preferences",
         "C-u": "swap-panes",
         "C-b": "change-directory",
         "C-t": "open-new-directory",
