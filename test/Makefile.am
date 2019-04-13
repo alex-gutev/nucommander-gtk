@@ -16,10 +16,10 @@ test_pathname_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
 # Directory Tree Tests
 
 test_directory_tree_SOURCES = dir_tree_test.cpp
-test_directory_tree_CPPFLAGS = -I$(top_srcdir)/src $(BOOST_CPPFLAGS) $(GLIBMM_CFLAGS)
+test_directory_tree_CPPFLAGS = -I$(top_srcdir)/src $(BOOST_CPPFLAGS) $(GTKMM_CFLAGS)
 test_directory_tree_LDFLAGS = $(BOOST_LDFLAGS)
 test_directory_tree_LDADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
-	$(GLIBMM_LIBS) \
+	$(GTKMM_LIBS) \
 	../src/paths/nucommander-pathname.$(OBJEXT) \
 	../src/directory/nucommander-dir_entry.$(OBJEXT) \
 	../src/directory/nucommander-dir_tree.$(OBJEXT) \

@@ -1,16 +1,32 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . src src/plugins/archgeneric po test
 
+nobase_dist_pkgdata_DATA = commands/open-terminal.lua commands/view.lua
+
+# Desktop File
+
 desktopdir = $(datadir)/applications
 dist_desktop_in_files = nucommander.desktop.in
 dist_desktop_DATA = $(dist_desktop_in_files:.desktop.in=.desktop)
-
-nobase_dist_pkgdata_DATA = commands/open-terminal.lua commands/view.lua
 
 CLEANFILES = $(srcdir)/nucommander.desktop
 
 nucommander.desktop: nucommander.desktop.in po/nucommander.pot po/bg.po
 	$(AM_V_GEN) $(MSGFMT) --desktop --template $< -d $(top_srcdir)/po -o $(srcdir)/$@
+
+
+# GSettings
+
+nucommander.gschema.xml: nucommander.gschema.xml.in
+	$(AM_V_GEN) $(SED) -e 's|@libdir[@]|$(nucommander_install_libdir)|g' $< > $@
+
+gsettings_SCHEMAS = nucommander.gschema.xml
+
+
+EXTRA_DIST = nucommander.gschema.xml.in
+CLEANFILES += nucommander.gschema.xml
+
+@GSETTINGS_RULES@
 
 
 # Mac App Bundle

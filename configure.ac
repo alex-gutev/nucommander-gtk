@@ -41,7 +41,7 @@ GLIB_GSETTINGS
 
 # Libraries
 
-PKG_CHECK_MODULES([GLIBMM], [gtkmm-3.0 >= 3.8.0])
+PKG_CHECK_MODULES([GTKMM], [gtkmm-3.0 >= 3.8.0])
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive])
 PKG_CHECK_MODULES([LIBLUA], [lua-5.2])
 

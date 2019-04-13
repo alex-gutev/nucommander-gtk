@@ -1,8 +1,8 @@
 bin_PROGRAMS = nucommander
-nucommander_LDADD = $(GLIBMM_LIBS) $(LIBLUA_LIBS)
+nucommander_LDADD = $(GTKMM_LIBS) $(LIBLUA_LIBS)
 
-nucommander_CFLAGS = $(GLIBMM_CFLAGS) $(LIBLUA_CFLAGS)
-nucommander_CXXFLAGS = $(GLIBMM_CFLAGS) $(BOOST_CPPFLAGS) $(LIBLUA_CFLAGS)
+nucommander_CFLAGS = $(GTKMM_CFLAGS) $(LIBLUA_CFLAGS)
+nucommander_CXXFLAGS = $(GTKMM_CFLAGS) $(BOOST_CPPFLAGS) $(LIBLUA_CFLAGS)
 nucommander_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\"
 
 ## Source Files
@@ -154,18 +154,7 @@ nucommander_RESOURCES = \
 
 
 $(srcdir)/resources.c: $(nucommander_RESOURCES)
-	glib-compile-resources --target=$(srcdir)/resources.c --sourcedir=$(srcdir)/resources --generate-source $(srcdir)/resources/nucommander.gresource.xml
+	$(AM_V_GEN) glib-compile-resources --target=$(srcdir)/resources.c --sourcedir=$(srcdir)/resources --generate-source $(srcdir)/resources/nucommander.gresource.xml
 
-
-## GSettings
-
-nucommander.gschema.xml: nucommander.gschema.xml.in
-	$(AM_V_GEN) $(SED) -e 's|@libdir[@]|$(nucommander_install_libdir)|g' $< > $@
-
-gsettings_SCHEMAS = nucommander.gschema.xml
-
-
-EXTRA_DIST = $(nucommander_RESOURCES) nucommander.gschema.xml.in
-CLEANFILES = resources.c nucommander.gschema.xml
-
-@GSETTINGS_RULES@
+EXTRA_DIST = $(nucommander_RESOURCES)
+CLEANFILES = $(srcdir)/resources.c
