@@ -35,7 +35,7 @@
          not needed. If the source path is left out, the default
          script will be used.
     -->
-    <launcher-script>@srcdir@/launcher.sh</launcher-script >
+    <launcher-script>@srcdir@/bundle/launcher.sh</launcher-script >
 
     <!-- Not implemented: Optional runtime, could be python or mono
          for example.
@@ -50,7 +50,7 @@
        this bundle file is located. The application name and bundle
        identifier are taken from the plist file.
   -->
-  <plist>@srcdir@/info.plist</plist>
+  <plist>@srcdir@/bundle/info.plist</plist>
 
   <main-binary>
     ${prefix:install}/bin/nucommander
