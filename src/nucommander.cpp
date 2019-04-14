@@ -24,6 +24,7 @@
 #include <sigc++/sigc++.h>
 #include <gtkmm/styleprovider.h>
 #include <gtkmm/cssprovider.h>
+#include <glib/gi18n.h>
 
 #include "app_window.h"
 
@@ -132,10 +133,10 @@ void nuc::NuCommander::show_about() {
     if (!about) {
         about.reset(new Gtk::AboutDialog());
 
-        about->set_program_name("NuCommander");
+        about->set_program_name(_("NuCommander"));
         about->set_version("0.1");
-        about->set_copyright("Alexander Gutev");
-        about->set_comments("A fast small orthodox file manager.");
+        about->set_copyright(_("Alexander Gutev"));
+        about->set_comments(_("A fast small orthodox file manager."));
 
         auto license = Gio::Resource::lookup_data_global("/org/agware/nucommander/license.txt");
         gsize size;
@@ -143,8 +144,8 @@ void nuc::NuCommander::show_about() {
         about->set_license((const char *)license->get_data(size));
 
         about->set_website("https://alex-gutev.github.io/nucommander-gtk/");
-        about->set_website_label("NuCommander Website");
-        about->set_authors({"Alexander Gutev"});
+        about->set_website_label(_("NuCommander Website"));
+        about->set_authors({_("Alexander Gutev")});
 
         about->signal_response().connect(std::bind(on_about_response, about.get(), _1));
     }

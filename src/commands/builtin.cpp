@@ -306,9 +306,9 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
 
-            dialog->set_query_label("Copy to:");
+            dialog->set_query_label(_("Destination"));
             dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
-            dialog->set_exec_button_label("Copy");
+            dialog->set_exec_button_label(_("Copy"));
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
                 auto type = src->dir_vfs()->directory_type();
@@ -329,9 +329,9 @@ void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
 
         dest_dialog *dialog = window->dest_dialog();
 
-        dialog->set_query_label("Directory Name:");
+        dialog->set_query_label(_("Directory Name"));
         dialog->dest_path("");
-        dialog->set_exec_button_label("Create Directory");
+        dialog->set_exec_button_label(_("Create Directory"));
 
         if (dialog->run() == Gtk::RESPONSE_OK) {
             window->add_operation(std::bind(make_dir_task, _1, dest, dialog->dest_path()));
@@ -360,9 +360,9 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
         if (!entries.empty()) {
             dest_dialog *dialog = window->dest_dialog();
 
-            dialog->set_query_label("Move/Rename to:");
+            dialog->set_query_label(_("Destination"));
             dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
-            dialog->set_exec_button_label("Move");
+            dialog->set_exec_button_label(_("Move"));
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
                 auto type = src->dir_vfs()->directory_type();
@@ -383,7 +383,7 @@ void delete_command::run(nuc::app_window *window, nuc::file_view *src, const Gdk
         if (!entries.empty()) {
             // Query for confirmation
 
-            Gtk::MessageDialog dialog(*window, "Confirm Delete", false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
+            Gtk::MessageDialog dialog(*window, _("Confirm Delete"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
             dialog.set_secondary_text(confirm_delete_msg(entries));
 
             int result = dialog.run();
@@ -402,10 +402,10 @@ void delete_command::run(nuc::app_window *window, nuc::file_view *src, const Gdk
 
 Glib::ustring delete_command::confirm_delete_msg(const std::vector<dir_entry *> &ents) {
     if (ents.size() == 1) {
-        return Glib::ustring::compose("Are you sure you want to delete '%1'?", ents[0]->file_name());
+        return Glib::ustring::compose(_("Are you sure you want to delete '%1'?"), ents[0]->file_name());
     }
     else {
-        return Glib::ustring::compose("Are you sure you want to delete %1 selected files?", ents.size());
+        return Glib::ustring::compose(_("Are you sure you want to delete %1 selected files?"), ents.size());
     }
 }
 

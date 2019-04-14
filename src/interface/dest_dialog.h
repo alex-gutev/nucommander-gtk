@@ -114,7 +114,7 @@ namespace nuc {
          * @param text The query text.
          */
         void set_query_label(Glib::ustring text) {
-            query_label->set_label(std::move(text));
+            query_label->set_label(std::move(text) + ":");
         }
 
         /**

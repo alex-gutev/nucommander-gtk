@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-13 19:33+0200\n"
-"PO-Revision-Date: 2019-02-08 20:13+0100\n"
+"POT-Creation-Date: 2019-04-14 09:07+0200\n"
+"PO-Revision-Date: 2019-04-14 09:15+0200\n"
 "Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
 "Language-Team: Bulgarian\n"
 "Language: bg\n"
@@ -89,9 +89,125 @@ msgstr ""
 msgid "Quit the application"
 msgstr ""
 
-#: nucommander.desktop:6
+#: src/commands/builtin.cpp:309 src/commands/builtin.cpp:363
+msgid "Destination"
+msgstr "Дестинация"
+
+#: src/commands/builtin.cpp:311
+msgid "Copy"
+msgstr "Изкопирай"
+
+#: src/commands/builtin.cpp:332
+msgid "Directory Name"
+msgstr "Име"
+
+#: src/commands/builtin.cpp:334
+msgid "Create Directory"
+msgstr "Направи Дирецторията"
+
+#: src/commands/builtin.cpp:365
+msgid "Move"
+msgstr "Измести"
+
+#: src/commands/builtin.cpp:386
+msgid "Confirm Delete"
+msgstr "Потвърди Изтриването"
+
+#: src/commands/builtin.cpp:405
+msgid "Are you sure you want to delete '%1'?"
+msgstr "Сигорен ли си че искаш да изтриеш '%1'?"
+
+#: src/commands/builtin.cpp:408
+msgid "Are you sure you want to delete %1 selected files?"
+msgstr "Сигорен ли си че искаш да истриеш %1 файл(а)?"
+
+#: src/errors/attribute_error.cpp:29
+msgid "Error setting permissions of '%1'."
+msgstr "Грешка в наглацането на разрешениета на '%1'."
+
+#: src/errors/attribute_error.cpp:32
+msgid "Error setting owner of '%1'."
+msgstr "Грешка в нагласането на собственика на '%1'."
+
+#: src/errors/attribute_error.cpp:35
+msgid "Error setting access/modification time of '%1'."
+msgstr "Грешка в нагласането на датите на '%1'."
+
+#: src/errors/file_error.cpp:29
+msgid "Error creating file: '%1'."
+msgstr "Грешка в създаването на файла: '%1'."
+
+#: src/errors/file_error.cpp:32
+msgid "Error writing to file: '%1'."
+msgstr "Грешка в писането към файла: '%1'."
+
+#: src/errors/file_error.cpp:35
+msgid "Error reading file '%1'."
+msgstr "Грешка в четенето от файла '%1'."
+
+#: src/errors/file_error.cpp:38
+msgid "Error creating directory '%1'."
+msgstr "Грешка в създаването на директорията '%1'."
+
+#: src/errors/file_error.cpp:41
+msgid "Error deleting '%1'."
+msgstr "Грешка в изтриването на '%1'."
+
+#: src/errors/error_dialog.cpp:66
+msgid "Recovery Action"
+msgstr "Действие"
+
+#: src/interface/open_dirs_popup.cpp:57
+msgid "Directory"
+msgstr "Директория"
+
+#: src/interface/prefs_window.cpp:144
+msgid "Command"
+msgstr "Команда"
+
+#: src/interface/prefs_window.cpp:145
+msgid "Shortcut"
+msgstr "Клавъж"
+
+#: src/interface/prefs_window.cpp:214
+msgid "Plugin Path"
+msgstr "Патеката на Библиотеката"
+
+#: src/interface/prefs_window.cpp:215
+msgid "Regex"
+msgstr "Регюлар Експрешън"
+
+#: src/interface/prefs_window.cpp:278
+msgid "Error Type"
+msgstr "Вида на Грешката"
+
+#: src/interface/prefs_window.cpp:279
+msgid "Error Code"
+msgstr "Кода на Грешката"
+
+#: src/interface/prefs_window.cpp:280
+msgid "Handler"
+msgstr "Действие"
+
+#: src/interface/prefs_window.cpp:355
+msgid "Column"
+msgstr "Колона"
+
+#: src/nucommander.cpp:136 nucommander.desktop:6
 msgid "NuCommander"
 msgstr "Нюкомандер"
+
+#: src/nucommander.cpp:138 src/nucommander.cpp:148
+msgid "Alexander Gutev"
+msgstr "Александър Гутев"
+
+#: src/nucommander.cpp:139
+msgid "A fast small orthodox file manager."
+msgstr "Малък бърз ортодоксиялен файл менаджер."
+
+#: src/nucommander.cpp:147
+msgid "NuCommander Website"
+msgstr "Сайта на Нюкомандер"
 
 #: nucommander.desktop:9
 msgid "Orthodox File Manager"

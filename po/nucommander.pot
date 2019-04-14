@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-13 19:33+0200\n"
+"POT-Creation-Date: 2019-04-14 09:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -89,8 +89,124 @@ msgstr ""
 msgid "Quit the application"
 msgstr ""
 
-#: nucommander.desktop:6
+#: src/commands/builtin.cpp:309 src/commands/builtin.cpp:363
+msgid "Destination"
+msgstr ""
+
+#: src/commands/builtin.cpp:311
+msgid "Copy"
+msgstr ""
+
+#: src/commands/builtin.cpp:332
+msgid "Directory Name"
+msgstr ""
+
+#: src/commands/builtin.cpp:334
+msgid "Create Directory"
+msgstr ""
+
+#: src/commands/builtin.cpp:365
+msgid "Move"
+msgstr ""
+
+#: src/commands/builtin.cpp:386
+msgid "Confirm Delete"
+msgstr ""
+
+#: src/commands/builtin.cpp:405
+msgid "Are you sure you want to delete '%1'?"
+msgstr ""
+
+#: src/commands/builtin.cpp:408
+msgid "Are you sure you want to delete %1 selected files?"
+msgstr ""
+
+#: src/errors/attribute_error.cpp:29
+msgid "Error setting permissions of '%1'."
+msgstr ""
+
+#: src/errors/attribute_error.cpp:32
+msgid "Error setting owner of '%1'."
+msgstr ""
+
+#: src/errors/attribute_error.cpp:35
+msgid "Error setting access/modification time of '%1'."
+msgstr ""
+
+#: src/errors/file_error.cpp:29
+msgid "Error creating file: '%1'."
+msgstr ""
+
+#: src/errors/file_error.cpp:32
+msgid "Error writing to file: '%1'."
+msgstr ""
+
+#: src/errors/file_error.cpp:35
+msgid "Error reading file '%1'."
+msgstr ""
+
+#: src/errors/file_error.cpp:38
+msgid "Error creating directory '%1'."
+msgstr ""
+
+#: src/errors/file_error.cpp:41
+msgid "Error deleting '%1'."
+msgstr ""
+
+#: src/errors/error_dialog.cpp:66
+msgid "Recovery Action"
+msgstr ""
+
+#: src/interface/open_dirs_popup.cpp:57
+msgid "Directory"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:144
+msgid "Command"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:145
+msgid "Shortcut"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:214
+msgid "Plugin Path"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:215
+msgid "Regex"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:278
+msgid "Error Type"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:279
+msgid "Error Code"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:280
+msgid "Handler"
+msgstr ""
+
+#: src/interface/prefs_window.cpp:355
+msgid "Column"
+msgstr ""
+
+#: src/nucommander.cpp:136 nucommander.desktop:6
 msgid "NuCommander"
+msgstr ""
+
+#: src/nucommander.cpp:138 src/nucommander.cpp:148
+msgid "Alexander Gutev"
+msgstr ""
+
+#: src/nucommander.cpp:139
+msgid "A fast small orthodox file manager."
+msgstr ""
+
+#: src/nucommander.cpp:147
+msgid "NuCommander Website"
 msgstr ""
 
 #: nucommander.desktop:9

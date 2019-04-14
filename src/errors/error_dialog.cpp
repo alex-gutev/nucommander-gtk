@@ -21,6 +21,8 @@
 
 #include <exception>
 
+#include <glib/gi18n.h>
+
 #include "tasks/async_task.h"
 
 using namespace nuc;
@@ -61,7 +63,7 @@ void error_dialog::init_model() {
     actions = create_model();
     actions_view->set_model(actions);
 
-    actions_view->append_column("Recovery Action", columns.name);
+    actions_view->append_column(_("Recovery Action"), columns.name);
 }
 
 Glib::RefPtr<Gtk::ListStore> error_dialog::create_model() {

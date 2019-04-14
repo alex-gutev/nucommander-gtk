@@ -19,18 +19,20 @@
 
 #include "attribute_error.h"
 
+#include <glib/gi18n.h>
+
 using namespace nuc;
 
 Glib::ustring attribute_error::type_explanation() const noexcept {
     switch (error_type()) {
     case error::type_set_mode:
-        return Glib::ustring::compose("Error setting permissions of '%1'.", file);
+        return Glib::ustring::compose(_("Error setting permissions of '%1'."), file);
 
     case error::type_set_owner:
-        return Glib::ustring::compose("Error setting owner of '%1'.", file);
+        return Glib::ustring::compose(_("Error setting owner of '%1'."), file);
 
     case error::type_set_times:
-        return Glib::ustring::compose("Error setting access/modification time of '%1'.", file);
+        return Glib::ustring::compose(_("Error setting access/modification time of '%1'."), file);
     }
 
     return "";

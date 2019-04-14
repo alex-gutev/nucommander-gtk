@@ -19,6 +19,8 @@
 
 #include "open_dirs_popup.h"
 
+#include <glib/gi18n.h>
+
 using namespace nuc;
 
 open_dirs_popup::model_columns::model_columns() {
@@ -52,7 +54,7 @@ open_dirs_popup::open_dirs_popup(BaseObjectType *cobject, const Glib::RefPtr<Gtk
     // Initialize Tree View
 
     dirs_view->set_model(dirs_list);
-    dirs_view->append_column("Directory", model.path);
+    dirs_view->append_column(_("Directory"), model.path);
     dirs_view->get_column(0)->set_sort_column(model.path);
 
     // Connect Signal Handlers

@@ -1,3 +1,9 @@
 src/file_list/columns.cpp
 src/commands/builtin.cpp
+src/errors/attribute_error.cpp
+src/errors/file_error.cpp
+src/errors/error_dialog.cpp
+src/interface/open_dirs_popup.cpp
+src/interface/prefs_window.cpp
+src/nucommander.cpp
 nucommander.desktop

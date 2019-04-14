@@ -19,24 +19,26 @@
 
 #include "file_error.h"
 
+#include <glib/gi18n.h>
+
 using namespace nuc;
 
 Glib::ustring file_error::type_explanation() const noexcept {
     switch (error_type()) {
     case error::type_create_file:
-        return Glib::ustring::compose("Error creating file: '%1'.", file);
+        return Glib::ustring::compose(_("Error creating file: '%1'."), file);
 
     case error::type_write_file:
-        return Glib::ustring::compose("Error writing to file: '%1'.", file);
+        return Glib::ustring::compose(_("Error writing to file: '%1'."), file);
 
     case error::type_read_file:
-        return Glib::ustring::compose("Error reading file '%1'.", file);
+        return Glib::ustring::compose(_("Error reading file '%1'."), file);
 
     case error::type_create_dir:
-        return Glib::ustring::compose("Error creating directory '%1'.", file);
+        return Glib::ustring::compose(_("Error creating directory '%1'."), file);
 
     case error::type_delete_file:
-        return Glib::ustring::compose("Error deleting '%1'.", file);
+        return Glib::ustring::compose(_("Error deleting '%1'."), file);
     }
 
     return "";
