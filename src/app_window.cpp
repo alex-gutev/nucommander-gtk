@@ -35,14 +35,14 @@
 using namespace nuc;
 
 app_window* app_window::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.ui");
 
     app_window *window = nullptr;
 
     builder->get_widget_derived("commander_window", window);
 
     if (!window)
-        throw std::runtime_error("No \"commander_window\" object in window.glade");
+        throw std::runtime_error("No \"commander_window\" object in window.ui");
 
     return window;
 }
@@ -91,7 +91,7 @@ void app_window::init_pane_view() {
 
 
 void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.ui");
 
     // TODO: Add error checking
 
@@ -112,7 +112,7 @@ void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
 
 
 Glib::RefPtr<Gtk::Builder> app_window::file_view_builder() {
-    return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.glade");
+    return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.ui");
 }
 
 bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {

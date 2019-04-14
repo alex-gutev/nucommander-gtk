@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-14 09:07+0200\n"
-"PO-Revision-Date: 2019-04-14 09:15+0200\n"
+"POT-Creation-Date: 2019-04-14 19:14+0200\n"
+"PO-Revision-Date: 2019-04-14 19:25+0200\n"
 "Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
 "Language-Team: Bulgarian\n"
 "Language: bg\n"
@@ -193,7 +193,7 @@ msgstr "Действие"
 msgid "Column"
 msgstr "Колона"
 
-#: src/nucommander.cpp:136 nucommander.desktop:6
+#: src/nucommander.cpp:136 src/resources/window.ui:7 nucommander.desktop:6
 msgid "NuCommander"
 msgstr "Нюкомандер"
 
@@ -208,6 +208,91 @@ msgstr "Малък бърз ортодоксиялен файл менаджер
 #: src/nucommander.cpp:147
 msgid "NuCommander Website"
 msgstr "Сайта на Нюкомандер"
+
+#: src/resources/dest_dialog.ui:24 src/resources/prefs_window.ui:472
+#: src/resources/progress_dialog.ui:34
+msgid "Cancel"
+msgstr "Откажи"
+
+#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:36
+#: src/resources/prefs_window.ui:485
+msgid "OK"
+msgstr "Добре"
+
+#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:73
+#: src/resources/progress_dialog.ui:69 src/resources/progress_dialog.ui:93
+msgid "label"
+msgstr ""
+
+#: src/resources/error_dialog.ui:23
+msgid "Apply to All"
+msgstr "Действай за Всички"
+
+#: src/resources/main_menu.ui:7
+msgid "_About"
+msgstr ""
+
+#: src/resources/main_menu.ui:13
+msgid "_Preferences"
+msgstr ""
+
+#: src/resources/main_menu.ui:19
+msgid "_Quit"
+msgstr ""
+
+#: src/resources/prefs_window.ui:7
+msgid "Preferences"
+msgstr "Настройки"
+
+#: src/resources/prefs_window.ui:49
+msgid "Directory Refresh Timeout"
+msgstr ""
+
+#: src/resources/prefs_window.ui:76
+msgid "General"
+msgstr "Общи"
+
+#: src/resources/prefs_window.ui:123 src/resources/prefs_window.ui:213
+#: src/resources/prefs_window.ui:303 src/resources/prefs_window.ui:411
+msgid "Add"
+msgstr "Добави"
+
+#: src/resources/prefs_window.ui:136 src/resources/prefs_window.ui:226
+#: src/resources/prefs_window.ui:316 src/resources/prefs_window.ui:424
+msgid "Remove"
+msgstr "Изтрий"
+
+#: src/resources/prefs_window.ui:165
+msgid "Key Bindings"
+msgstr "Клавиши"
+
+#: src/resources/prefs_window.ui:255
+msgid "Error Handlers"
+msgstr "Действия при Грешки"
+
+#: src/resources/prefs_window.ui:345
+msgid "Plugins"
+msgstr "Плугинки"
+
+#: src/resources/prefs_window.ui:385
+msgid "Up"
+msgstr "Нагоре"
+
+#: src/resources/prefs_window.ui:398
+msgid "Down"
+msgstr "Надоло"
+
+#: src/resources/prefs_window.ui:451
+msgid "Columns"
+msgstr "Колони"
+
+#: src/resources/prefs_window.ui:498
+msgid "Apply"
+msgstr "Запази"
+
+#: src/resources/progress_dialog.ui:21
+msgid "Hide"
+msgstr "Скрий"
 
 #: nucommander.desktop:9
 msgid "Orthodox File Manager"

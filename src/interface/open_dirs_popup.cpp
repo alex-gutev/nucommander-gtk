@@ -29,14 +29,14 @@ open_dirs_popup::model_columns::model_columns() {
 }
 
 open_dirs_popup *open_dirs_popup::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/open_dirs_popup.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/open_dirs_popup.ui");
 
     open_dirs_popup *window = nullptr;
 
     builder->get_widget_derived("dirs_popup", window);
 
     if (!window)
-        throw std::runtime_error("No \"dirs_popup\" object in open_dirs_popup.glade");
+        throw std::runtime_error("No \"dirs_popup\" object in open_dirs_popup.ui");
 
     return window;
 }

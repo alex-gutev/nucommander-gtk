@@ -29,14 +29,14 @@ using namespace nuc;
 
 
 error_dialog *error_dialog::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/error_dialog.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/error_dialog.ui");
 
     error_dialog *dialog = nullptr;
 
     builder->get_widget_derived("error_dialog", dialog);
 
     if (!dialog)
-        throw std::runtime_error("No \"error_dialog\" object in error_dialog.glade");
+        throw std::runtime_error("No \"error_dialog\" object in error_dialog.ui");
 
     return dialog;
 }

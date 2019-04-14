@@ -27,14 +27,14 @@ using namespace nuc;
 
 
 dest_dialog *dest_dialog::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/dest_dialog.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/dest_dialog.ui");
 
     dest_dialog *dialog = nullptr;
 
     builder->get_widget_derived("dest_dialog", dialog);
 
     if (!dialog)
-        throw std::runtime_error("No \"dest_dialog\" object in dest_dialog.glade");
+        throw std::runtime_error("No \"dest_dialog\" object in dest_dialog.ui");
 
     return dialog;
 }

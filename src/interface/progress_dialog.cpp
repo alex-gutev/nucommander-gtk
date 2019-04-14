@@ -26,14 +26,14 @@ using namespace nuc;
 
 
 progress_dialog *progress_dialog::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/progress_dialog.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/progress_dialog.ui");
 
     progress_dialog *dialog = nullptr;
 
     builder->get_widget_derived("progress_dialog", dialog);
 
     if (!dialog)
-        throw std::runtime_error("No \"progress_dialog\" object in progress_dialog.glade");
+        throw std::runtime_error("No \"progress_dialog\" object in progress_dialog.ui");
 
     return dialog;
 }

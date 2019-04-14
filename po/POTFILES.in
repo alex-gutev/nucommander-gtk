@@ -6,4 +6,12 @@ src/errors/error_dialog.cpp
 src/interface/open_dirs_popup.cpp
 src/interface/prefs_window.cpp
 src/nucommander.cpp
+src/resources/dest_dialog.ui
+src/resources/error_dialog.ui
+src/resources/fileview.ui
+src/resources/main_menu.ui
+src/resources/open_dirs_popup.ui
+src/resources/prefs_window.ui
+src/resources/progress_dialog.ui
+src/resources/window.ui
 nucommander.desktop

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-14 09:07+0200\n"
+"POT-Creation-Date: 2019-04-14 19:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -193,7 +193,7 @@ msgstr ""
 msgid "Column"
 msgstr ""
 
-#: src/nucommander.cpp:136 nucommander.desktop:6
+#: src/nucommander.cpp:136 src/resources/window.ui:7 nucommander.desktop:6
 msgid "NuCommander"
 msgstr ""
 
@@ -207,6 +207,91 @@ msgstr ""
 
 #: src/nucommander.cpp:147
 msgid "NuCommander Website"
+msgstr ""
+
+#: src/resources/dest_dialog.ui:24 src/resources/prefs_window.ui:472
+#: src/resources/progress_dialog.ui:34
+msgid "Cancel"
+msgstr ""
+
+#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:36
+#: src/resources/prefs_window.ui:485
+msgid "OK"
+msgstr ""
+
+#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:73
+#: src/resources/progress_dialog.ui:69 src/resources/progress_dialog.ui:93
+msgid "label"
+msgstr ""
+
+#: src/resources/error_dialog.ui:23
+msgid "Apply to All"
+msgstr ""
+
+#: src/resources/main_menu.ui:7
+msgid "_About"
+msgstr ""
+
+#: src/resources/main_menu.ui:13
+msgid "_Preferences"
+msgstr ""
+
+#: src/resources/main_menu.ui:19
+msgid "_Quit"
+msgstr ""
+
+#: src/resources/prefs_window.ui:7
+msgid "Preferences"
+msgstr ""
+
+#: src/resources/prefs_window.ui:49
+msgid "Directory Refresh Timeout"
+msgstr ""
+
+#: src/resources/prefs_window.ui:76
+msgid "General"
+msgstr ""
+
+#: src/resources/prefs_window.ui:123 src/resources/prefs_window.ui:213
+#: src/resources/prefs_window.ui:303 src/resources/prefs_window.ui:411
+msgid "Add"
+msgstr ""
+
+#: src/resources/prefs_window.ui:136 src/resources/prefs_window.ui:226
+#: src/resources/prefs_window.ui:316 src/resources/prefs_window.ui:424
+msgid "Remove"
+msgstr ""
+
+#: src/resources/prefs_window.ui:165
+msgid "Key Bindings"
+msgstr ""
+
+#: src/resources/prefs_window.ui:255
+msgid "Error Handlers"
+msgstr ""
+
+#: src/resources/prefs_window.ui:345
+msgid "Plugins"
+msgstr ""
+
+#: src/resources/prefs_window.ui:385
+msgid "Up"
+msgstr ""
+
+#: src/resources/prefs_window.ui:398
+msgid "Down"
+msgstr ""
+
+#: src/resources/prefs_window.ui:451
+msgid "Columns"
+msgstr ""
+
+#: src/resources/prefs_window.ui:498
+msgid "Apply"
+msgstr ""
+
+#: src/resources/progress_dialog.ui:21
+msgid "Hide"
 msgstr ""
 
 #: nucommander.desktop:9

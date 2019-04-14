@@ -140,13 +140,13 @@ nucommander_SOURCES = \
 nodist_nucommander_SOURCES = resources.c
 
 nucommander_RESOURCES = \
-	resources/window.glade \
-	resources/fileview.glade \
-	resources/error_dialog.glade \
-	resources/dest_dialog.glade \
-	resources/progress_dialog.glade \
-	resources/prefs_window.glade \
-	resources/open_dirs_popup.glade \
+	resources/window.ui \
+	resources/fileview.ui \
+	resources/error_dialog.ui \
+	resources/dest_dialog.ui \
+	resources/progress_dialog.ui \
+	resources/prefs_window.ui \
+	resources/open_dirs_popup.ui \
 	resources/main_menu.ui \
 	resources/nucommander.gresource.xml \
 	resources/styles.css \

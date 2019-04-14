@@ -59,14 +59,14 @@ prefs_window *prefs_window::instance() {
 }
 
 prefs_window *prefs_window::create() {
-    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/prefs_window.glade");
+    auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/prefs_window.ui");
 
     prefs_window *window = nullptr;
 
     builder->get_widget_derived("prefs_window", window);
 
     if (!window)
-        throw std::runtime_error("No \"key_prefs_dialog\" object in key_pref_dialog.glade");
+        throw std::runtime_error("No \"key_prefs_dialog\" object in key_pref_dialog.ui");
 
     return window;
 }
