@@ -1,0 +1,26 @@
+NuCommander
+===============================
+
+NuCommander aims to be a fast small orthodox file manager, with
+emphasis on a keyboard driven user interface.
+
+Installation
+===============================
+
+Download the latest release tarball. Unpack the tarball to a directory
+of your choice and then in the directory run the following commands:
+
+./configure
+make
+sudo make install
+
+
+This will install NuCommander to the /usr/local prefix, you can
+specify a different prefix with the `--prefix=<prefix>` option to
+`./configure`.
+
+Status
+===============================
+
+NuCommander is currently in early stages of development. The current
+version lacks some important features and may contain bugs.
