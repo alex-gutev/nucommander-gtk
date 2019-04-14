@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-01 19:17+0200\n"
+"POT-Creation-Date: 2019-04-13 19:33+0200\n"
 "PO-Revision-Date: 2019-02-08 20:13+0100\n"
 "Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
 "Language-Team: Bulgarian\n"
@@ -17,68 +17,76 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/file_list/columns.cpp:183
+#: src/file_list/columns.cpp:225 src/file_list/columns.cpp:226
 msgid "Name"
 msgstr "Име"
 
-#: src/file_list/columns.cpp:204
-msgid "Size"
-msgstr "Размер"
+#: src/file_list/columns.cpp:228
+msgid "Ext"
+msgstr "Разш"
 
-#: src/file_list/columns.cpp:273
+#: src/file_list/columns.cpp:229
 msgid "Date Modified"
 msgstr "Дата на Промяна"
 
-#: src/commands/builtin.cpp:76
+#: src/file_list/columns.cpp:230
+msgid "Size"
+msgstr "Размер"
+
+#: src/commands/builtin.cpp:77
 msgid "Copy marked/selected files, in source pane, to a destination directory."
 msgstr ""
 
-#: src/commands/builtin.cpp:103
+#: src/commands/builtin.cpp:104
 msgid "Create a new directory in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:118
+#: src/commands/builtin.cpp:119
 msgid "Move/Rename marked/selected files in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:141
+#: src/commands/builtin.cpp:142
 msgid "Delete the marked/selected files in the source pane"
 msgstr ""
 
-#: src/commands/builtin.cpp:154
+#: src/commands/builtin.cpp:155
 msgid "Jump to the current path text entry."
 msgstr ""
 
-#: src/commands/builtin.cpp:167
+#: src/commands/builtin.cpp:168
 msgid "Begin filtering in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:188
+#: src/commands/builtin.cpp:189
 msgid "Open the keybinding preferences."
 msgstr ""
 
-#: src/commands/builtin.cpp:201
+#: src/commands/builtin.cpp:202
 msgid "Swap source and destination panes' directories."
 msgstr ""
 
-#: src/commands/builtin.cpp:214
+#: src/commands/builtin.cpp:215
 msgid ""
 "Display the list of open directories, to choose a new directory to display "
 "in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:228
+#: src/commands/builtin.cpp:229
 msgid "Create a new directory buffer."
 msgstr ""
 
-#: src/commands/builtin.cpp:242
+#: src/commands/builtin.cpp:243
 msgid ""
 "Close the source pane's current directory and return to the previously "
 "visited directory."
 msgstr ""
 
-#: src/commands/builtin.cpp:255
+#: src/commands/builtin.cpp:256
 msgid "Cancel reading the directory in the source pane"
+msgstr ""
+
+#: src/commands/builtin.cpp:269
+msgid "Quit the application"
 msgstr ""
 
 #: nucommander.desktop:6
