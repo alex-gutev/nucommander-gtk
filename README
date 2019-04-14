@@ -7,6 +7,14 @@ emphasis on a keyboard driven user interface.
 Installation
 ===============================
 
+NuCommander has the following dependencies:
+
+  - GTKMM version 3.8 or greater
+  - libarchive 3.1.2 or greater
+  - Lua 5.2
+
+Make sure these are installed before installing NuCommander.
+
 Download the latest release tarball. Unpack the tarball to a directory
 of your choice and then run the following commands in the directory:
 
