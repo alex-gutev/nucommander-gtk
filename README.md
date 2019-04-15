@@ -1,8 +1,7 @@
 # NuCommander
 
-NuCommander aims to be a fast, small, lightweight orthodox file
-manager for Linux with an emphasis on a keyboard driven user
-interface.
+NuCommander aims to be a fast, small orthodox file manager for Linux
+with an emphasis on a keyboard driven user interface.
 
 ## Design
 
@@ -12,14 +11,18 @@ removed in favour of a clean, minimal user interface.
 
 ![Screenshot](img/screenshot.png)
 
+### Features
+
+NuCommander has the basic features expected in an orthodox file
+manager:
+
+   * **Browsing Directories** - Both regular directories and archives.
+   * **Basic Commands** - File copying, moving, renaming and deleting.
+   * **Opening Files** - In their default applications.
+   * **Archive Plugin Interface** - For creating plugins to read new archive types.
+
 ## Status
 
-NuCommander is currently in early stages of development.
-
-The following basic features have been implemented, _there is still
-significant polishing up to do_:
-
-   * **Browsing Directories** - both regular directories and archives.
-   * **Opening files** in their default applications.
-   * **File Copying** - both to and from regular directories and archives.
-   * **Archive plugin interface** - for creating plugins to read various archive types
+Releases of NuCommander are available however it is still at
+alpha-level thus it may contain bugs and some important features are
+yet to be implemented.
