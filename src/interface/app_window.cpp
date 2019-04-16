@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,10 @@
  *
  */
 
-#include "app_window.h"
+#include "interface/app_window.h"
 
-#include <exception>
+#include <cassert>
 #include <functional>
-#include <iostream>
 
 #include <giomm/appinfo.h>
 
@@ -38,11 +37,7 @@ app_window* app_window::create() {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.ui");
 
     app_window *window = nullptr;
-
     builder->get_widget_derived("commander_window", window);
-
-    if (!window)
-        throw std::runtime_error("No \"commander_window\" object in window.ui");
 
     return window;
 }
@@ -53,19 +48,12 @@ app_window::app_window(Gtk::ApplicationWindow::BaseObjectType* cobject,
 
     add_events(Gdk::FOCUS_CHANGE_MASK);
 
-    // TODO: Add error checking
-
     set_default_size(800, 600);
 
     builder->get_widget("pane_view", pane_view);
-
     init_pane_view();
 }
 
-app_window::~app_window() {
-    if (err_dialog)
-        delete err_dialog;
-}
 
 void app_window::init_pane_view() {
     set_focus_chain({pane_view});
@@ -89,31 +77,25 @@ void app_window::init_pane_view() {
     pane_view->show_all();
 }
 
-
-void app_window::add_file_view(nuc::file_view* & ptr, int pane) {
+void app_window::add_file_view(nuc::file_view* & view, int pane) {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.ui");
-
-    // TODO: Add error checking
-
-    builder->get_widget_derived("file_view", ptr);
+    builder->get_widget_derived("file_view", view);
 
     if (pane == 1) {
-        pane_view->pack1(*ptr, true, true);
+        pane_view->pack1(*view, true, true);
     }
     else {
-        pane_view->pack2(*ptr, true, true);
+        pane_view->pack2(*view, true, true);
     }
 
-    ptr->add_events(Gdk::KEY_PRESS_MASK);
-    ptr->signal_key_press().connect(sigc::bind<file_view*>(sigc::mem_fun(this, &app_window::on_keypress), ptr), false);
+    view->add_events(Gdk::KEY_PRESS_MASK);
+    view->signal_key_press().connect(sigc::bind<file_view*>(sigc::mem_fun(this, &app_window::on_keypress), view), false);
 
-    ptr->signal_activate_entry().connect(sigc::mem_fun(this, &app_window::on_entry_activate));
+    view->signal_activate_entry().connect(sigc::mem_fun(this, &app_window::on_entry_activate));
 }
 
 
-Glib::RefPtr<Gtk::Builder> app_window::file_view_builder() {
-    return Gtk::Builder::create_from_resource("/org/agware/nucommander/fileview.ui");
-}
+//// Signal Handlers
 
 bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
     nuc::error_handler handler([this] (const error &e) {
@@ -124,8 +106,7 @@ bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
         return command_keymap::instance().exec_command(this, src, e);
     }
     catch (const nuc::error &) {
-        // Catch errors to abort failed commands
-
+        // Catch errors to abort failed commands.
         // Return true to indicate a command was executed.
         return true;
     }
@@ -149,6 +130,9 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
     }
 }
 
+
+//// Opening Files
+
 void app_window::open_file(const std::string &path) {
     try {
         Gio::AppInfo::launch_default_for_uri(Gio::File::create_for_path(path)->get_uri());
@@ -158,6 +142,9 @@ void app_window::open_file(const std::string &path) {
         // other than letting the user manually retry.
     }
 }
+
+
+//// Operations
 
 void app_window::add_operation(task_queue::task_type op) {
     using namespace std::placeholders;
@@ -177,14 +164,11 @@ void app_window::add_operation(const task_queue::task_type &op, const progress_e
 }
 
 
-/// Error Handlers
+//// Error Handler
 
-void app_window::error_handler::create_error_dialog() {
-    if (!err_dialog) {
-        err_dialog = error_dialog::create();
-
-        err_dialog->set_transient_for(*window);
-    }
+app_window::error_handler::error_handler(app_window *window)
+    : chosen_actions(auto_error_handlers()), window(window) {
+    assert(window);
 }
 
 std::pair<const restart *, bool> app_window::error_handler::choose_action(const error &e) {
@@ -193,14 +177,15 @@ std::pair<const restart *, bool> app_window::error_handler::choose_action(const 
     std::promise<std::pair<const restart *, bool>> promise;
 
     dispatch_main([&] {
-        create_error_dialog();
-        promise.set_value(err_dialog->run(e, actions));
+        promise.set_value(window->show_error(e, actions));
     });
 
     return promise.get_future().get();
 }
 
 void app_window::error_handler::operator()(cancel_state &state, const nuc::error &e) {
+    // Check if a "for all" handler was chosen.
+
     auto it = chosen_actions.find(e);
     auto &actions = restarts();
 
@@ -212,6 +197,8 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
             return;
         }
     }
+
+    // Prompt user for handler for this error.
 
     const restart *r;
     bool all;
@@ -228,20 +215,19 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
 }
 
 
-/// Error Dialog
+//// Error Dialog
 
-void app_window::create_error_dialog() {
+error_dialog * app_window::error_dialog() {
     if (!err_dialog) {
         err_dialog = error_dialog::create();
-
         err_dialog->set_transient_for(*this);
     }
+
+    return err_dialog;
 }
 
 std::pair<const restart *, bool> app_window::show_error(const nuc::error &err, const restart_map &restarts) {
-    create_error_dialog();
-
-    return err_dialog->run(err, restarts);
+    return error_dialog()->run(err, restarts);
 }
 
 
@@ -257,7 +243,7 @@ nuc::dest_dialog *app_window::dest_dialog() {
 }
 
 
-//// Progress
+//// Progress Dialog
 
 nuc::progress_dialog *app_window::progress_dialog() {
     if (!m_progress_dialog) {
@@ -268,6 +254,7 @@ nuc::progress_dialog *app_window::progress_dialog() {
 
     return m_progress_dialog;
 }
+
 void app_window::on_prog_dialog_response(int id) {
     if (id == Gtk::RESPONSE_CANCEL) {
         operations->cancel();
@@ -281,9 +268,22 @@ void app_window::on_operation_finish(bool cancelled) {
 }
 
 
+app_window::progress_fn::progress_fn(class progress_dialog *dialog, std::shared_ptr<dir_type> type) : type(type), dialog(dialog) {
+    assert(dialog);
+}
+app_window::progress_fn::progress_fn(class progress_dialog *dialog) : dialog(dialog) {
+    assert(dialog);
+}
+
 void app_window::progress_fn::operator()(const nuc::progress_event &e) {
     switch (e.type) {
     case progress_event::type_begin:
+        dialog->hide_dir();
+
+        dialog->set_file_label("");
+        dialog->set_file_size(0);
+        dialog->file_progress(0);
+
         dialog->show();
         dialog->present();
         break;
@@ -353,6 +353,7 @@ progress_event::callback app_window::get_progress_fn(std::shared_ptr<dir_type> t
         });
     };
 }
+
 
 //// Open Directories Popup
 

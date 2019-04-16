@@ -11,12 +11,7 @@ nucommander_SOURCES = \
 	main.cpp \
 	nucommander.cpp \
 	nucommander.h \
-	app_window.cpp \
-	app_window.h \
-	file_view.h \
-	file_view.cpp \
 	types.h \
-	cleanup_n.h \
 	paths/pathname.h \
 	paths/pathname.cpp \
 	plugins/archive_plugin_types.h \
@@ -119,6 +114,10 @@ nucommander_SOURCES = \
 	interface/prefs_window.cpp \
 	interface/open_dirs_popup.h \
 	interface/open_dirs_popup.cpp \
+	interface/app_window.cpp \
+	interface/app_window.h \
+	interface/file_view.h \
+	interface/file_view.cpp \
 	util/util.h \
 	file_list/list_controller.h \
 	file_list/file_list_controller.h \

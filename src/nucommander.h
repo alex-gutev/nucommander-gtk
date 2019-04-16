@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUCOMMANDER_H
-#define NUCOMMANDER_H
+#ifndef NUC_NUCOMMANDER_H
+#define NUC_NUCOMMANDER_H
 
 #include <gtkmm/application.h>
 #include <gtkmm/window.h>
@@ -54,7 +54,7 @@ namespace nuc {
         void show_about();
 
         /**
-         * Opens the preferences dialog.
+         * Shows the preferences dialog.
          */
         static void preferences();
 
@@ -100,7 +100,7 @@ namespace nuc {
     };
 }
 
-#endif // NUCOMMANDER_H
+#endif // NUC_NUCOMMANDER_H
 
 // Local Variables:
 // mode: c++

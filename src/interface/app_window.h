@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef APP_WINDOW_H
-#define APP_WINDOW_H
+#ifndef NUC_INTERFACE_APP_WINDOW_H
+#define NUC_INTERFACE_APP_WINDOW_H
 
 #include <map>
 
@@ -30,8 +30,7 @@
 
 #include <glibmm.h>
 
-#include "cleanup_n.h"
-#include "file_view.h"
+#include "interface/file_view.h"
 
 #include "tasks/async_task.h"
 #include "tasks/task_queue.h"
@@ -48,12 +47,94 @@
 namespace nuc {
     /**
      * Main Application Window.
-     *
-     * Creates the file view widgets and adds them to the paned view
-     * container.
      */
     class app_window : public Gtk::ApplicationWindow {
+    public:
+        /* Constructor. */
+        app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Creates a new application window object.
+         *
+         * @return app_window
+         */
+        static app_window *create();
+
+
+        /* Operations */
+
+        /**
+         * Adds an operation to the operations task queue.
+         *
+         * @param op The operation to add.
+         */
+        void add_operation(task_queue::task_type op);
+
+        /**
+         * Adds an operation to the operations task queue and assigns
+         * the progress callback @a progress to the progress callback
+         * of its cancellation state.
+         *
+         * @param op The operation to add
+         * @param progress Progress callback
+         */
+        void add_operation(const task_queue::task_type &op, const progress_event::callback &progress);
+
+
+        /* Dialogs */
+
+        /**
+         * Returns a pointer to the destination dialog.
+         *
+         * @return Pointer to the destination dialog.
+         */
+        nuc::dest_dialog *dest_dialog();
+
+        /**
+         * Returns a pointer to the progress dialog.
+         *
+         * @return Pointer to the progress dialog.
+         */
+        nuc::progress_dialog *progress_dialog();
+
+        /**
+         * Returns a pointer to the open directory list popup.
+         *
+         * @return     open_dirs_popup *
+         */
+        nuc::open_dirs_popup *open_dirs_popup();
+
+
+        /* Progress Callback */
+
+        /**
+         * Creates a progress reporting callback function.
+         *
+         * @param type Type of the directory containing the files
+         *   which are being processed.
+         *
+         * @return The callback function.
+         */
+        progress_event::callback get_progress_fn(std::shared_ptr<dir_type> type);
+
+
+        /* Cleanup Function */
+
+        /**
+         * Asynchronous cleanup method.
+         *
+         * @param fn The cleanup function that will be called, on the
+         *           main thread, once it is safe to deallocate the
+         *           object.
+         *
+         * This method should only be called on the main thread.
+         */
+        template <typename F>
+        void cleanup(F fn);
+
     protected:
+        /* Widgets */
+
         /**
          * The builder object used to created the window widget.
          */
@@ -74,11 +155,13 @@ namespace nuc {
         file_view *right_view;
 
 
+        /* Dialogs */
+
         /**
          * Error dialog: displays error details and a list of recovery
          * options.
          */
-        error_dialog *err_dialog = nullptr;
+        nuc::error_dialog *err_dialog = nullptr;
 
         /**
          * Destination dialog: Queries the user for a destination
@@ -96,6 +179,9 @@ namespace nuc {
          */
         nuc::open_dirs_popup *m_open_dirs_popup = nullptr;
 
+
+        /* Operation Queue */
+
         /**
          * Operation task queue, onto which file operations are
          * queued.
@@ -110,32 +196,29 @@ namespace nuc {
          * container, and sets up the focus chain.
          */
         void init_pane_view();
-        /**
-         * Creates a file view widget, stores the pointer to it in
-         * 'ptr' and adds to the paned containter, with 'pane'
-         * indicating which pane to add it to.
-         *
-         * ptr:  Reference to where the pointer to the widget is to be
-         *       stored.
-         *
-         * pane: 1 - to add the file view to the left pane.
-         *       2 - to add the file view to the right pane.
-         */
-        void add_file_view(file_view * &ptr, int pane);
 
         /**
-         * Creates a new file view widget builder.
+         * Creates a file view widget, stores the pointer to it in @a
+         * view and adds it to the paned view container.
+         *
+         * @param view Reference to a pointer in which the pointer to
+         *   the file view widget is stored.
+         *
+         * @param pane Indicates which pane to add the view to, 1 -
+         *   left, 2 - right.
          */
-        Glib::RefPtr<Gtk::Builder> file_view_builder();
+        void add_file_view(file_view * &ptr, int pane);
 
 
         /* Signal Handlers */
 
         /**
-         * Signal handler for the key press event on each file_view.
+         * Signal handler for the file_view key press event.
          *
          * @param e The event.
          * @param src The file_view in which the event was triggered.
+         *
+         * @return True if the event was handled.
          */
         bool on_keypress(const GdkEventKey *e, file_view *src);
 
@@ -147,6 +230,9 @@ namespace nuc {
          * @param ent The activated entry.
          */
         void on_entry_activate(file_view *src, file_list_controller *flist, dir_entry *ent);
+
+
+        /* Opening Files */
 
         /**
          * Opens the file at @a path, with the default application for
@@ -183,16 +269,6 @@ namespace nuc {
              */
             app_window *window;
 
-            /**
-             * Error Dialog.
-             */
-            error_dialog *err_dialog = nullptr;
-
-            /**
-             * Creates the error dialog, and stores a pointer to it in
-             * err_dialog, if it has not been created already.
-             */
-            void create_error_dialog();
 
             /**
              * Displays the error dialog with the error @e and the
@@ -215,7 +291,7 @@ namespace nuc {
              *
              * @param window The dialog window.
              */
-            error_handler(app_window *window) : chosen_actions(auto_error_handlers()), window(window) {}
+            error_handler(app_window *window);
 
             /**
              * Error handler function.
@@ -230,10 +306,11 @@ namespace nuc {
         /* Error Dialog */
 
         /**
-         * Creates the error dialog, and stores a pointer to it in
-         * err_dialog, if it has not been created already.
+         * Creates the error dialog.
+         *
+         * @return Pointer to the error dialog.
          */
-        void create_error_dialog();
+        nuc::error_dialog *error_dialog();
 
         /**
          * Displays the error dialog with a particular error and
@@ -274,7 +351,7 @@ namespace nuc {
             /**
              * The progress dialog.
              */
-            progress_dialog *dialog;
+            nuc::progress_dialog *dialog;
 
             /**
              * Cancellation state of the get directory size operation.
@@ -301,8 +378,8 @@ namespace nuc {
              * @param type The type of the parent directory of the
              *   files being processed.
              */
-            progress_fn(progress_dialog *dialog, std::shared_ptr<dir_type> type) : type(type), dialog(dialog) {}
-            progress_fn(progress_dialog *dialog) : dialog(dialog) {}
+            progress_fn(class progress_dialog *dialog, std::shared_ptr<dir_type> type);
+            progress_fn(class progress_dialog *dialog);
 
             /**
              * Progress callback function.
@@ -326,78 +403,6 @@ namespace nuc {
          *   if it finished normally.
          */
         void on_operation_finish(bool cancelled);
-
-    public:
-        /* Constructor. */
-        app_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
-
-        /* Destructor */
-        ~app_window();
-
-        /**
-         * Creates a new application window object.
-         */
-        static app_window *create();
-
-        /**
-         * Adds an operation to the operations task queue.
-         *
-         * @param op The operation to add.
-         */
-        void add_operation(task_queue::task_type op);
-
-        /**
-         * Adds an operation to the operations task queue and assigns
-         * the progress callback @a progress to the progress callback
-         * of its cancellation state.
-         *
-         * @param op The operation to add
-         * @param progress Progress callback
-         */
-        void add_operation(const task_queue::task_type &op, const progress_event::callback &progress);
-
-        /**
-         * Returns a pointer to the destination dialog.
-         *
-         * @return Pointer to the destination dialog.
-         */
-        nuc::dest_dialog *dest_dialog();
-
-        /**
-         * Returns a pointer to the progress dialog.
-         *
-         * @return Pointer to the progress dialog.
-         */
-        nuc::progress_dialog *progress_dialog();
-
-        /**
-         * Creates a progress reporting callback function.
-         *
-         * @param type Type of the directory containing the files
-         *   which are being processed.
-         *
-         * @return The callback function.
-         */
-        progress_event::callback get_progress_fn(std::shared_ptr<dir_type> type);
-
-        /**
-         * Returns a pointer to the open directory list popup.
-         *
-         * @return     open_dirs_popup *
-         */
-        nuc::open_dirs_popup *open_dirs_popup();
-
-        /**
-         * Asynchronous cleanup method.
-         *
-         * @param fn The cleanup function to call once it is safe to
-         *           deallocate the object.
-         *
-         * This method should only be called on the main thread. The
-         * function fn will be called on the main thread.
-         */
-        template <typename F>
-        void cleanup(F fn);
     };
 }
 
@@ -409,7 +414,7 @@ void nuc::app_window::cleanup(F fn) {
     });
 }
 
-#endif // APP_WINDOW_H
+#endif // NUC_INTERFACE_APP_WINDOW_H
 
 // Local Variables:
 // mode: c++

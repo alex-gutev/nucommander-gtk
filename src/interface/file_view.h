@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_FILE_VIEW_H
-#define NUC_FILE_VIEW_H
+#ifndef NUC_INTERFACE_FILE_VIEW_H
+#define NUC_INTERFACE_FILE_VIEW_H
 
 #include <glibmm.h>
 
@@ -40,14 +40,15 @@ namespace nuc {
     /**
      * File view derived widget.
      *
-     * Manages the file view widget which contains a text entry, where
-     * the current path is displayed and entred, and a tree-view
-     * widget where the file-list is displayed.
+     * Manages the file view widget which contains a text entry
+     * displaying the current path, and a tree-view widget where the
+     * file-list is displayed.
      *
      * The class also initiates background read operations in response
      * to user events triggered by the child widgets.
      */
     class file_view : public Gtk::Frame {
+    public:
         /**
          * Activate entry signal type.
          *
@@ -64,6 +65,148 @@ namespace nuc {
          */
         typedef decltype(((Gtk::Frame*)nullptr)->signal_key_press_event()) signal_key_press_event_type;
 
+
+        /**
+         * The opposite file_view, i.e. the destination pane.
+         */
+        file_view * next_file_view;
+
+
+        /**
+         * Derived widget constructor.
+         */
+        file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
+
+
+        /* File List Controller */
+
+        /**
+         * Returns the file list controller.
+         *
+         * @return file_list_controller
+         */
+        std::shared_ptr<file_list_controller> file_list() {
+            return flist;
+        }
+
+        /**
+         * Sets the file view's file list controller.
+         *
+         * @param flist The new file list controller.
+         *
+         * @param push_old If true the previous file list controller,
+         *   is pushed onto the file list controller stack.
+         */
+        void file_list(std::shared_ptr<file_list_controller> flist, bool push_old = true);
+
+        /**
+         * Pops a file list controller off the file list controller
+         * stack.
+         *
+         * @return Shared pointer to the file list controller or null
+         *   if the stack is empty.
+         */
+        std::shared_ptr<file_list_controller> pop_file_list();
+
+
+        /* Path */
+
+        /**
+         * Returns the path to the file view's current directory.
+         */
+        const paths::pathname &path() const {
+            return flist->path();
+        }
+
+        /**
+         * Changes the current path of the file view, this changes the
+         * path displayed and begins a background read operation for
+         * the new path.
+         */
+        void path(const paths::pathname &path, bool move_to_old = false);
+
+
+        /* Changing Keyboard Focus */
+
+        /**
+         * Moves the keyboard focus to the path entry widget.
+         */
+        void focus_path();
+
+
+        /* Getting Selected Entries */
+
+        /**
+         * Return the selected entry or NULL if there is no selected
+         * entry.
+         *
+         * @return dir_entry *
+         */
+        dir_entry *selected_entry();
+
+        /**
+         * Returns the list of all marked entries. If there are no
+         * marked entries, a list containing only the selected entry
+         * is returned. If there is no selected entry an empty list is
+         * returned.
+         *
+         * @return List of entries.
+         */
+        std::vector<dir_entry*> selected_entries() const;
+
+
+        /* Directory VFS */
+
+        /**
+         * Returns a pointer to the vfs object for reading the current
+         * directory.
+         *
+         * @return Pointer to the vfs object or NULL if the file_view
+         * is not currently displaying a directory.
+         */
+        std::shared_ptr<nuc::vfs> dir_vfs() const;
+
+
+        /* Filtering */
+
+        /**
+         * Begins filtering.
+         *
+         * Shows the filter entry.
+         */
+        void begin_filter();
+
+        /**
+         * Begins filtering and sets the contents of the filter text
+         * entry.
+         *
+         * @param str The contents of the filter entry.
+         */
+        void begin_filter(const Glib::ustring &str);
+
+
+        /* Signals */
+
+        /**
+         * Activate entry signal. This signal is emitted whenever an
+         * entry (a row in the file tree view) is activated either by
+         * double clicking on it or pressing the return key.
+         *
+         * @return The signal.
+         */
+        signal_activate_entry_type signal_activate_entry() {
+            return m_signal_activate_entry;
+        }
+
+        /**
+         * Key press event signal, which is emitted for all keypress
+         * events emitted while the tree view has the keyboard focus.
+         */
+        signal_key_press_event_type signal_key_press() {
+            return file_list_view->signal_key_press_event();
+        }
+
+    private:
         /**
          * Stores the connections to the file list controller signals.
          */
@@ -74,13 +217,15 @@ namespace nuc {
         };
 
 
+        /* File List Controller */
+
         /**
-         * File list controller containing the directory's contents.
+         * File list controller for the current directory.
          */
         std::shared_ptr<file_list_controller> flist;
 
         /**
-         * Stack of previous file_list_controller's
+         * Stack of previous file_list_controller's.
          */
         std::vector<std::weak_ptr<file_list_controller>> flist_stack;
 
@@ -127,6 +272,9 @@ namespace nuc {
          * Search Entry Widget.
          */
         Gtk::Entry *filter_entry;
+
+
+        /* Signals */
 
         /**
          * Activate entry signal.
@@ -239,7 +387,7 @@ namespace nuc {
         /**
          * Handler for the up/down arrow key press event.
          *
-         * e: The keyboard event.
+         * @param e The keyboard event.
          */
         void keypress_arrow(const GdkEventKey *e);
 
@@ -252,11 +400,11 @@ namespace nuc {
          * the selection changed signal is emitted), if the shift
          * modifier key was held down.
          *
-         * e:        The keyboard event.
+         * @param e The keyboard event.
          *
-         * mark_sel: True if the new selected row should also be
-         *           marked, false if the last row to be marked is the
-         *           row before the selected row.
+         * @param mark_sel True if the new selected row should also be
+         *   marked, false if the last row to be marked is the row
+         *   before the selected row.
          */
         void keypress_change_selection(const GdkEventKey *e, bool mark_selected);
 
@@ -269,7 +417,7 @@ namespace nuc {
          *
          * @param list The list controller.
          */
-        void connect_model_signals(std::shared_ptr<list_controller> list);
+        void connect_model_signals(const std::shared_ptr<list_controller> &list);
 
         /**
          * Signal handler for the file list controller's path changed
@@ -340,135 +488,10 @@ namespace nuc {
          * @param e The event.
          */
         bool filter_key_press_before(GdkEventKey *e);
-
-    public:
-        /**
-         * The opposite file_view, i.e. the destination pane.
-         */
-        file_view * next_file_view;
-
-
-        /**
-         * Derived widget constructor.
-         */
-        file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> &builder);
-
-        /**
-         * Returns the file list controller.
-         *
-         * @return The file list controller.
-         */
-        std::shared_ptr<file_list_controller> file_list() {
-            return flist;
-        }
-
-        /**
-         * Sets the file view's file list controller.
-         *
-         * @param flist The new file list controller.
-         *
-         * @param push_old If true the previous file list controller,
-         *   is pushed onto the file list controller stack.
-         */
-        void file_list(std::shared_ptr<file_list_controller> flist, bool push_old = true);
-
-        /**
-         * Pops a file list controller off the file list controller
-         * stack.
-         *
-         * @return Shared pointer to the file list controller or null
-         *   if the stack is empty.
-         */
-        std::shared_ptr<file_list_controller> pop_file_list();
-
-        /**
-         * Returns the path to the file view's current directory.
-         */
-        const paths::pathname &path() const {
-            return flist->path();
-        }
-
-        /**
-         * Changes the current path of the file view, this changes the
-         * path displayed and begins a background read operation for
-         * the new path.
-         */
-        void path(const paths::pathname &path, bool move_to_old = false);
-
-        /**
-         * Moves the keyboard focus to the path entry widget.
-         */
-        void focus_path();
-
-        /**
-         * Return the selected entry or NULL if there is no selected
-         * entry.
-         *
-         * @return dir_entry *
-         */
-        dir_entry *selected_entry();
-
-        /**
-         * Returns the list of all marked entries. If there are no
-         * marked entries, a list containing only the selected entry
-         * is returned. If there is no selected entry an empty list is
-         * returned.
-         *
-         * @return List of entries.
-         */
-        std::vector<dir_entry*> selected_entries() const;
-
-        /**
-         * Returns a pointer to the vfs object for reading the current
-         * directory.
-         *
-         * @return Pointer to the vfs object or NULL if the file_view
-         * is not currently displaying a directory.
-         */
-        std::shared_ptr<nuc::vfs> dir_vfs() const;
-
-
-        /* Filtering */
-
-        /**
-         * Begins filtering.
-         *
-         * Shows the filter entry.
-         */
-        void begin_filter();
-
-        /**
-         * Begins filtering and sets the contents of the filter text
-         * entry.
-         *
-         * @param str The contents of the filter entry.
-         */
-        void begin_filter(const Glib::ustring &str);
-
-        /* Signals */
-
-        /**
-         * Activate entry signal. This signal is emitted whenever the
-         * an (a row in the file tree view) is activate either by
-         * double clicking on it or pressing the return key.
-         *
-         * @return The signal.
-         */
-        signal_activate_entry_type signal_activate_entry() {
-            return m_signal_activate_entry;
-        }
-
-        /**
-         * Key press event signal, which is emitted for all keypress
-         * events emitted while the tree view has the keyboard focus.
-         */
-        signal_key_press_event_type signal_key_press() {
-            return file_list_view->signal_key_press_event();
-        }
     };
 }
 
-#endif // NUC_FILE_VIEW_H
+#endif // NUC_INTERFACE_FILE_VIEW_H
 
 // Local Variables:
 // mode: c++

@@ -21,8 +21,8 @@
 
 #include <giomm/appinfo.h>
 
-#include "app_window.h"
-#include "file_view.h"
+#include "interface/app_window.h"
+#include "interface/file_view.h"
 
 #include "lua_api.h"
 

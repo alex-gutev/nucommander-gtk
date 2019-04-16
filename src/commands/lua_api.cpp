@@ -23,8 +23,8 @@
 
 #include "tasks/async_task.h"
 
-#include "app_window.h"
-#include "file_view.h"
+#include "interface/app_window.h"
+#include "interface/file_view.h"
 #include "commands/commands.h"
 
 #include "directory/dir_entry.h"

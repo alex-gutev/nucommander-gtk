@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <gtkmm/cssprovider.h>
 #include <glib/gi18n.h>
 
-#include "app_window.h"
+#include "interface/app_window.h"
 
 #include "tasks/async_task.h"
 #include "commands/commands.h"
@@ -135,7 +135,7 @@ void nuc::NuCommander::show_about() {
 
         about->set_program_name(_("NuCommander"));
         about->set_version("0.1");
-        about->set_copyright(_("Alexander Gutev"));
+        about->set_copyright(_("Copyright (c)  Alexander Gutev"));
         about->set_comments(_("A fast small orthodox file manager."));
 
         auto license = Gio::Resource::lookup_data_global("/org/agware/nucommander/license.txt");

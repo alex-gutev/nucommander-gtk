@@ -23,8 +23,8 @@
 #include <gtkmm/messagedialog.h>
 
 #include "nucommander.h"
-#include "app_window.h"
-#include "file_view.h"
+#include "interface/app_window.h"
+#include "interface/file_view.h"
 
 #include "interface/prefs_window.h"
 #include "interface/dest_dialog.h"

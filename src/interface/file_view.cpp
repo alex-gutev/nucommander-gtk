@@ -1,6 +1,6 @@
 /*
  * NuCommander
- * Copyright (C) 2018  Alexander Gutev <alex.gutev@gmail.com>
+ * Copyright (C) 2018-2019  Alexander Gutev <alex.gutev@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,26 +17,22 @@
  *
  */
 
-#include "file_view.h"
+#include "interface/file_view.h"
+
+#include <algorithm>
+#include <functional>
+
+#include <gdk/gdkkeysyms.h>
+
 
 #include "tasks/async_task.h"
 
 #include "file_list/columns.h"
 #include "file_list/filtered_list_controller.h"
-
 #include "search/fuzzy_filter.h"
 
 #include "settings/app_settings.h"
 
-
-#include <gdk/gdkkeysyms.h>
-
-#include <algorithm>
-#include <functional>
-
-// For debugging only
-//#include <iostream>
-//#include <stdio.h>
 
 using namespace nuc;
 
@@ -48,7 +44,6 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
     builder->get_widget("path_entry", path_entry);
     builder->get_widget("file_list", file_list_view);
     builder->get_widget("scroll_window", scroll_window);
-
     builder->get_widget("filter_entry", filter_entry);
 
     init_file_list();
@@ -69,9 +64,7 @@ void file_view::init_file_list() {
 }
 
 void file_view::init_columns() {
-    std::vector<std::string> columns = app_settings::instance().settings()->get_string_array("columns");
-
-    for (auto &name : columns) {
+    for (auto &name : app_settings::instance().columns()) {
         if (auto column = get_column(name))
             file_list_view->append_column(*column->create());
     }
@@ -139,11 +132,9 @@ void file_view::init_file_list_events() {
         return false;
     });
 
-
     // Add Event Signal Handlers
 
     file_list_view->get_selection()->signal_changed().connect(sigc::mem_fun(this, &file_view::on_selection_changed));
-
     file_list_view->signal_key_press_event().connect(sigc::mem_fun(this, &file_view::on_file_list_keypress), false);
 }
 
@@ -218,7 +209,7 @@ void file_view::on_path_entry_activate() {
 }
 
 void file_view::on_row_activate(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn* column) {
-    auto row = file_list_view->get_model()->children()[row_path[0]];
+    auto row = *file_list_view->get_model()->get_iter(row_path);
     dir_entry &ent = *row[file_model_columns::instance().ent];
 
     m_signal_activate_entry.emit(this, flist.get(), &ent);
@@ -308,7 +299,7 @@ void file_view::keypress_change_selection(const GdkEventKey *e, bool mark_select
 }
 
 
-void file_view::connect_model_signals(std::shared_ptr<list_controller> list) {
+void file_view::connect_model_signals(const std::shared_ptr<list_controller> &list) {
     signals.model_change = list->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
     signals.select_row = list->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
 }
@@ -360,6 +351,8 @@ std::vector<dir_entry*> file_view::selected_entries() const {
 }
 
 
+//// Directory VFS
+
 std::shared_ptr<nuc::vfs> file_view::dir_vfs() const {
     return flist ? flist->dir_vfs() : nullptr;
 }
@@ -377,7 +370,7 @@ void file_view::focus_path() {
 void file_view::make_filter_model() {
     auto filter_list = filtered_list_controller::create(flist, [this] (Gtk::TreeRow row) {
         dir_entry *ent = row[file_model_columns::instance().ent];
-        return fuzzy_match(static_cast<Glib::ustring>(ent->file_name()), filter_entry->get_text());
+        return fuzzy_match(Glib::ustring(ent->file_name()), filter_entry->get_text());
     });
 
     signals.model_change.disconnect();
@@ -408,7 +401,7 @@ void file_view::begin_filter(const Glib::ustring &str) {
     begin_filter();
 
     filter_entry->set_text(str);
-    filter_entry->set_position(1);
+    filter_entry->set_position(str.length());
 }
 
 
