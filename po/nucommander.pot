@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-14 19:14+0200\n"
+"POT-Creation-Date: 2019-04-16 09:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -197,8 +197,8 @@ msgstr ""
 msgid "NuCommander"
 msgstr ""
 
-#: src/nucommander.cpp:138 src/nucommander.cpp:148
-msgid "Alexander Gutev"
+#: src/nucommander.cpp:138
+msgid "Copyright (c)  Alexander Gutev"
 msgstr ""
 
 #: src/nucommander.cpp:139
@@ -209,22 +209,26 @@ msgstr ""
 msgid "NuCommander Website"
 msgstr ""
 
+#: src/nucommander.cpp:148
+msgid "Alexander Gutev"
+msgstr ""
+
 #: src/resources/dest_dialog.ui:24 src/resources/prefs_window.ui:472
 #: src/resources/progress_dialog.ui:34
 msgid "Cancel"
 msgstr ""
 
-#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:36
+#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:37
 #: src/resources/prefs_window.ui:485
 msgid "OK"
 msgstr ""
 
-#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:73
+#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:74
 #: src/resources/progress_dialog.ui:69 src/resources/progress_dialog.ui:93
 msgid "label"
 msgstr ""
 
-#: src/resources/error_dialog.ui:23
+#: src/resources/error_dialog.ui:24
 msgid "Apply to All"
 msgstr ""
 

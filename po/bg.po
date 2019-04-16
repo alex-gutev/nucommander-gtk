@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-14 19:14+0200\n"
-"PO-Revision-Date: 2019-04-14 19:25+0200\n"
+"POT-Creation-Date: 2019-04-16 09:37+0200\n"
+"PO-Revision-Date: 2019-04-16 09:38+0200\n"
 "Last-Translator: Alexander Gutev <alex.gutev@gmail.com>\n"
 "Language-Team: Bulgarian\n"
 "Language: bg\n"
@@ -197,9 +197,9 @@ msgstr "Колона"
 msgid "NuCommander"
 msgstr "Нюкомандер"
 
-#: src/nucommander.cpp:138 src/nucommander.cpp:148
-msgid "Alexander Gutev"
-msgstr "Александър Гутев"
+#: src/nucommander.cpp:138
+msgid "Copyright (c)  Alexander Gutev"
+msgstr "Авторско Право (c) Александър Гутев"
 
 #: src/nucommander.cpp:139
 msgid "A fast small orthodox file manager."
@@ -209,22 +209,26 @@ msgstr "Малък бърз ортодоксиялен файл менаджер
 msgid "NuCommander Website"
 msgstr "Сайта на Нюкомандер"
 
+#: src/nucommander.cpp:148
+msgid "Alexander Gutev"
+msgstr "Александър Гутев"
+
 #: src/resources/dest_dialog.ui:24 src/resources/prefs_window.ui:472
 #: src/resources/progress_dialog.ui:34
 msgid "Cancel"
 msgstr "Откажи"
 
-#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:36
+#: src/resources/dest_dialog.ui:37 src/resources/error_dialog.ui:37
 #: src/resources/prefs_window.ui:485
 msgid "OK"
 msgstr "Добре"
 
-#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:73
+#: src/resources/dest_dialog.ui:72 src/resources/error_dialog.ui:74
 #: src/resources/progress_dialog.ui:69 src/resources/progress_dialog.ui:93
 msgid "label"
 msgstr ""
 
-#: src/resources/error_dialog.ui:23
+#: src/resources/error_dialog.ui:24
 msgid "Apply to All"
 msgstr "Действай за Всички"
 
