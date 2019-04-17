@@ -39,6 +39,45 @@ order, separated by any number of characters.
 
 ![Screenshot of Fuzzy Filtering](img/snap-filter2.png)
 
+### Easy Directory Switching
+
+NuCommander allows multiple directories to be open at the same
+time. Changing which directory is displayed in the left or right pane
+can be done by simply pressing a key, which brings up the list of the
+current open directories, selecting the directory from the list and
+pressing enter.
+
+![Screenshot of Open Directory List](img/snap-open-dirs.png)
+
+There is no need to have to find and click on the tab, of the
+directory you want to switch to, nor do you have to cycle through all
+the open directories until you reach the right one. Furthermore, the
+open directories are not tied to any particular pane. A directory
+which was originally opened in the left pane, can later be displayed
+in the right pane and vice versa. This can all be done without having
+to drag and drop the tab from the left pane to the right pane.
+
+### Custom Commands
+
+Custom commands can be written in Lua, to which NuCommander exposes an
+API, which is a lightweight, however fully-fledged, programming
+language.
+
+The "view" and "open-terminal" commands are implemented in Lua,
+located in the `<prefix>/share/nucommander/commands` directory. The
+view and terminal programs can be changed by editing these files
+directly or copying them over to
+`~/.local/share/nucommander/commands`.
+
+_The API exposed to Lua is currently very limited, however will be
+greatly expanded in the next release._
+
+### Customizable Keybindings
+
+The keys to which commands are bound is fully customizable. Any
+command, whether built in or custom, can be bound to virtually any
+key.
+
 ## Status
 
 Releases of NuCommander are available however it is still at
