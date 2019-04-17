@@ -59,9 +59,8 @@ to drag and drop the tab from the left pane to the right pane.
 
 ### Custom Commands
 
-Custom commands can be written in Lua, to which NuCommander exposes an
-API, which is a lightweight, however fully-fledged, programming
-language.
+Custom commands can be written in Lua which is a lightweight, however
+fully-fledged, programming language.
 
 The "view" and "open-terminal" commands are implemented in Lua,
 located in the `<prefix>/share/nucommander/commands` directory. The
