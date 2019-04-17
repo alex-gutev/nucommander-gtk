@@ -47,7 +47,7 @@ can be done by simply pressing a key, which brings up the list of the
 current open directories, selecting the directory from the list and
 pressing enter.
 
-![Screenshot of Open Directory List](img/snap-open-dirs.png)
+![Screenshot of List of Open Directories](img/snap-open-dirs.png)
 
 There is no need to have to find and click on the tab, of the
 directory you want to switch to, nor do you have to cycle through all
