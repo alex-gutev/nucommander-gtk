@@ -9,7 +9,7 @@ The twin pane interface, of Norton Commander, is preserved however all
 redundant UI elements, such as command buttons and toolbars are
 removed in favour of a clean, minimal user interface.
 
-![Screenshot](img/snap1.png)
+![Screenshot](assets/img/snap1.png)
 
 ## Features
 
@@ -29,7 +29,7 @@ the search string matches in the beginning or the middle of the file
 name. For example the search string "linux" will match the file names
 "**linux**" as well as "x86_64-**linux**-gnu"
 
-![Screenshot of Fuzzy Filtering](img/snap-filter.png)
+![Screenshot of Fuzzy Filtering](assets/img/snap-filter.png)
 
 File names which contain disjoint occurrences of the characters in the
 search string, in the same order, will also be matched. For example
@@ -37,7 +37,7 @@ the search string "lnx" will match "**l**i**n**u**x**, as well as any
 other file name which contains an "l" an "n" and an "x", in that
 order, separated by any number of characters.
 
-![Screenshot of Fuzzy Filtering](img/snap-filter2.png)
+![Screenshot of Fuzzy Filtering](assets/img/snap-filter2.png)
 
 ### Easy Directory Switching
 
@@ -47,7 +47,7 @@ can be done by simply pressing a key, which brings up the list of the
 current open directories, selecting the directory from the list and
 pressing enter.
 
-![Screenshot of List of Open Directories](img/snap-open-dirs.png)
+![Screenshot of Open Directory List](assets/img/snap-open-dirs.png)
 
 There is no need to have to find and click on the tab, of the
 directory you want to switch to, nor do you have to cycle through all
