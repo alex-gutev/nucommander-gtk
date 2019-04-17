@@ -73,9 +73,8 @@ greatly expanded in the next release._
 
 ### Customizable Keybindings
 
-The keys to which commands are bound is fully customizable. Any
-command, whether built in or custom, can be bound to virtually any
-key.
+The keys to which commands, whether built in or custom, are fully
+customizable. Any command can be bound to virtually any key.
 
 ## Status
 
