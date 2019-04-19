@@ -24,11 +24,11 @@
 
 using namespace nuc;
 
-archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const paths::pathname &base, const std::vector<paths::pathname> &paths)
+archive_tree_lister::archive_tree_lister(archive_plugin *plugin, const pathname &base, const std::vector<pathname> &paths)
     : archive_tree_lister(new archive_lister(plugin, base), paths) {
 }
 
-archive_tree_lister::archive_tree_lister(archive_lister *listr, const std::vector<paths::pathname> &paths)
+archive_tree_lister::archive_tree_lister(archive_lister *listr, const std::vector<pathname> &paths)
     : listr(listr) {
     for (auto path : paths) {
         visit_paths.emplace(path.canonicalize());
@@ -43,13 +43,13 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     add_list_callback(fn);
 
     while (listr->read_entry(ent)) {
-        paths::pathname ent_path = paths::pathname(ent.name).canonicalize();
+        pathname ent_path = pathname(ent.name).canonicalize();
 
         if (ent.type == DT_DIR)
-            ent_path = paths::pathname(ent_path, true);
+            ent_path = pathname(ent_path, true);
 
         size_t offset = path_offset(ent_path);
-        if (offset != paths::string::npos) {
+        if (offset != pathname::string::npos) {
             bool got_stat = listr->entry_stat(st);
 
             ent.name = ent_path.path().c_str() + offset;
@@ -59,7 +59,7 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
                     st.st_mode = S_IFDIR | S_IRWXU;
                 }
 
-                paths::string name(ent.name);
+                pathname::string name(ent.name);
 
                 if (!add_dir_stat(name, &st)) {
                     continue;
@@ -79,27 +79,27 @@ void archive_tree_lister::list_entries(const list_callback &fn) {
     }
 }
 
-size_t archive_tree_lister::path_offset(const paths::pathname &path) {
-    size_t offset = paths::pathname::subpath_offset(visit_paths, path);
+size_t archive_tree_lister::path_offset(const pathname &path) {
+    size_t offset = pathname::subpath_offset(visit_paths, path);
 
-    if (offset != paths::string::npos) {
-        return add_visited_dirs(offset, path) ? offset : paths::string::npos;
+    if (offset != pathname::string::npos) {
+        return add_visited_dirs(offset, path) ? offset : pathname::string::npos;
     }
 
-    return paths::string::npos;
+    return pathname::string::npos;
 }
 
-bool archive_tree_lister::add_visited_dirs(size_t base_offset, const paths::pathname &path) {
+bool archive_tree_lister::add_visited_dirs(size_t base_offset, const pathname &path) {
     struct stat st = {};
     st.st_mode = S_IFDIR | S_IRWXU;
 
-    paths::pathname subpath = path.path().substr(base_offset);
-    std::vector<paths::string> comps = subpath.components();
+    pathname subpath = path.path().substr(base_offset);
+    std::vector<pathname::string> comps = subpath.components();
 
-    paths::pathname dir_path;
+    pathname dir_path;
 
     for (auto it = comps.begin(), end = comps.end()-1; it != end; ++it) {
-        dir_path = paths::pathname(dir_path.append(*it), true);
+        dir_path = pathname(dir_path.append(*it), true);
 
         auto visited_it = visited_dirs.find(dir_path);
 
@@ -122,7 +122,7 @@ bool archive_tree_lister::add_visited_dirs(size_t base_offset, const paths::path
     return true;
 }
 
-bool archive_tree_lister::add_dir_stat(const paths::pathname &name, const struct stat *st) {
+bool archive_tree_lister::add_dir_stat(const pathname &name, const struct stat *st) {
     auto dir_it = visited_dirs.find(name);
 
     if (dir_it != visited_dirs.end()) {

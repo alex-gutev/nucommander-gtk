@@ -31,31 +31,31 @@ dir_entry *archive_tree::add_entry(dir_entry ent) {
     return add_components(dir_ent->subpath(), *dir_ent);
 }
 
-bool archive_tree::in_subpath(const paths::pathname& path) {
+bool archive_tree::in_subpath(const pathname& path) {
     return path.is_child_of(m_subpath);
 }
 
-dir_entry *archive_tree::add_components(const paths::pathname &path, dir_entry &ent) {
-    std::vector<paths::string> comps = path.components();
+dir_entry *archive_tree::add_components(const pathname &path, dir_entry &ent) {
+    std::vector<pathname::string> comps = path.components();
 
     file_map<dir_entry *> *parent_map = &dirs[""];
-    paths::pathname sub_path;
+    pathname sub_path;
 
     dir_entry *child_ent = nullptr;
-    
+
     for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
         std::string comp = *it;
 
         sub_path = sub_path.append(comp);
 
         dir_entry *dent;
-        
+
         if (it != (end - 1)) {
             dent = &make_dir_ent(sub_path);
-            
+
             if (!add_to_map(*parent_map, comp, dent))
                 dent = nullptr;
-            
+
             parent_map = &dirs[sub_path];
         }
         else {
@@ -89,9 +89,9 @@ dir_entry * archive_tree::add_dir_entry(nuc::dir_entry ent) {
     return dir_tree::add_entry(std::move(ent));
 }
 
-bool archive_tree::add_to_map(file_map<dir_entry *> &map, const paths::string &name, dir_entry *ent) {
+bool archive_tree::add_to_map(file_map<dir_entry *> &map, const pathname::string &name, dir_entry *ent) {
     auto range = map.equal_range(name);
-    
+
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second == ent) {
             return false;
@@ -102,23 +102,23 @@ bool archive_tree::add_to_map(file_map<dir_entry *> &map, const paths::string &n
     return true;
 }
 
-dir_entry &archive_tree::make_dir_ent(const paths::pathname &path) {
+dir_entry &archive_tree::make_dir_ent(const pathname &path) {
     auto range = map.equal_range(path);
-    
+
     for (auto it = range.first; it != range.second; ++it) {
         dir_entry &ent = it->second;
-        
+
         if (ent.ent_type() == dir_entry::type_dir) {
             return ent;
         }
     }
-    
+
     dir_entry &ent = map.emplace(path, dir_entry(path, dir_entry::type_dir))->second;
-    
+
     return ent;
 }
 
-dir_tree::dir_map const * archive_tree::subpath_dir(const paths::pathname &path) const {
+dir_tree::dir_map const * archive_tree::subpath_dir(const pathname &path) const {
     auto it = dirs.find(path);
 
     if (it != dirs.end()) {
@@ -132,11 +132,11 @@ bool archive_tree::is_subdir(const dir_entry& ent) const {
     return ent.type() == dir_entry::type_dir && dirs.count(ent.subpath());
 }
 
-dir_entry *archive_tree::get_entry(const paths::string &name) {
+dir_entry *archive_tree::get_entry(const pathname::string &name) {
     return dir_tree::get_entry(m_subpath.append(name).canonicalize());
 }
 
-dir_tree::entry_range archive_tree::get_entries(const paths::string &name) {
+dir_tree::entry_range archive_tree::get_entries(const pathname::string &name) {
     return dir_tree::get_entries(m_subpath.append(name).canonicalize());
 }
 

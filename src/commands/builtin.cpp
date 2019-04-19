@@ -58,7 +58,7 @@ using namespace nuc;
  *
  * @return The absolute relative destination path.
  */
-static paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathname &dest);
+static pathname expand_dest_path(const pathname &path, const pathname &dest);
 
 
 /// Builtin Commands
@@ -98,7 +98,7 @@ struct make_dir_command : public command {
      * @param dest The directory in which to create the directory.
      * @param name Name of the directory to create.
      */
-    static void make_dir_task(nuc::cancel_state &state, const nuc::paths::string &dest, const nuc::paths::string &name);
+    static void make_dir_task(nuc::cancel_state &state, const nuc::pathname::string &dest, const nuc::pathname::string &name);
 
     virtual std::string description() {
         return _("Create a new directory in the source pane.");
@@ -292,8 +292,8 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
 
 /// Utility Functions
 
-paths::pathname expand_dest_path(const paths::pathname &path, const paths::pathname &dest) {
-    return paths::pathname(path, true).merge(dest);
+pathname expand_dest_path(const pathname &path, const pathname &dest) {
+    return pathname(path, true).merge(dest);
 }
 
 
@@ -307,7 +307,7 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
             dest_dialog *dialog = window->dest_dialog();
 
             dialog->set_query_label(_("Destination"));
-            dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
+            dialog->dest_path(pathname(src->next_file_view->path(), true).path());
             dialog->set_exec_button_label(_("Copy"));
 
             if (dialog->run() == Gtk::RESPONSE_OK) {
@@ -325,7 +325,7 @@ void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
     using namespace std::placeholders;
 
     if (window && src) {
-        paths::string dest = src->path();
+        pathname::string dest = src->path();
 
         dest_dialog *dialog = window->dest_dialog();
 
@@ -340,7 +340,7 @@ void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
 }
 
 
-void make_dir_command::make_dir_task(cancel_state &state, const paths::string &dest, const paths::string &name) {
+void make_dir_command::make_dir_task(cancel_state &state, const pathname::string &dest, const pathname::string &name) {
     try {
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
@@ -361,7 +361,7 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
             dest_dialog *dialog = window->dest_dialog();
 
             dialog->set_query_label(_("Destination"));
-            dialog->dest_path(paths::pathname(src->next_file_view->path(), true).path());
+            dialog->dest_path(pathname(src->next_file_view->path(), true).path());
             dialog->set_exec_button_label(_("Move"));
 
             if (dialog->run() == Gtk::RESPONSE_OK) {

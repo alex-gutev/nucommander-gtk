@@ -39,7 +39,7 @@ namespace nuc {
          * @param subpath Subpath, within the containing archive, to
          *   the archive.
          */
-        sub_archive_lister(lister *parent, archive_plugin *plugin, const paths::pathname &subpath);
+        sub_archive_lister(lister *parent, archive_plugin *plugin, const pathname &subpath);
 
         virtual ~sub_archive_lister();
 
@@ -64,7 +64,7 @@ namespace nuc {
          *
          * @param subpath Subpath to the archive file.
          */
-        void find_archive_file(const paths::pathname &subpath);
+        void find_archive_file(const pathname &subpath);
 
         /**
          * Reads a block of data from the archive file.

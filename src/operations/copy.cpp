@@ -43,7 +43,7 @@ using namespace nuc;
  *
  * @param dest Destination path entered by the user.
  */
-static void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
+static void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest);
 
 /**
  * Replaces the initial components of @a subpath with other
@@ -59,7 +59,7 @@ static void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type
  * @return A path in which the initial @a comp_len characters, of @a
  *   subpath, are replaced with @a replacement.
  */
-static paths::string replace_initial_dir(size_t comp_len, const paths::string &replacement, const paths::string &path);
+static pathname::string replace_initial_dir(size_t comp_len, const pathname::string &replacement, const pathname::string &path);
 
 /**
  * Copies the data from the input stream @a in, to the output stream
@@ -88,30 +88,30 @@ static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::funct
 
 /// Creating the copy task function
 
-nuc::task_queue::task_type nuc::make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry *> &entries, const paths::string &dest) {
+nuc::task_queue::task_type nuc::make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry *> &entries, const pathname::string &dest) {
     using namespace std::placeholders;
 
     return std::bind(copy_task_fn, _1, src_type, lister_paths(entries), dest);
 }
 
-std::vector<paths::pathname> nuc::lister_paths(const std::vector<dir_entry*> &entries) {
-    std::vector<paths::pathname> paths;
+std::vector<pathname> nuc::lister_paths(const std::vector<dir_entry*> &entries) {
+    std::vector<pathname> paths;
 
     for (dir_entry *ent : entries) {
-        paths.push_back(paths::pathname(ent->subpath(), ent->type() == dir_entry::type_dir));
+        paths.push_back(pathname(ent->subpath(), ent->type() == dir_entry::type_dir));
     }
 
     return paths;
 }
 
 
-void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest) {
     using namespace std::placeholders;
 
     state.call_progress(progress_event(progress_event::type_begin));
 
     try {
-        paths::pathname dest_dir;
+        pathname dest_dir;
         map_name_fn map_name;
 
         std::tie(dest_dir, map_name) = determine_dest_dir(dest, paths);
@@ -128,7 +128,7 @@ void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const
     state.call_progress(progress_event(progress_event::type_finish));
 }
 
-std::pair<paths::string, map_name_fn> nuc::determine_dest_dir(const paths::pathname &dest, const std::vector<paths::pathname> &paths) {
+std::pair<pathname::string, map_name_fn> nuc::determine_dest_dir(const pathname &dest, const std::vector<pathname> &paths) {
     using namespace std::placeholders;
 
     if (paths.size() == 1 && !dest.is_dir()) {
@@ -141,7 +141,7 @@ std::pair<paths::string, map_name_fn> nuc::determine_dest_dir(const paths::pathn
     return std::make_pair(dest, identity());
 }
 
-paths::string replace_initial_dir(size_t len, const paths::string &replacement, const paths::string &path) {
+pathname::string replace_initial_dir(size_t len, const pathname::string &replacement, const pathname::string &path) {
     return replacement + path.substr(len);
 }
 
@@ -167,7 +167,7 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
 
         state.test_cancel();
 
-        const paths::string &ent_name = map_name(ent.name);
+        const pathname::string &ent_name = map_name(ent.name);
 
         try {
             switch (ent.type) {
@@ -237,7 +237,7 @@ static void copy_file(cancel_state &state, instream &in, outstream &out) {
 
 /// Unpacking files from archives
 
-nuc::task_queue::task_type nuc::make_unpack_task(std::shared_ptr<dir_type> src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback) {
+nuc::task_queue::task_type nuc::make_unpack_task(std::shared_ptr<dir_type> src_type, const pathname &subpath, const std::function<void(const char *)> &callback) {
     return [=] (cancel_state &state) {
         std::unique_ptr<tree_lister> ls(src_type->create_tree_lister({subpath}));
 

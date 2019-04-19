@@ -57,9 +57,9 @@ dir_entry::entry_type dir_entry::dt_to_entry_type(uint8_t type) {
 // The default constructor call m_attr() is required to value
 // initialize all members of the stat struct to zero
 
-dir_entry::dir_entry(const paths::pathname orig_name, uint8_t type) : dir_entry(orig_name, dt_to_entry_type(type)) {}
+dir_entry::dir_entry(const pathname orig_name, uint8_t type) : dir_entry(orig_name, dt_to_entry_type(type)) {}
 
-dir_entry::dir_entry(const paths::pathname orig_name, entry_type type)
+dir_entry::dir_entry(const pathname orig_name, entry_type type)
     : m_orig_subpath(orig_name), m_subpath(orig_name.canonicalize()),
       m_file_name(m_subpath.basename()), m_attr(), m_type(type) {}
 
@@ -70,7 +70,7 @@ dir_entry::dir_entry(const lister::entry &ent, const struct stat &st) : dir_entr
     m_attr = st;
 }
 
-dir_entry::dir_entry(paths::pathname path, const struct stat &st) : dir_entry(std::move(path), IFTODT(st.st_mode & S_IFMT)) {
+dir_entry::dir_entry(pathname path, const struct stat &st) : dir_entry(std::move(path), IFTODT(st.st_mode & S_IFMT)) {
     m_attr = st;
 }
 
@@ -88,6 +88,6 @@ void dir_entry::ent_type(uint8_t type) {
 
 dir_entry::entry_type dir_entry::type() const {
     uint8_t type = IFTODT(m_attr.st_mode);
-    
+
     return type != DT_UNKNOWN ? dt_to_entry_type(type) : m_type;
 }

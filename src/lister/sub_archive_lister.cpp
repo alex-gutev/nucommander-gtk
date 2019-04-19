@@ -21,7 +21,7 @@
 
 using namespace nuc;
 
-sub_archive_lister::sub_archive_lister(lister *parent, archive_plugin *plugin, const paths::pathname &subpath)
+sub_archive_lister::sub_archive_lister(lister *parent, archive_plugin *plugin, const pathname &subpath)
     : archive_lister(plugin), parent_lister(parent) {
     int error = 0;
 
@@ -36,11 +36,11 @@ sub_archive_lister::~sub_archive_lister() {
     if (arch_stream) delete arch_stream;
 }
 
-void sub_archive_lister::find_archive_file(const paths::pathname &subpath) {
+void sub_archive_lister::find_archive_file(const pathname &subpath) {
     lister::entry ent;
 
     while (parent_lister->read_entry(ent)) {
-        if (ent.type == DT_REG && subpath == paths::pathname(ent.name).canonicalize()) {
+        if (ent.type == DT_REG && subpath == pathname(ent.name).canonicalize()) {
             arch_stream = parent_lister->open_entry();
             return;
         }

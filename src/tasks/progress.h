@@ -73,7 +73,7 @@ namespace nuc {
          * - type_enter_file
          * - type_exit_file
          */
-        paths::pathname file;
+        pathname file;
 
         /**
          * If the event type is type_process_data this is the number
@@ -90,7 +90,7 @@ namespace nuc {
 
         progress_event(progress_type type) : type(type) {}
 
-        progress_event(progress_type type, paths::pathname file, size_t bytes = 0) : type(type), file(file), bytes(bytes) {}
+        progress_event(progress_type type, pathname file, size_t bytes = 0) : type(type), file(file), bytes(bytes) {}
 
         progress_event(progress_type type, size_t bytes) : type(type), bytes(bytes) {}
     };

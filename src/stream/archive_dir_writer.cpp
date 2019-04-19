@@ -25,7 +25,7 @@
 
 using namespace nuc;
 
-archive_dir_writer::archive_dir_writer(paths::pathname arch_path, archive_plugin *plugin, paths::pathname subpath)
+archive_dir_writer::archive_dir_writer(pathname arch_path, archive_plugin *plugin, pathname subpath)
     : path(std::move(arch_path)), subpath(subpath), plugin(plugin) {
     open_old();
 
@@ -38,7 +38,7 @@ archive_dir_writer::archive_dir_writer(paths::pathname arch_path, archive_plugin
     }
 }
 
-archive_dir_writer::archive_dir_writer(archive_plugin *plugin, const paths::pathname &path, const paths::pathname &subpath) : plugin(plugin), path(path), subpath(subpath) {}
+archive_dir_writer::archive_dir_writer(archive_plugin *plugin, const pathname &path, const pathname &subpath) : plugin(plugin), path(path), subpath(subpath) {}
 
 void archive_dir_writer::open_old() {
     try_op([this] {
@@ -50,7 +50,7 @@ void archive_dir_writer::open_temp() {
     open_temp(path);
 }
 
-void archive_dir_writer::open_temp(const paths::pathname &path) {
+void archive_dir_writer::open_temp(const pathname &path) {
     // Create temporary file name
 
     tmp_path = path;
@@ -124,7 +124,7 @@ void archive_dir_writer::get_old_entries() {
     bool copied = false;;
 
     while (next_entry(ent)) {
-        paths::pathname cpath = paths::pathname(ent.name).canonicalize();
+        pathname cpath = pathname(ent.name).canonicalize();
 
         add_old_entry(cpath, ent.type);
 
@@ -139,13 +139,13 @@ void archive_dir_writer::get_old_entries() {
     in_lister.reset();
 }
 
-void archive_dir_writer::add_parent_entries(paths::pathname path) {
+void archive_dir_writer::add_parent_entries(pathname path) {
     while(path = path.remove_last_component(), !path.empty()) {
         if (!add_old_entry(path, DT_DIR)) break;
     }
 }
 
-bool archive_dir_writer::add_old_entry(const paths::pathname &path, int type) {
+bool archive_dir_writer::add_old_entry(const pathname &path, int type) {
     auto pair = old_entries.insert(std::make_pair(path, type));
 
     if (!pair.second) {
@@ -173,7 +173,7 @@ void archive_dir_writer::copy_old_entries() {
     int err = 0;
 
     while (next_entry(ent)) {
-        auto it = old_entries.find(paths::pathname(ent.name).canonicalize());
+        auto it = old_entries.find(pathname(ent.name).canonicalize());
 
         if (it != old_entries.end()) {
             // FIXME: Get proper error code and error description
@@ -205,7 +205,7 @@ bool archive_dir_writer::next_entry(lister::entry &ent) {
     return more;
 }
 
-outstream * archive_dir_writer::create(const paths::pathname &path, const struct stat *st, int flags) {
+outstream * archive_dir_writer::create(const pathname &path, const struct stat *st, int flags) {
     // Default regular file stat structure
     struct stat reg{};
     reg.st_mode = S_IFREG | S_IRWXU;
@@ -215,7 +215,7 @@ outstream * archive_dir_writer::create(const paths::pathname &path, const struct
     return new archive_outstream(plugin, out_handle);
 }
 
-void archive_dir_writer::mkdir(const paths::pathname &path, bool defer) {
+void archive_dir_writer::mkdir(const pathname &path, bool defer) {
     check_exists(subpath.append(path));
 
     if (!defer) {
@@ -226,7 +226,7 @@ void archive_dir_writer::mkdir(const paths::pathname &path, bool defer) {
     }
 }
 
-void archive_dir_writer::symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st) {
+void archive_dir_writer::symlink(const pathname &path, const pathname &target, const struct stat *st) {
     // Default symlink stat structure
     struct stat lnk{};
     lnk.st_mode = S_IFLNK;
@@ -234,14 +234,14 @@ void archive_dir_writer::symlink(const paths::pathname &path, const paths::pathn
     create_entry(true, path.path().c_str(), st ? st : &lnk, target.path().c_str());
 }
 
-void archive_dir_writer::set_attributes(const paths::pathname &path, const struct stat *st) {
+void archive_dir_writer::set_attributes(const pathname &path, const struct stat *st) {
     if (st && S_ISDIR(st->st_mode)) {
         create_entry(true, path.path().c_str(), st);
     }
 }
 
 void archive_dir_writer::create_entry(bool check, const char *path, const struct stat *st, const char *symlink_dest) {
-    paths::pathname ent_path = subpath.append(path).canonicalize();
+    pathname ent_path = subpath.append(path).canonicalize();
 
     if (check)
         check_exists(ent_path);
@@ -260,7 +260,7 @@ void archive_dir_writer::create_entry(bool check, const char *path, const struct
             raise_plugin_error(out_handle, err));
 }
 
-void archive_dir_writer::check_exists(paths::pathname path) {
+void archive_dir_writer::check_exists(pathname path) {
     bool replace = false;
 
     path = path.canonicalize();
@@ -286,7 +286,7 @@ void archive_dir_writer::check_exists(paths::pathname path) {
     });
 }
 
-void archive_dir_writer::remove_old_entry(paths::pathname path) {
+void archive_dir_writer::remove_old_entry(pathname path) {
     auto it = old_entries.find(path);
 
     if (it != old_entries.end()) {
@@ -295,7 +295,7 @@ void archive_dir_writer::remove_old_entry(paths::pathname path) {
         it = old_entries.erase(it);
 
         if (is_dir) {
-            path = paths::pathname(path, true);
+            path = pathname(path, true);
 
             while (it != old_entries.end() && it->first.is_subpath(path)) {
                 it = old_entries.erase(it);
@@ -305,10 +305,10 @@ void archive_dir_writer::remove_old_entry(paths::pathname path) {
 }
 
 
-void archive_dir_writer::rename(const paths::pathname &src, const paths::pathname &dest) {
+void archive_dir_writer::rename(const pathname &src, const pathname &dest) {
     check_exists(dest);
 
-    paths::pathname src_path = src.canonicalize();
+    pathname src_path = src.canonicalize();
 
     auto it = old_entries.find(src_path);
 
@@ -328,8 +328,8 @@ void archive_dir_writer::rename(const paths::pathname &src, const paths::pathnam
     }
 }
 
-void archive_dir_writer::remove(const paths::pathname &path, bool relative) {
-    paths::pathname ent_path = (relative ? subpath.append(path) : path).canonicalize();
+void archive_dir_writer::remove(const pathname &path, bool relative) {
+    pathname ent_path = (relative ? subpath.append(path) : path).canonicalize();
 
     // TODO: Raise an error if there is no such entry
     remove_old_entry(ent_path);

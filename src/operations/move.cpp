@@ -52,7 +52,7 @@ struct begin_copy_exception {};
  *
  * @param dest Path to the destination directory.
  */
-static void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
+static void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest);
 
 /**
  * Copies the files in @a paths to the destination directory @a dest.
@@ -67,10 +67,10 @@ static void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type
  *
  * @param dest Path to the destination directory.
  */
-static void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest);
+static void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest);
 
-task_queue::task_type nuc::make_move_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const paths::pathname &dest) {
-    std::vector<paths::pathname> paths = lister_paths(entries);
+task_queue::task_type nuc::make_move_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const pathname &dest) {
+    std::vector<pathname> paths = lister_paths(entries);
 
     return [=] (cancel_state &state) {
         state.call_progress(progress_event(progress_event::type_begin));
@@ -86,7 +86,7 @@ task_queue::task_type nuc::make_move_task(std::shared_ptr<dir_type> src_type, co
     };
 }
 
-void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
+void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest) {
     // Check that the source and destination directories are on the
     // same file system.
     if (auto fs_type = dir_type::on_same_fs(src_type->path(), dest)) {
@@ -111,16 +111,16 @@ void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type, const
     }
 }
 
-void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, const paths::pathname &dest, dir_writer &dir) {
-    paths::pathname dest_dir;
+void nuc::move(cancel_state &state, const std::vector<pathname> &items, const pathname &dest, dir_writer &dir) {
+    pathname dest_dir;
     map_name_fn map_name;
 
     std::tie(dest_dir, map_name) = determine_dest_dir(dest, items);
 
-    for (const paths::pathname &item : items) {
+    for (const pathname &item : items) {
         global_restart skip(skip_exception::restart);
 
-        paths::string name = map_name(item.basename());
+        pathname::string name = map_name(item.basename());
 
         state.call_progress(progress_event(progress_event::type_enter_file, item, 1));
 
@@ -135,8 +135,8 @@ void nuc::move(cancel_state &state, const std::vector<paths::pathname> &items, c
     }
 }
 
-void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<paths::pathname> &paths, const paths::pathname &dest) {
-    paths::pathname dest_dir;
+void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest) {
+    pathname dest_dir;
     map_name_fn map_name;
 
     std::tie(dest_dir, map_name) = determine_dest_dir(dest, paths);

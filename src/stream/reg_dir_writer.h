@@ -65,19 +65,19 @@ namespace nuc {
 
         virtual void close();
 
-        virtual outstream *create(const paths::pathname &path, const struct stat *st, int flags);
+        virtual outstream *create(const pathname &path, const struct stat *st, int flags);
 
-        virtual void mkdir(const paths::pathname &path, bool defer);
+        virtual void mkdir(const pathname &path, bool defer);
 
-        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st);
+        virtual void symlink(const pathname &path, const pathname &target, const struct stat *st);
 
-        virtual void set_attributes(const paths::pathname &path, const struct stat *st);
+        virtual void set_attributes(const pathname &path, const struct stat *st);
 
-        virtual void rename(const paths::pathname &src, const paths::pathname &dest);
+        virtual void rename(const pathname &src, const pathname &dest);
 
-        virtual void remove(const paths::pathname &path, bool relative);
+        virtual void remove(const pathname &path, bool relative);
 
-        virtual file_id get_file_id(const paths::pathname &path);
+        virtual file_id get_file_id(const pathname &path);
     };
 }
 

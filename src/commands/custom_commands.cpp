@@ -36,7 +36,7 @@ using namespace nuc;
  *
  * @return Vector of pathname's of the directories.
  */
-static std::vector<paths::pathname> command_dirs();
+static std::vector<pathname> command_dirs();
 
 /**
  * Loads all custom commands in the directory @a dir to the command
@@ -45,7 +45,7 @@ static std::vector<paths::pathname> command_dirs();
  * @param dir Directory to load commands from.
  * @param table Command table to load the commands to.
  */
-static void load_commands_in_dir(const paths::pathname &dir, command_keymap::command_map &table);
+static void load_commands_in_dir(const pathname &dir, command_keymap::command_map &table);
 
 
 void nuc::add_custom_commands(command_keymap::command_map &table) {
@@ -59,19 +59,19 @@ void nuc::add_custom_commands(command_keymap::command_map &table) {
     }
 }
 
-static std::vector<paths::pathname> command_dirs() {
-    std::vector<paths::pathname> dirs;
+static std::vector<pathname> command_dirs() {
+    std::vector<pathname> dirs;
 
     for (const auto &path : Glib::get_system_data_dirs()) {
-        dirs.push_back(paths::pathname(path).append("nucommander/commands"));
+        dirs.push_back(pathname(path).append("nucommander/commands"));
     }
 
-    dirs.push_back(paths::pathname(Glib::get_user_data_dir()).append("nucommander/commands"));
+    dirs.push_back(pathname(Glib::get_user_data_dir()).append("nucommander/commands"));
 
     return dirs;
 }
 
-static void load_commands_in_dir(const paths::pathname &dir, command_keymap::command_map &table) {
+static void load_commands_in_dir(const pathname &dir, command_keymap::command_map &table) {
     dir_lister listr(dir);
 
     lister::entry ent;
@@ -83,7 +83,7 @@ static void load_commands_in_dir(const paths::pathname &dir, command_keymap::com
                 continue;
         }
 
-        paths::pathname name(ent.name);
+        pathname name(ent.name);
 
         if (boost::iequals(name.extension(), "LUA")) {
             const std::string &name_str = name.path();

@@ -44,7 +44,7 @@ namespace nuc {
          * @param subpath Subpath within the nested archive, at which
          *   new entries are created.
          */
-        sub_archive_dir_writer(archive_plugin *plugin, dir_type *dtype, dir_writer *parent_writer, const paths::pathname &path, const paths::pathname &subpath);
+        sub_archive_dir_writer(archive_plugin *plugin, dir_type *dtype, dir_writer *parent_writer, const pathname &path, const pathname &subpath);
 
         virtual void close();
 

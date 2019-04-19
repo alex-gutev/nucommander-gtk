@@ -95,13 +95,13 @@ void vfs::finalize() {
 }
 
 
-void vfs::read(const paths::pathname& path, std::shared_ptr<delegate> del) {
+void vfs::read(const pathname& path, std::shared_ptr<delegate> del) {
     cancel_update();
 
     add_read_task(path, false, del);
 }
 
-void vfs::add_read_task(const paths::pathname &path, bool refresh, std::shared_ptr<delegate> del) {
+void vfs::add_read_task(const pathname &path, bool refresh, std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
     auto tstate = std::make_shared<read_dir_state>(refresh, del);
@@ -155,7 +155,7 @@ bool vfs::ascend(std::shared_ptr<delegate> del) {
     return false;
 }
 
-void vfs::add_read_subdir(const paths::pathname &subpath, std::shared_ptr<delegate> del) {
+void vfs::add_read_subdir(const pathname &subpath, std::shared_ptr<delegate> del) {
     using namespace std::placeholders;
 
     monitor.pause();
@@ -199,7 +199,7 @@ void vfs::finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> 
 
 void vfs::refresh_subdir() {
     if (!cur_tree->at_basedir() && !cur_tree->subpath_dir(cur_tree->subpath())) {
-        paths::pathname subpath = cur_tree->subpath();
+        pathname subpath = cur_tree->subpath();
 
         cur_tree->subpath(subpath.remove_last_component());
 
@@ -242,7 +242,7 @@ bool vfs::cancel() {
 
 /// Read task
 
-void vfs::read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const paths::pathname &path) {
+void vfs::read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const pathname &path) {
     tstate->type = dir_type::get(path);
     list_dir(state, tstate);
 }
@@ -436,7 +436,7 @@ void vfs::finish_updates(std::shared_ptr<delegate> del) {
 }
 
 
-void vfs::file_created(cancel_state &state, const paths::string &path) {
+void vfs::file_created(cancel_state &state, const pathname::string &path) {
     struct stat st;
 
     // Issue: The entry type is not obtained, instead the entry and
@@ -445,7 +445,7 @@ void vfs::file_created(cancel_state &state, const paths::string &path) {
 
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
-            const paths::string name(paths::pathname(path).basename());
+            const pathname::string name(pathname(path).basename());
 
             remove_entry(name);
             new_tree->add_entry(dir_entry(name, st));
@@ -453,7 +453,7 @@ void vfs::file_created(cancel_state &state, const paths::string &path) {
     }
 }
 
-void vfs::file_changed(cancel_state &state, const paths::string &path) {
+void vfs::file_changed(cancel_state &state, const pathname::string &path) {
     struct stat st;
 
     // Same entry type issue as file_created when the file is not
@@ -461,7 +461,7 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
 
     if (file_stat(path, &st)) {
         state.no_cancel([&] {
-            const paths::string name(paths::pathname(path).basename());
+            const pathname::string name(pathname(path).basename());
 
             dir_entry *ent = new_tree->get_entry(name);
 
@@ -475,17 +475,17 @@ void vfs::file_changed(cancel_state &state, const paths::string &path) {
     }
 }
 
-void vfs::file_deleted(cancel_state &state, const paths::string &path) {
+void vfs::file_deleted(cancel_state &state, const pathname::string &path) {
     state.no_cancel([=] {
-        remove_entry(paths::pathname(path).basename());
+        remove_entry(pathname(path).basename());
     });
 }
 
-void vfs::file_renamed(cancel_state &state, const paths::string &src, const paths::string &dest) {
+void vfs::file_renamed(cancel_state &state, const pathname::string &src, const pathname::string &dest) {
     bool exists = false;
 
-    paths::string src_name = paths::pathname(src).basename();
-    paths::string dest_name = paths::pathname(dest).basename();
+    pathname::string src_name = pathname(src).basename();
+    pathname::string dest_name = pathname(dest).basename();
 
     state.no_cancel([&] {
         dir_entry *ent = new_tree->get_entry(src_name);
@@ -507,12 +507,12 @@ void vfs::file_renamed(cancel_state &state, const paths::string &src, const path
     }
 }
 
-void vfs::remove_entry(const paths::string& name) {
+void vfs::remove_entry(const pathname::string& name) {
     new_tree->index().erase(name);
 }
 
 
-bool vfs::file_stat(const paths::string &path, struct stat *st) {
+bool vfs::file_stat(const pathname::string &path, struct stat *st) {
     return !stat(path.c_str(), st) || !lstat(path.c_str(), st);
 }
 
@@ -528,16 +528,16 @@ void vfs::call_begin(cancel_state &state, std::shared_ptr<delegate> del) {
 
 //// Accessing Files on Disk
 
-task_queue::task_type vfs::access_file(const dir_entry &ent, std::function<void(const paths::pathname &)> fn) {
+task_queue::task_type vfs::access_file(const dir_entry &ent, std::function<void(const pathname &)> fn) {
     using namespace std::placeholders;
 
     if (!dtype->is_dir()) {
         return make_unpack_task(dtype, ent.orig_subpath(), [=] (const char *path) {
-            fn(paths::pathname(path));
+            fn(pathname(path));
         });
     }
     else {
-        paths::pathname full_path = dtype->path().append(ent.orig_subpath());
+        pathname full_path = dtype->path().append(ent.orig_subpath());
 
         return std::bind(fn, full_path);
     }

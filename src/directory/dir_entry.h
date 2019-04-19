@@ -29,7 +29,7 @@
 namespace nuc {
     /**
      * Directory Entry.
-     * 
+     *
      * Stores information about entries in a directory tree, such as
      * the file name, the subpath (within the tree), and stat
      * attributes.
@@ -38,17 +38,17 @@ namespace nuc {
         /**
          * Original non-canonicalized subpath of the entry.
          */
-        paths::pathname m_orig_subpath;
+        pathname m_orig_subpath;
         /**
          * Canonicalized subpath.
          */
-        paths::pathname m_subpath;
+        pathname m_subpath;
         /**
          * The file name of the entry, i.e. the basename of the
          * canonicalized subpath of the entry.
          */
-        paths::string m_file_name;
-        
+        pathname::string m_file_name;
+
         /**
          * Stat attributes of the underlying file.
          */
@@ -87,32 +87,32 @@ namespace nuc {
          * orig_subpath: The non-canonicalized subpath.
          * type:         The type of the entry, as a dirent (DT_) constant.
          */
-        dir_entry(const paths::pathname orig_subpath, uint8_t type);
+        dir_entry(const pathname orig_subpath, uint8_t type);
         /**
          * Constructs a 'dir_entry' object with a given name and type.
          *
          * orig_subpath: The non-canonicalized subpath.
          * type:         The type of the entry, as an entry_type constant.
          */
-        dir_entry(const paths::pathname orig_subpath, entry_type type);
-        
+        dir_entry(const pathname orig_subpath, entry_type type);
+
         /**
          * Constructs a 'dir_entry' object from a 'lister' object.
          */
         dir_entry(const lister::entry &ent);
-        
+
         /**
          * Constructs a 'dir_entry' object from 'lister::entry' object
          * with given stat attributes.
          */
         dir_entry(const lister::entry &ent, const struct stat &st);
 
-        dir_entry(paths::pathname path, const struct stat &st);
-        
+        dir_entry(pathname path, const struct stat &st);
+
         /**
          * Returns the original non-canonicalized subpath.
          */
-        const paths::pathname &orig_subpath() const {
+        const pathname &orig_subpath() const {
             return m_orig_subpath;
         }
 
@@ -120,7 +120,7 @@ namespace nuc {
          * Changes the original sub-path of the entry and updates the
          * canonicalized subpath and file name.
          */
-        void orig_subpath(paths::pathname path) {
+        void orig_subpath(pathname path) {
             m_orig_subpath = path;
             subpath(std::move(path).canonicalize());
         }
@@ -128,25 +128,25 @@ namespace nuc {
         /**
          * Returns the canonicalized subpath.
          */
-        const paths::pathname &subpath() const {
+        const pathname &subpath() const {
             return m_subpath;
         }
         /**
          * Sets the canonicalized subpath, and file name.
          */
-        void subpath(const paths::pathname &path) {
+        void subpath(const pathname &path) {
             m_subpath = path;
             m_file_name = path.basename();
         }
-        
+
         /**
          * Returns the file name component of the canonicalized
          * subpath.
          */
-        const paths::string &file_name() const {
+        const pathname::string &file_name() const {
             return m_file_name;
         }
-        
+
         /**
          * Returns the entry type.
          */
@@ -164,14 +164,14 @@ namespace nuc {
          * the entry type is returned instead.
          */
         entry_type type() const;
-        
+
         /**
          * Returns the stat attributes.
          */
         const struct stat &attr() const {
             return m_attr;
         }
-        
+
         /**
          * Sets the stat attributes.
          */

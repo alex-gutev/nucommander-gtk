@@ -46,7 +46,7 @@ namespace nuc {
          * @param plugin Plugin for writing to the archive.
          * @param subpath Subpath within the archive.
          */
-        archive_dir_writer(paths::pathname path, archive_plugin *plugin, paths::pathname subpath = paths::pathname());
+        archive_dir_writer(pathname path, archive_plugin *plugin, pathname subpath = pathname());
 
         /**
          * Closes any open archive handles, and deletes the new file
@@ -73,17 +73,17 @@ namespace nuc {
         virtual void close();
 
 
-        virtual outstream *create(const paths::pathname &path, const struct stat *st, int flags);
+        virtual outstream *create(const pathname &path, const struct stat *st, int flags);
 
-        virtual void mkdir(const paths::pathname &path, bool defer);
+        virtual void mkdir(const pathname &path, bool defer);
 
-        virtual void symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st);
+        virtual void symlink(const pathname &path, const pathname &target, const struct stat *st);
 
-        virtual void set_attributes(const paths::pathname &path, const struct stat *st);
+        virtual void set_attributes(const pathname &path, const struct stat *st);
 
-        virtual void rename(const paths::pathname &src, const paths::pathname &dest);
+        virtual void rename(const pathname &src, const pathname &dest);
 
-        virtual void remove(const paths::pathname &path, bool relative);
+        virtual void remove(const pathname &path, bool relative);
 
     protected:
         /**
@@ -106,7 +106,7 @@ namespace nuc {
         /**
          * Path to the new archive file that is being created.
          */
-        paths::string tmp_path;
+        pathname::string tmp_path;
 
         /**
          * Flag: True if the temporary file, into which the new
@@ -128,7 +128,7 @@ namespace nuc {
              * the new archive. If this is an empty string, the entry
              * is recreated under the same path.
              */
-            paths::pathname new_path;
+            pathname new_path;
 
             old_entry(int type) : type(type) {}
         };
@@ -136,20 +136,20 @@ namespace nuc {
         /**
          * Path to the archive file being written to.
          */
-        paths::pathname path;
+        pathname path;
 
         /**
          * Subpath within the archive, where all new entries are
          * created.
          */
-        paths::pathname subpath;
+        pathname subpath;
 
         /**
          * Map containing the entries already in the archive. Each key
          * is the canonicalized subpath to the entry and the
          * corresponding value is an old_entry struct.
          */
-        std::map<paths::pathname, old_entry> old_entries;
+        std::map<pathname, old_entry> old_entries;
 
 
         /**
@@ -160,7 +160,7 @@ namespace nuc {
          * @param path Path to the archive file.
          * @param subpath Subpath within the archive.
          */
-        archive_dir_writer(archive_plugin *plugin, const paths::pathname &path, const paths::pathname &subpath);
+        archive_dir_writer(archive_plugin *plugin, const pathname &path, const pathname &subpath);
 
         /**
          * Obtain the subpaths of all entries in the old archive and
@@ -177,7 +177,7 @@ namespace nuc {
          * @param path Location where the temporary file should be
          * created.
          */
-        void open_temp(const paths::pathname &path);
+        void open_temp(const pathname &path);
 
         /**
          * Copies all entries in the existing archive to the new
@@ -239,7 +239,7 @@ namespace nuc {
          *
          * @param path Subpath to the entry.
          */
-        void add_parent_entries(paths::pathname path);
+        void add_parent_entries(pathname path);
 
         /**
          * Adds an old entry with subpath @a path to the old_entries
@@ -256,7 +256,7 @@ namespace nuc {
          *   there was an entry with the same subpath in the map, and
          *   it was not replaced.
          */
-        bool add_old_entry(const paths::pathname &path, int type);
+        bool add_old_entry(const pathname &path, int type);
 
         /**
          * Sets the type of the new archive to the same type as the
@@ -293,7 +293,7 @@ namespace nuc {
          *
          * @param path Path to the entry.
          */
-        void check_exists(paths::pathname path);
+        void check_exists(pathname path);
 
         /**
          * Removes the entry at subpath @a path. If it is a directory
@@ -301,7 +301,7 @@ namespace nuc {
          *
          * @param path Subpath to the entry.
          */
-        void remove_old_entry(paths::pathname path);
+        void remove_old_entry(pathname path);
     };
 }
 

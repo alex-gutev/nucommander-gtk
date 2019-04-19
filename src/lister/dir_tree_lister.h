@@ -74,7 +74,7 @@ namespace nuc {
          *
          * @return The new current directory.
          */
-        static paths::pathname set_dir(FTSENT *ent, const paths::string &name, paths::pathname dir);
+        static pathname set_dir(FTSENT *ent, const pathname::string &name, pathname dir);
 
         /**
          * Returns the visit info for the entry @a ent. If the entry
@@ -96,7 +96,7 @@ namespace nuc {
          * @param paths Array of names of sub-directories/files which
          *    are to be listed.
          */
-        dir_tree_lister(const paths::pathname &base, const std::vector<paths::pathname> &paths);
+        dir_tree_lister(const pathname &base, const std::vector<pathname> &paths);
 
         virtual ~dir_tree_lister();
 

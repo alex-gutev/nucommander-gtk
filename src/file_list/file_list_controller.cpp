@@ -141,7 +141,7 @@ void file_list_controller::init_vfs() {
         return std::shared_ptr<vfs::delegate>();
     });
 
-    vfs->signal_deleted().connect([=] (paths::pathname path) {
+    vfs->signal_deleted().connect([=] (pathname path) {
         if (auto self = ptr.lock())
             self->vfs_dir_deleted(path);
     });
@@ -218,13 +218,13 @@ std::shared_ptr<vfs::delegate> file_list_controller::vfs_dir_changed() {
     return std::make_shared<update_delegate>(shared_from_this());
 }
 
-void file_list_controller::vfs_dir_deleted(paths::pathname new_path) {
+void file_list_controller::vfs_dir_deleted(pathname new_path) {
     if (!reading)
         read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
 
 
-void file_list_controller::read_parent_dir(paths::pathname path) {
+void file_list_controller::read_parent_dir(pathname path) {
     using namespace std::placeholders;
 
     if (!path.is_root()) {
@@ -255,7 +255,7 @@ void file_list_controller::reset_list() {
 
 void file_list_controller::set_updated_list(Glib::RefPtr<Gtk::ListStore> new_list) {
     bool selection = false;
-    paths::string name;
+    pathname::string name;
     index_type index = 0;
 
     if (selected_row) {
@@ -294,7 +294,7 @@ void file_list_controller::update_marked_set() {
 }
 
 
-void file_list_controller::add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const paths::pathname &new_path) {
+void file_list_controller::add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const pathname &new_path) {
     if (!new_path.is_root())
         create_row(*new_list->append(), parent_entry);
 }
@@ -410,7 +410,7 @@ void file_list_controller::select_old() {
     select_named(cur_path.basename(), 0);
 }
 
-void file_list_controller::select_named(const paths::string &name, index_type row_ind) {
+void file_list_controller::select_named(const pathname::string &name, index_type row_ind) {
     index_type selection = 0;
 
     if (cur_list->children().size()) {
@@ -466,8 +466,8 @@ void file_list_controller::prepare_read(bool move_to_old) {
     clear_view();
 }
 
-paths::pathname file_list_controller::expand_path(const paths::pathname &path) {
-    return paths::pathname(cur_path, true).merge(path);
+pathname file_list_controller::expand_path(const pathname &path) {
+    return pathname(cur_path, true).merge(path);
 }
 
 void file_list_controller::clear_view() {
@@ -476,10 +476,10 @@ void file_list_controller::clear_view() {
     m_signal_change_model.emit(empty_list);
 }
 
-void file_list_controller::path(const paths::pathname &path, bool move_to_old) {
+void file_list_controller::path(const pathname &path, bool move_to_old) {
     prepare_read(move_to_old);
 
-    paths::pathname cpath(expand_path(path));
+    pathname cpath(expand_path(path));
     m_signal_path.emit(cpath);
 
     vfs->read(cpath, std::make_shared<read_delegate>(shared_from_this()));
@@ -487,7 +487,7 @@ void file_list_controller::path(const paths::pathname &path, bool move_to_old) {
 
 bool file_list_controller::descend(const dir_entry& ent) {
     if (ent.ent_type() == dir_entry::type_parent) {
-        paths::string new_path(cur_path.remove_last_component());
+        pathname::string new_path(cur_path.remove_last_component());
         auto del = std::make_shared<read_delegate>(shared_from_this());
 
         m_signal_path.emit(new_path);
@@ -500,7 +500,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
         return true;
     }
     else {
-        paths::string new_path(cur_path.append(ent.file_name()));
+        pathname::string new_path(cur_path.append(ent.file_name()));
 
         if (vfs->descend(ent, std::make_shared<read_delegate>(shared_from_this()))) {
             prepare_read(false);

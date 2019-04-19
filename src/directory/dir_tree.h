@@ -49,7 +49,7 @@ namespace nuc {
          * name.
          */
         file_map<dir_entry> map;
-        
+
     public:
 
         /**
@@ -58,7 +58,7 @@ namespace nuc {
          * particular name.
          */
         typedef std::pair<file_map<dir_entry>::iterator, file_map<dir_entry>::iterator> entry_range;
-        
+
         /**
          * Directory map type.
          *
@@ -109,18 +109,18 @@ namespace nuc {
          *
          * @return The current subdirectory.
          */
-        virtual paths::pathname subpath() const {
+        virtual pathname subpath() const {
             // The empty string cannot be a valid directory name.
             return "";
         }
-        
+
         /**
          * Sets the tree's subdirectory, without checking whether it
          * exists.
          *
          * @param path The new subpath.
          */
-        virtual void subpath(paths::pathname path) {}
+        virtual void subpath(pathname path) {}
 
         /**
          * Returns the contents of a subdirectory, if it exists.
@@ -132,7 +132,7 @@ namespace nuc {
          *    returned, otherwise nullptr is returned, if there is no
          *    such subdirectory.
          */
-        virtual dir_map const * subpath_dir(const paths::pathname &path) const {
+        virtual dir_map const * subpath_dir(const pathname &path) const {
             return nullptr;
         }
 
@@ -151,7 +151,7 @@ namespace nuc {
         virtual bool at_basedir() const {
             return true;
         }
-        
+
         /**
          * Retrieves the first entry with name @name in the current
          * subdirectory.
@@ -161,7 +161,7 @@ namespace nuc {
          * @return Pointer to the entry, 'nullptr' if the entry was
          *    not found.
          */
-        virtual dir_entry *get_entry(const paths::string &name) {
+        virtual dir_entry *get_entry(const pathname::string &name) {
             auto it = map.find(name);
 
             if (it != map.end()) {
@@ -181,7 +181,7 @@ namespace nuc {
          *   iterator to the first entry and the second iterator is
          *   the past the end iterator.
          */
-        virtual entry_range get_entries(const paths::string &name) {
+        virtual entry_range get_entries(const pathname::string &name) {
             return map.equal_range(name);
         }
 
@@ -193,7 +193,7 @@ namespace nuc {
             return map;
         }
 
-        /** 
+        /**
          * @return Iterator to the first entry in the directory tree.
          */
         auto begin() -> decltype(map.begin()) {
@@ -201,7 +201,7 @@ namespace nuc {
         }
 
         /**
-         * @return Past-the-end iterator. 
+         * @return Past-the-end iterator.
          */
         auto end() -> decltype(map.end()) {
             return map.end();

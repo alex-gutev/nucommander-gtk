@@ -114,7 +114,7 @@ namespace nuc {
         /**
          * Returns the path to the file view's current directory.
          */
-        const paths::pathname &path() const {
+        const pathname &path() const {
             return flist->path();
         }
 
@@ -123,7 +123,7 @@ namespace nuc {
          * path displayed and begins a background read operation for
          * the new path.
          */
-        void path(const paths::pathname &path, bool move_to_old = false);
+        void path(const pathname &path, bool move_to_old = false);
 
 
         /* Changing Keyboard Focus */
@@ -423,7 +423,7 @@ namespace nuc {
          * Signal handler for the file list controller's path changed
          * signal.
          */
-        void on_path_changed(const paths::pathname &path);
+        void on_path_changed(const pathname &path);
 
         /**
          * Signal handler for the file list controller's change model

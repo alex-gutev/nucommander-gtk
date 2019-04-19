@@ -24,7 +24,7 @@
 using namespace nuc;
 
 
-sub_archive_dir_writer::sub_archive_dir_writer(archive_plugin *plugin, dir_type *dtype, dir_writer *parent_writer, const paths::pathname &path, const paths::pathname &subpath)
+sub_archive_dir_writer::sub_archive_dir_writer(archive_plugin *plugin, dir_type *dtype, dir_writer *parent_writer, const pathname &path, const pathname &subpath)
     : archive_dir_writer(plugin, path, subpath), dtype(dtype), parent_writer(parent_writer) {
     open_old();
 

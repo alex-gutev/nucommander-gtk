@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef NUC_TYPES_H
+#define NUC_TYPES_H
 
 #include <string>
 #include <unordered_map>
@@ -43,7 +43,7 @@ namespace nuc {
      * File map type.
      */
     template <typename T>
-    using file_map = std::unordered_multimap<paths::string, T>;
+    using file_map = std::unordered_multimap<pathname::string, T>;
 
     /**
      * Context data type for the dir_entry class.
@@ -110,7 +110,7 @@ namespace std {
     };
 }
 
-#endif // TYPES_H
+#endif // NUC_TYPES_H
 
 // Local Variables:
 // mode: c++

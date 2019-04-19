@@ -29,7 +29,7 @@ archive_lister::~archive_lister() {
     close();
 }
 
-archive_lister::archive_lister(archive_plugin *plugin, const paths::string &path) : plugin(plugin) {
+archive_lister::archive_lister(archive_plugin *plugin, const pathname::string &path) : plugin(plugin) {
     int error = 0;
 
     if (!(handle = plugin->open(path.c_str(), NUC_AP_MODE_UNPACK, &error))) {

@@ -57,7 +57,7 @@ void reg_dir_writer::close() {
     ::close(fd);
 }
 
-outstream * reg_dir_writer::create(const paths::pathname &path, const struct stat *st, int flags) {
+outstream * reg_dir_writer::create(const pathname &path, const struct stat *st, int flags) {
     int fflags = flags & stream_flag_exclusive ? O_EXCL : 0;
 
     global_restart overwrite(overwrite_restart(fflags));
@@ -83,12 +83,12 @@ restart overwrite_restart(int &flags) {
 }
 
 
-void reg_dir_writer::mkdir(const paths::pathname &path, bool) {
+void reg_dir_writer::mkdir(const pathname &path, bool) {
     TRY_OP_(mkdirat(fd, path.path().c_str(), S_IRWXU),
             throw file_error(errno, error::type_create_dir, true, path))
 }
 
-void reg_dir_writer::symlink(const paths::pathname &path, const paths::pathname &target, const struct stat *st) {
+void reg_dir_writer::symlink(const pathname &path, const pathname &target, const struct stat *st) {
     TRY_OP(symlinkat(target.path().c_str(), fd, path.path().c_str()))
 
     set_attributes(path, st);
@@ -126,7 +126,7 @@ void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct 
     }
 }
 
-void reg_dir_writer::set_attributes(const paths::pathname &path, const struct stat *st) {
+void reg_dir_writer::set_attributes(const pathname &path, const struct stat *st) {
     if (st) {
         if (!S_ISLNK(st->st_mode))
             with_skip_attrib([=] {
@@ -169,7 +169,7 @@ void with_skip_attrib(F op) {
     }
 }
 
-nuc::file_id reg_dir_writer::get_file_id(const paths::pathname &path) {
+nuc::file_id reg_dir_writer::get_file_id(const pathname &path) {
     struct stat st;
 
     if (!fstatat(fd, path.c_str(), &st, AT_SYMLINK_NOFOLLOW)) {
@@ -181,7 +181,7 @@ nuc::file_id reg_dir_writer::get_file_id(const paths::pathname &path) {
 
 /// Renaming Files
 
-void reg_dir_writer::rename(const paths::pathname &src, const paths::pathname &dest) {
+void reg_dir_writer::rename(const pathname &src, const pathname &dest) {
     bool replace = false;
 
     global_restart(restart("replace", [&] (const error &e, boost::any) {
@@ -205,7 +205,7 @@ void reg_dir_writer::rename(const paths::pathname &src, const paths::pathname &d
 
 /// Deleting Files
 
-void reg_dir_writer::remove(const paths::pathname &path, bool relative) {
+void reg_dir_writer::remove(const pathname &path, bool relative) {
     try_op([=] {
         if (unlinkat(fd, path.path().c_str(), AT_REMOVEDIR)) {
             int err = errno;

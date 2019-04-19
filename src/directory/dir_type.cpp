@@ -48,10 +48,10 @@ using namespace nuc;
  * system API.
  */
 class reg_dir_type : public dir_type {
-    paths::pathname m_path;
+    pathname m_path;
 
 public:
-    reg_dir_type(paths::pathname path) : m_path(path) {}
+    reg_dir_type(pathname path) : m_path(path) {}
 
     virtual std::shared_ptr<dir_type> copy() const {
         return std::make_shared<reg_dir_type>(*this);
@@ -61,7 +61,7 @@ public:
         return new dir_lister(m_path);
     }
 
-    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+    virtual tree_lister * create_tree_lister(const std::vector<pathname> &subpaths) const {
         return new dir_tree_lister(m_path, subpaths);
     }
 
@@ -77,17 +77,17 @@ public:
         return true;
     }
 
-    virtual paths::pathname path() const {
+    virtual pathname path() const {
         return m_path;
     }
 
-    virtual paths::pathname subpath() const {
+    virtual pathname subpath() const {
         return "";
     }
 
-    virtual void subpath(const paths::pathname &subpath) {}
+    virtual void subpath(const pathname &subpath) {}
 
-    virtual paths::pathname logical_path() const {
+    virtual pathname logical_path() const {
         return m_path;
     }
 };
@@ -98,11 +98,11 @@ public:
 class archive_dir_type : public dir_type {
     archive_plugin * plugin;
 
-    paths::pathname m_path;
-    paths::pathname m_subpath;
+    pathname m_path;
+    pathname m_subpath;
 
 public:
-    archive_dir_type(archive_plugin *plugin, paths::pathname path, paths::pathname subpath)
+    archive_dir_type(archive_plugin *plugin, pathname path, pathname subpath)
         : plugin(plugin), m_path(path), m_subpath(subpath) {}
 
     virtual std::shared_ptr<dir_type> copy() const {
@@ -114,7 +114,7 @@ public:
         return new archive_lister(plugin, m_path);
     }
 
-    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+    virtual tree_lister * create_tree_lister(const std::vector<pathname> &subpaths) const {
         plugin->load();
         return new archive_tree_lister(plugin, m_path, subpaths);
     }
@@ -131,19 +131,19 @@ public:
         return false;
     }
 
-    virtual paths::pathname path() const {
+    virtual pathname path() const {
         return m_path;
     }
 
-    virtual paths::pathname subpath() const {
+    virtual pathname subpath() const {
         return m_subpath;
     }
 
-    virtual void subpath(const paths::pathname &subpath) {
+    virtual void subpath(const pathname &subpath) {
         m_subpath = subpath;
     }
 
-    virtual paths::pathname logical_path() const {
+    virtual pathname logical_path() const {
         return m_path.append(m_subpath);
     }
 };
@@ -165,14 +165,14 @@ class sub_archive_dir_type : public dir_type {
     /**
      * Subpath to the archive within the containing archive.
      */
-    paths::pathname m_path;
+    pathname m_path;
     /**
      * Subpath within the archive.
      */
-    paths::pathname m_subpath;
+    pathname m_subpath;
 
 public:
-    sub_archive_dir_type(archive_plugin *plugin, std::shared_ptr<dir_type> parent_type, const paths::pathname &path, const paths::pathname &subpath)
+    sub_archive_dir_type(archive_plugin *plugin, std::shared_ptr<dir_type> parent_type, const pathname &path, const pathname &subpath)
         : plugin(plugin), parent_type(parent_type->copy()), m_path(path), m_subpath(subpath) {
         this->parent_type->subpath("");
     }
@@ -188,7 +188,7 @@ public:
         return new sub_archive_lister(parent_type->create_lister(), plugin, m_path);
     }
 
-    virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const {
+    virtual tree_lister * create_tree_lister(const std::vector<pathname> &subpaths) const {
         return new archive_tree_lister(create_lister(), subpaths);
     }
 
@@ -204,19 +204,19 @@ public:
         return false;
     }
 
-    virtual paths::pathname path() const {
+    virtual pathname path() const {
         return parent_type->path();
     }
 
-    virtual paths::pathname subpath() const {
+    virtual pathname subpath() const {
         return m_subpath;
     }
 
-    virtual void subpath(const paths::pathname &subpath) {
+    virtual void subpath(const pathname &subpath) {
         m_subpath = subpath;
     }
 
-    virtual paths::pathname logical_path() const {
+    virtual pathname logical_path() const {
         return parent_type->logical_path().append(m_path).append(m_subpath);
     }
 };
@@ -232,7 +232,7 @@ public:
  *
  * @return The canonicalized path.
  */
-static paths::pathname canonicalize(const paths::pathname &path) {
+static pathname canonicalize(const pathname &path) {
     return path.expand_tilde().canonicalize();
 }
 
@@ -244,7 +244,7 @@ static paths::pathname canonicalize(const paths::pathname &path) {
  * @return The name of the matching entry or an empty string
  *    if the directory @a dir could not be read.
  */
-static paths::string find_match_comp(const paths::string &dir, const paths::string &comp) {
+static pathname::string find_match_comp(const pathname::string &dir, const pathname::string &comp) {
     if (comp == "/")
         return comp;
 
@@ -252,7 +252,7 @@ static paths::string find_match_comp(const paths::string &dir, const paths::stri
         dir_lister lister(dir);
         lister::entry ent;
 
-        paths::string match;
+        pathname::string match;
 
         while (lister.read_entry(ent)) {
             if (comp == ent.name) {
@@ -285,18 +285,18 @@ static paths::string find_match_comp(const paths::string &dir, const paths::stri
  *    which can be read, the second value is the remainder of
  *    the path, which has not been case-canonicalized.
  */
-static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths::pathname &path) {
-    paths::pathname cpath;
+static std::pair<pathname, pathname> canonicalize_case(const pathname &path) {
+    pathname cpath;
     auto comps(path.components());
 
     for (auto it = comps.begin(), end = comps.end(); it != end; ++it) {
-        const paths::string &comp = *it;
+        const pathname::string &comp = *it;
 
-        paths::string can_comp = find_match_comp(cpath, comp);
+        pathname::string can_comp = find_match_comp(cpath, comp);
 
         // Directory could not be read
         if (can_comp.empty()) {
-            return std::make_pair(cpath, paths::pathname::from_components(std::vector<paths::string>(it, end), path.is_dir()));
+            return std::make_pair(cpath, pathname(std::vector<pathname::string>(it, end), path.is_dir()));
         }
 
         cpath = cpath.append(can_comp);
@@ -316,21 +316,21 @@ static std::pair<paths::pathname, paths::pathname> canonicalize_case(const paths
  *   of path which refers to an existing file and the second
  *   value is the remaining non-existent portion.
  */
-static std::pair<paths::string, paths::string> find_dir(const paths::string &path) {
-    paths::string sub_path = path;
-    size_t sep_index = paths::string::npos;
+static std::pair<pathname::string, pathname::string> find_dir(const pathname::string &path) {
+    pathname::string sub_path = path;
+    size_t sep_index = pathname::string::npos;
 
     while (!sub_path.empty() && access(sub_path.c_str(), F_OK)) {
         sep_index = sub_path.rfind('/', sep_index);
 
-        if (sep_index != paths::string::npos) {
+        if (sep_index != pathname::string::npos) {
             sub_path = path.substr(0, sep_index);
         }
     }
 
     return std::make_pair(
         !sub_path.empty() ? sub_path : "/",
-        sep_index != paths::string::npos ? path.substr(sep_index + 1, path.length() - sep_index) : paths::string()
+        sep_index != pathname::string::npos ? path.substr(sep_index + 1, path.length() - sep_index) : pathname::string()
     );
 }
 
@@ -341,7 +341,7 @@ static std::pair<paths::string, paths::string> find_dir(const paths::string &pat
  *
  * @return True if the file is a regular directory.
  */
-static bool is_reg_dir(const paths::string &path) {
+static bool is_reg_dir(const pathname::string &path) {
     struct stat st;
 
     return !stat(path.c_str(), &st) && S_ISDIR(st.st_mode);
@@ -368,7 +368,7 @@ static bool is_reg_dir(const paths::string &path) {
  *
  * @return dir_type object of the archive directory.
  */
-static std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const paths::pathname &dir);
+static std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const pathname &dir);
 
 /**
  * Searches the archive with type @a dtype for a regular file entry
@@ -381,10 +381,10 @@ static std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtyp
  *   file found and the second entry is the remaining components of
  *   the subpath, i.e. the subpath within the archive file.
  */
-static std::pair<paths::pathname, paths::pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const paths::pathname &dir);
+static std::pair<pathname, pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const pathname &dir);
 
 
-std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path) {
+std::shared_ptr<dir_type> dir_type::get(const pathname &path) {
     auto pair = canonicalize_case(canonicalize(path));
 
     if (!pair.second.empty() || !is_reg_dir(pair.first)) {
@@ -396,8 +396,8 @@ std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path) {
     return std::make_shared<reg_dir_type>(pair.first.append(pair.second));
 }
 
-std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const paths::pathname &dir) {
-    paths::pathname file, subpath;
+std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, const pathname &dir) {
+    pathname file, subpath;
 
     if (!dir.empty()) {
         std::tie(file, subpath) = find_archive_file(dtype, dir);
@@ -414,15 +414,15 @@ std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, cons
     return dtype;
 }
 
-std::pair<paths::pathname, paths::pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const paths::pathname &dir) {
+std::pair<pathname, pathname> find_archive_file(std::shared_ptr<dir_type> dtype, const pathname &dir) {
     // Longest subpath of dir that is actually in the archive.
-    paths::pathname subpath;
+    pathname subpath;
 
     std::unique_ptr<lister> listr(dtype->create_lister());
     lister::entry ent;
 
     while (listr->read_entry(ent)) {
-        paths::pathname name = ent.name;
+        pathname name = ent.name;
         name = name.canonicalize();
 
         if (dir == name) {
@@ -447,7 +447,7 @@ std::pair<paths::pathname, paths::pathname> find_archive_file(std::shared_ptr<di
 }
 
 
-std::shared_ptr<dir_type> dir_type::get(const paths::pathname &path, const dir_entry& ent) {
+std::shared_ptr<dir_type> dir_type::get(const pathname &path, const dir_entry& ent) {
     switch (ent.type()) {
     case dir_entry::type_dir:
         return std::make_shared<reg_dir_type>(path.append(ent.file_name()));
@@ -481,14 +481,14 @@ std::shared_ptr<dir_type> dir_type::get(std::shared_ptr<dir_type> dir, const nuc
 
 // Getting a directory writer object
 
-dir_writer * dir_type::get_writer(const paths::pathname &path) {
+dir_writer * dir_type::get_writer(const pathname &path) {
     return get(path)->create_writer();
 }
 
 
 // Querying Directory Type Properties
 
-dir_type::fs_type dir_type::on_same_fs(const paths::string &dir1, const paths::string &dir2) {
+dir_type::fs_type dir_type::on_same_fs(const pathname::string &dir1, const pathname::string &dir2) {
     auto path1 = find_dir(dir1).first;
     auto path2 = find_dir(dir2).first;
 
@@ -506,7 +506,7 @@ dir_type::fs_type dir_type::on_same_fs(const paths::string &dir1, const paths::s
     return fs_type_none;
 }
 
-paths::pathname dir_type::get_subpath(const paths::pathname &path) {
+pathname dir_type::get_subpath(const pathname &path) {
     return find_dir(path).second;
 }
 

@@ -140,8 +140,8 @@ namespace nuc {
          *
          * @return The destination path.
          */
-        Glib::ustring dest_path() const {
-            return dest_entry->get_text();
+        pathname dest_path() const {
+            return pathname(dest_entry->get_text());
         }
 
         /**

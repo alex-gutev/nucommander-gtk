@@ -35,7 +35,7 @@ namespace nuc {
         /**
          * The name of the file which triggered the error.
          */
-        paths::string file;
+        pathname::string file;
 
     public:
         using error::error;

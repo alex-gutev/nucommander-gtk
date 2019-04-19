@@ -362,7 +362,7 @@ namespace nuc {
              * Begins a get directory size operation for the directory
              * at path @a dir.
              */
-            void get_dir_size(const paths::pathname &dir);
+            void get_dir_size(const pathname &dir);
             /**
              * Called when the size of the directory has been obtained.
              */

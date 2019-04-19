@@ -70,7 +70,7 @@ namespace nuc {
          *
          * @return tree_lister object
          */
-        virtual tree_lister * create_tree_lister(const std::vector<paths::pathname> &subpaths) const = 0;
+        virtual tree_lister * create_tree_lister(const std::vector<pathname> &subpaths) const = 0;
 
         /**
          * Creates a directory tree suitable for the directory.
@@ -101,7 +101,7 @@ namespace nuc {
          *
          * @return pathname
          */
-        virtual paths::pathname path() const = 0;
+        virtual pathname path() const = 0;
 
         /**
          * Returns the subpath to the directory within its parent
@@ -113,7 +113,7 @@ namespace nuc {
          *
          * @return pathname
          */
-        virtual paths::pathname subpath() const = 0;
+        virtual pathname subpath() const = 0;
 
         /**
          * Sets the subpath to the directory within the parent virtual
@@ -121,14 +121,14 @@ namespace nuc {
          *
          * @param subpath The subpath to set.
          */
-        virtual void subpath(const paths::pathname &subpath) = 0;
+        virtual void subpath(const pathname &subpath) = 0;
 
         /**
          * Returns the logical path to the directory that is the path
          * returned by subpath() concatenated to the path returned by
          * path().
          */
-        virtual paths::pathname logical_path() const = 0;
+        virtual pathname logical_path() const = 0;
 
 
         /**
@@ -140,7 +140,7 @@ namespace nuc {
          *
          * @param path Path to the directory.
          */
-        static std::shared_ptr<dir_type> get(const paths::pathname &path);
+        static std::shared_ptr<dir_type> get(const pathname &path);
 
         /**
          * Determines the directory type of the entry @a ent within
@@ -151,7 +151,7 @@ namespace nuc {
          * @param path Path to the directory containing the entry.
          * @param ent  The entry within the directory @a path.
          */
-        static std::shared_ptr<dir_type> get(const paths::pathname &path, const dir_entry &ent);
+        static std::shared_ptr<dir_type> get(const pathname &path, const dir_entry &ent);
 
         /**
          * Determines the directory type of the entry @a ent contained
@@ -170,7 +170,7 @@ namespace nuc {
          *
          * @return The directory writer object.
          */
-        static dir_writer *get_writer(const paths::pathname &path);
+        static dir_writer *get_writer(const pathname &path);
 
         /**
          * Virtual file system type.
@@ -194,7 +194,7 @@ namespace nuc {
          *   returns the type of the file system (as an fs_type
          *   constant) otherwise returns fs_type_none.
          */
-        static fs_type on_same_fs(const paths::string &dir1, const paths::string &dir2);
+        static fs_type on_same_fs(const pathname::string &dir1, const pathname::string &dir2);
 
         /**
          * Retrieves the subpath component, within a virtual file
@@ -204,7 +204,7 @@ namespace nuc {
          * @param path The path.
          * @return The subpath component.
          */
-        static paths::pathname get_subpath(const paths::pathname &path);
+        static pathname get_subpath(const pathname &path);
     };
 }
 

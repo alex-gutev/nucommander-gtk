@@ -204,7 +204,7 @@ std::shared_ptr<file_list_controller> file_view::pop_file_list() {
 //// Signal Handlers
 
 void file_view::on_path_entry_activate() {
-    flist->path(path_entry->get_text());
+    flist->path(pathname(path_entry->get_text()));
     file_list_view->grab_focus();
 }
 
@@ -304,7 +304,7 @@ void file_view::connect_model_signals(const std::shared_ptr<list_controller> &li
     signals.select_row = list->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
 }
 
-void file_view::on_path_changed(const paths::pathname &path) {
+void file_view::on_path_changed(const pathname &path) {
     end_filter();
     entry_path(path);
 }
@@ -323,7 +323,7 @@ void file_view::select_row(Gtk::TreeRow row) {
 
 //// Changing the current path
 
-void file_view::path(const paths::pathname &path, bool move_to_old) {
+void file_view::path(const pathname &path, bool move_to_old) {
     end_filter();
 
     entry_path(path);

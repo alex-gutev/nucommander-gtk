@@ -220,7 +220,7 @@ namespace nuc {
         /**
          * Directory deleted signal type.
          */
-        typedef sigc::signal<void, paths::pathname> deleted_signal;
+        typedef sigc::signal<void, pathname> deleted_signal;
 
 
         /**
@@ -260,7 +260,7 @@ namespace nuc {
          *
          * @return The current path.
          */
-        paths::string path() {
+        pathname::string path() {
             return dtype->logical_path();
         }
 
@@ -273,7 +273,7 @@ namespace nuc {
          * @param path The path of the directory to read.
          * @param del The delegate object for the read operation.
          */
-        void read(const paths::pathname &path, std::shared_ptr<delegate> del);
+        void read(const pathname &path, std::shared_ptr<delegate> del);
 
         /**
          * Attempts to list the contents of the entry @a ent.
@@ -342,7 +342,7 @@ namespace nuc {
          * @return Pointer to the entry, 'nullptr' if no entry with
          *    name @a name found.
          */
-        dir_entry *get_entry(const paths::string &name) {
+        dir_entry *get_entry(const pathname::string &name) {
             return cur_tree->get_entry(name);
         }
 
@@ -356,7 +356,7 @@ namespace nuc {
          *    the first entry, the second iterator is the past the
          *    end iterator.
          */
-        dir_tree::entry_range get_entries(const paths::string &path) {
+        dir_tree::entry_range get_entries(const pathname::string &path) {
             return cur_tree->get_entries(path);
         }
 
@@ -375,7 +375,7 @@ namespace nuc {
          * @param fn Callback function of one argument, the full path
          *   to the unpacked file.
          */
-        task_queue::task_type access_file(const dir_entry &ent, std::function<void(const paths::pathname &)> fn);
+        task_queue::task_type access_file(const dir_entry &ent, std::function<void(const pathname &)> fn);
 
     private:
         /**
@@ -433,7 +433,7 @@ namespace nuc {
          *
          * @param del The delegate object for the read operation.
          */
-        void add_read_task(const paths::pathname &path, bool refresh, std::shared_ptr<delegate> del);
+        void add_read_task(const pathname &path, bool refresh, std::shared_ptr<delegate> del);
 
         /**
          * Adds a read task to the task queue.
@@ -461,7 +461,7 @@ namespace nuc {
          * @param tstate Read directory task state.
          * @param path  The path to read.
          */
-        void read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const paths::pathname &path);
+        void read_path(cancel_state &state, std::shared_ptr<read_dir_state> tstate, const pathname &path);
 
         /**
          * Reads the directory using the lister and dir_tree objects
@@ -528,7 +528,7 @@ namespace nuc {
          */
         struct read_subdir_state {
             /** Subpath to the subdirectory */
-            paths::pathname subpath;
+            pathname subpath;
 
             /** Operation Delegate */
             std::shared_ptr<delegate> m_delegate;
@@ -542,7 +542,7 @@ namespace nuc {
              * @param path Subdirectory subpath.
              * @param del The delegate object for the read operation.
              */
-            read_subdir_state(paths::pathname path, std::shared_ptr<delegate> del) : subpath(std::move(path)), m_delegate(del) {}
+            read_subdir_state(pathname path, std::shared_ptr<delegate> del) : subpath(std::move(path)), m_delegate(del) {}
 
             /* Disable copying */
             read_subdir_state(const read_subdir_state &) = delete;
@@ -556,7 +556,7 @@ namespace nuc {
          * @param subpath The subpath to read.
          * @param del The delegate object for the read operation.
          */
-        void add_read_subdir(const paths::pathname &subpath, std::shared_ptr<delegate> del);
+        void add_read_subdir(const pathname &subpath, std::shared_ptr<delegate> del);
 
         /**
          * Read subdirectory task.
@@ -639,17 +639,17 @@ namespace nuc {
          * Handler functions for the create, change, delete and rename
          * file events.
          */
-        void file_created(cancel_state &state, const paths::string &path);
-        void file_changed(cancel_state &state, const paths::string &path);
-        void file_deleted(cancel_state &state, const paths::string &path);
-        void file_renamed(cancel_state &state, const paths::string &src, const paths::string &dest);
+        void file_created(cancel_state &state, const pathname::string &path);
+        void file_changed(cancel_state &state, const pathname::string &path);
+        void file_deleted(cancel_state &state, const pathname::string &path);
+        void file_renamed(cancel_state &state, const pathname::string &src, const pathname::string &dest);
 
         /**
          * Removes an entry from the new directory tree (new_tree).
          *
          * @param subpath The subpath of the entry
          */
-        void remove_entry(const paths::string &subpath);
+        void remove_entry(const pathname::string &subpath);
 
         /**
          * Obtains the stat attributes of a file. First the stat
@@ -664,7 +664,7 @@ namespace nuc {
          * @return true if successful, false if both stat and lstat
          *         failed.
          */
-        static bool file_stat(const paths::string &path, struct stat *st);
+        static bool file_stat(const pathname::string &path, struct stat *st);
 
 
         /** Calling Delegate Methods */

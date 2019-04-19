@@ -48,7 +48,7 @@ namespace nuc {
          *
          * @param path Path to the directory.
          */
-        dir_lister(const paths::string &path);
+        dir_lister(const pathname::string &path);
 
         /**
          * Destructor. Closes the directory handle, if open.

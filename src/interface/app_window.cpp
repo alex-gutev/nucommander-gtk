@@ -122,7 +122,7 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
             add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));
         }
         else {
-            paths::pathname full_path = flist->path().append(ent->orig_subpath());
+            pathname full_path = flist->path().append(ent->orig_subpath());
             add_operation([=] (cancel_state &) {
                 open_file(full_path.c_str());
             });
@@ -329,7 +329,7 @@ void app_window::progress_fn::operator()(const nuc::progress_event &e) {
     }
 }
 
-void app_window::progress_fn::get_dir_size(const paths::pathname &dir) {
+void app_window::progress_fn::get_dir_size(const pathname &dir) {
     using namespace std::placeholders;
 
     dir_size_state = std::make_shared<cancel_state>();

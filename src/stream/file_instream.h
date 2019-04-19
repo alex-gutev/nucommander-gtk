@@ -37,7 +37,7 @@ namespace nuc {
         /**
          * Path to the file being read.
          */
-        paths::string path;
+        pathname::string path;
 
         /**
          * Default buffer size (size of the blocks).

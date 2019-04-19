@@ -48,7 +48,7 @@ namespace nuc {
          * @param plugin The plugin which reads the archive.
          * @param path Path to the archive file.
          */
-        archive_lister(archive_plugin *plugin, const paths::string &path);
+        archive_lister(archive_plugin *plugin, const pathname::string &path);
 
         /**
          * Constructs an archive lister, however does not open any

@@ -48,7 +48,7 @@ namespace nuc {
      *    the directory @a src_type, to the destination directory with
      *    writer @a dest.
      */
-    task_queue::task_type make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const paths::string &dest);
+    task_queue::task_type make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const pathname::string &dest);
 
     /**
      * Returns the subpaths of the entries which should be visited by
@@ -61,7 +61,7 @@ namespace nuc {
      *
      * @return Array of subpaths.
      */
-    std::vector<paths::pathname> lister_paths(const std::vector<dir_entry*> &entries);
+    std::vector<pathname> lister_paths(const std::vector<dir_entry*> &entries);
 
     /**
      * Function which returns the name of the file to which a file
@@ -72,7 +72,7 @@ namespace nuc {
      * @return The name of the file to which the original file should
      *   be copied.
      */
-    typedef std::function<paths::string(const paths::string &)> map_name_fn;
+    typedef std::function<pathname::string(const pathname::string &)> map_name_fn;
 
     /**
      * Determines whether the destination path is the path to the
@@ -87,7 +87,7 @@ namespace nuc {
      *   destination directory and the second element is the function
      *   which maps source file names to destination file names.
      */
-    std::pair<paths::string, map_name_fn> determine_dest_dir(const paths::pathname &dest, const std::vector<paths::pathname> &paths);
+    std::pair<pathname::string, map_name_fn> determine_dest_dir(const pathname &dest, const std::vector<pathname> &paths);
 
     /**
      * Copies the files returned by the tree lister @a lister to the
@@ -121,7 +121,7 @@ namespace nuc {
      *
      * @return The task.
      */
-    task_queue::task_type make_unpack_task(std::shared_ptr<dir_type> src_type, const paths::pathname &subpath, const std::function<void(const char *)> &callback);
+    task_queue::task_type make_unpack_task(std::shared_ptr<dir_type> src_type, const pathname &subpath, const std::function<void(const char *)> &callback);
 }
 
 #endif

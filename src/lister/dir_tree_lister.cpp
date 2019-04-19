@@ -28,11 +28,11 @@
 
 using namespace nuc;
 
-dir_tree_lister::dir_tree_lister(const paths::pathname &base, const std::vector<paths::pathname> &paths) {
+dir_tree_lister::dir_tree_lister(const pathname &base, const std::vector<pathname> &paths) {
     std::vector<std::string> full_paths;
     std::vector<const char *> cpaths;
 
-    for (const paths::pathname &path : paths) {
+    for (const pathname &path : paths) {
         full_paths.emplace_back(base.append(path));
         cpaths.push_back(full_paths.back().c_str());
     }
@@ -54,7 +54,7 @@ dir_tree_lister::~dir_tree_lister() {
 }
 
 void dir_tree_lister::list_entries(const list_callback &fn) {
-    paths::pathname current_dir;
+    pathname current_dir;
     lister::entry ent;
 
     add_list_callback(fn);
@@ -63,8 +63,8 @@ void dir_tree_lister::list_entries(const list_callback &fn) {
         if (last_ent->fts_info == FTS_ERR || last_ent->fts_info == FTS_DNR)
             raise_error(last_ent->fts_errno);
 
-        paths::string name = last_ent->fts_namelen ? last_ent->fts_name : paths::pathname(last_ent->fts_path).basename();
-        paths::string path = last_ent->fts_info == FTS_DP ? current_dir : current_dir.append(name);
+        pathname::string name = last_ent->fts_namelen ? last_ent->fts_name : pathname(last_ent->fts_path).basename();
+        pathname::string path = last_ent->fts_info == FTS_DP ? current_dir : current_dir.append(name);
 
         ent.type = get_type(last_ent);
         ent.name = path.c_str();
@@ -88,7 +88,7 @@ void dir_tree_lister::list_entries(const list_callback &fn) {
     }
 }
 
-paths::pathname dir_tree_lister::set_dir(FTSENT *last_ent, const paths::string &name, paths::pathname current_dir) {
+pathname dir_tree_lister::set_dir(FTSENT *last_ent, const pathname::string &name, pathname current_dir) {
     switch (last_ent->fts_info) {
     case FTS_D:
         return current_dir.append(name);

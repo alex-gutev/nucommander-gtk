@@ -25,21 +25,21 @@
 #include <pwd.h>
 
 
-using namespace nuc::paths;
-
-pathname pathname::from_components(const std::vector<string> &comps, bool is_dir) {
-    pathname path;
-
-    for (const string &comp : comps) {
-        std::move(path).append(comp);
-    }
-
-    path.ensure_trail_slash(is_dir);
-
-    return path;
+nuc::pathname::pathname(string path) : m_path(std::move(path)) {}
+nuc::pathname::pathname(string path, bool is_dir) : m_path(std::move(path)) {
+    ensure_trail_slash(is_dir);
 }
 
-void pathname::ensure_trail_slash(bool is_dir) {
+nuc::pathname::pathname(const std::vector<string> &components, bool is_dir) {
+    for (const string &comp : components) {
+        append_component(comp);
+    }
+
+    ensure_trail_slash(is_dir);
+}
+
+
+void nuc::pathname::ensure_trail_slash(bool is_dir) {
     if (m_path.size()) {
         if (is_dir && m_path.back() != '/')
             m_path.push_back('/');
@@ -48,54 +48,60 @@ void pathname::ensure_trail_slash(bool is_dir) {
     }
 }
 
+void nuc::pathname::append_component(const string &component) {
+    if (m_path.size() && !is_dir())
+        m_path.push_back('/');
 
-bool pathname::is_dir() const {
+    m_path.append(component);
+}
+
+
+bool nuc::pathname::is_dir() const {
     return m_path.size() && m_path.back() == '/';
 }
 
-std::vector<string> pathname::components() const {
+std::vector<nuc::pathname::string> nuc::pathname::components() const {
     std::vector<string> components;
 
-    size_t pos = m_path.find('/');
+    if (!empty()) {
+        size_t pos = m_path.find('/');
 
-    if (pos == 0) {
-        components.push_back("/");
-    }
-    else {
-        components.push_back(m_path.substr(0, pos));
-    }
-
-    while (pos < m_path.length() - 1) {
-        pos++;
-
-        size_t next_pos = m_path.find('/', pos);
-        size_t count = next_pos - pos;
-
-        if (count) {
-            components.push_back(m_path.substr(pos, count));
+        if (pos == 0) {
+            components.push_back("/");
+        }
+        else {
+            components.push_back(m_path.substr(0, pos));
         }
 
-        pos = next_pos;
+        while (pos < m_path.length() - 1) {
+            pos++;
+
+            size_t next_pos = m_path.find('/', pos);
+            size_t count = next_pos - pos;
+
+            if (count) {
+                components.push_back(m_path.substr(pos, count));
+            }
+
+            pos = next_pos;
+        }
     }
 
     return components;
 }
 
 
-pathname& pathname::append(const nuc::paths::pathname &path) && {
-    if (m_path.size() && !is_dir())
-        m_path.push_back('/');
-
-    m_path.append(path.m_path);
+nuc::pathname& nuc::pathname::append(const nuc::pathname &path) && {
+    append_component(path.m_path);
     return *this;
 }
 
-pathname pathname::append(const nuc::paths::pathname &path) const & {
+nuc::pathname nuc::pathname::append(const nuc::pathname &path) const & {
     return pathname(*this).append(path);
 }
 
 
-pathname& pathname::remove_last_component() && {
+nuc::pathname& nuc::pathname::remove_last_component() && {
     if (m_path.size() > 1) {
         bool dir = is_dir();
         size_t pos = m_path.rfind('/', m_path.size() - (dir ? 2 : 0));
@@ -117,12 +123,12 @@ pathname& pathname::remove_last_component() && {
     return *this;
 }
 
-pathname pathname::remove_last_component() const & {
+nuc::pathname nuc::pathname::remove_last_component() const & {
     return pathname(*this).remove_last_component();
 }
 
 
-pathname& pathname::merge(const nuc::paths::pathname &path) && {
+nuc::pathname& nuc::pathname::merge(const nuc::pathname &path) && {
     if (path.is_relative()) {
         if (!is_dir())
             *this = remove_last_component();
@@ -136,12 +142,12 @@ pathname& pathname::merge(const nuc::paths::pathname &path) && {
     return *this;
 }
 
-pathname pathname::merge(const nuc::paths::pathname &path) const & {
+nuc::pathname nuc::pathname::merge(const nuc::pathname &path) const & {
     return pathname(*this).merge(path);
 }
 
 
-pathname& pathname::canonicalize(bool is_dir) && {
+nuc::pathname& nuc::pathname::canonicalize(bool is_dir) && {
     std::vector<string> new_comps;
 
     for (string &comp : components()) {
@@ -160,17 +166,17 @@ pathname& pathname::canonicalize(bool is_dir) && {
         }
     }
 
-    m_path = from_components(new_comps, is_dir).m_path;
+    m_path = pathname(new_comps, is_dir).m_path;
 
     return *this;
 }
 
-pathname pathname::canonicalize(bool is_dir) const & {
+nuc::pathname nuc::pathname::canonicalize(bool is_dir) const & {
     return pathname(*this).canonicalize(is_dir);
 }
 
 
-pathname pathname::expand_tilde() const {
+nuc::pathname nuc::pathname::expand_tilde() const {
     if (!m_path.empty() && m_path.front() == '~') {
         size_t pos = m_path.find_first_of('/');
         const string &tilde = m_path.substr(0, pos);
@@ -185,7 +191,7 @@ pathname pathname::expand_tilde() const {
             }
         }
         else if (struct passwd *pw = getpwnam(tilde.substr(1).c_str())) {
-                return home = pw->pw_dir;
+            return pathname(pw->pw_dir);
         }
 
         if (home) {
@@ -197,7 +203,7 @@ pathname pathname::expand_tilde() const {
 }
 
 
-string pathname::basename() const {
+nuc::pathname::string nuc::pathname::basename() const {
     if (m_path.length()) {
         // If path ends in slash search from previous character
         size_t end = m_path.length() - (is_dir() ? 2 : 0);
@@ -219,25 +225,25 @@ string pathname::basename() const {
  * character is at the beginning or end of the string, string npos is
  * returned.
  */
-static size_t extension_offset(const nuc::paths::string &str) {
+static size_t extension_offset(const nuc::pathname::string &str) {
     size_t pos = str.rfind('.');
 
-    return pos && pos != (str.length() - 1) ? pos : string::npos;
+    return pos && pos != (str.length() - 1) ? pos : nuc::pathname::string::npos;
 }
 
-string pathname::filename() const {
+nuc::pathname::string nuc::pathname::filename() const {
     string name = basename();
     return name.substr(0, extension_offset(name));
 }
 
-string pathname::extension() const {
+nuc::pathname::string nuc::pathname::extension() const {
     string name = basename();
     size_t pos = extension_offset(name);
 
     return pos != string::npos ? name.substr(pos + 1) : string();
 }
 
-size_t pathname::basename_offset() const {
+size_t nuc::pathname::basename_offset() const {
     // If path ends in slash search from previous character
     size_t end = m_path.length() - (is_dir() ? 2 : 0);
     // Find last slash
@@ -247,16 +253,16 @@ size_t pathname::basename_offset() const {
 }
 
 
-bool pathname::is_root() const {
+bool nuc::pathname::is_root() const {
     return m_path == "/";
 }
 
-bool pathname::is_relative() const {
+bool nuc::pathname::is_relative() const {
     return m_path.empty() || (m_path.front() != '/' && m_path.front() != '~');
 }
 
 
-bool pathname::is_child_of(const nuc::paths::pathname &parent) const {
+bool nuc::pathname::is_child_of(const nuc::pathname &parent) const {
     if (is_subpath(parent)) {
         size_t offset = m_path.rfind('/', m_path.size() - (is_dir() ? 2 : 0));
 
@@ -269,7 +275,7 @@ bool pathname::is_child_of(const nuc::paths::pathname &parent) const {
     return false;
 }
 
-bool pathname::is_subpath(const nuc::paths::pathname &parent, bool check_dir) const {
+bool nuc::pathname::is_subpath(const nuc::pathname &parent, bool check_dir) const {
     if (parent.empty()) return true;
     if (parent.path().size() >= m_path.size()) return false;
 
@@ -284,12 +290,12 @@ bool pathname::is_subpath(const nuc::paths::pathname &parent, bool check_dir) co
     return false;
 }
 
-bool pathname::has_dirs() const {
+bool nuc::pathname::has_dirs() const {
     return m_path.find('/') != string::npos;
 }
 
 
-size_t pathname::subpath_offset(const std::set<paths::pathname> &paths, const nuc::paths::pathname &path) {
+size_t nuc::pathname::subpath_offset(const std::set<pathname> &paths, const nuc::pathname &path) {
     // Iterator to first path not less than path i.e. either equal to
     // path or the first path which is not a parent of path
     auto it = paths.lower_bound(path);

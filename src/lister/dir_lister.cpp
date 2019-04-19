@@ -31,7 +31,7 @@
 
 using namespace nuc;
 
-dir_lister::dir_lister(const paths::string &path) {
+dir_lister::dir_lister(const pathname::string &path) {
     if (!(dp = opendir(path.c_str()))) {
         raise_error(errno);
     }

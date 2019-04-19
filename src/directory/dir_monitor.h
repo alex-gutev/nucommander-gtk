@@ -106,12 +106,12 @@ namespace nuc {
              * For rename events, this contains the original file
              * name.
              */
-            paths::string file;
+            pathname::string file;
             /**
              * Used only in rename events. The new file name of the
              * renamed file.
              */
-            paths::string other_file;
+            pathname::string other_file;
 
         public:
 
@@ -135,7 +135,7 @@ namespace nuc {
              * event. For rename events (FILE_RENAMED), this is the
              * original file name.
              */
-            const paths::string &src() const {
+            const pathname::string &src() const {
                 assert(m_type != EVENTS_BEGIN && m_type != EVENTS_END);
                 return file;
             }
@@ -143,7 +143,7 @@ namespace nuc {
              * Returns the new file name of the renamed file. Should
              * only be used when the event is FILE_RENAMED.
              */
-            const paths::string &dest() const {
+            const pathname::string &dest() const {
                 assert(m_type == FILE_RENAMED);
                 return other_file;
             }
@@ -175,7 +175,7 @@ namespace nuc {
          *
          * @return Returns true if the monitoring began successfully.
          */
-        bool monitor_dir(const paths::string &path, bool paused = true, bool is_dir = true);
+        bool monitor_dir(const pathname::string &path, bool paused = true, bool is_dir = true);
 
         /**
          * Cancels the monitor, if the monitor is paused all queued
@@ -277,7 +277,7 @@ namespace nuc {
         /**
          * Calls the event signal handler.
          */
-        void emit_event(event_type type, paths::string file = paths::string(), paths::string other_file = paths::string());
+        void emit_event(event_type type, pathname::string file = pathname::string(), pathname::string other_file = pathname::string());
     };
 }
 

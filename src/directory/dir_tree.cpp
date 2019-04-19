@@ -26,10 +26,10 @@ dir_entry* dir_tree::add_entry(const lister::entry &ent, const struct stat &st) 
 }
 
 dir_entry* dir_tree::add_entry(dir_entry ent) {
-    paths::string key = ent.subpath();
+    pathname::string key = ent.subpath();
 
     dir_entry &dir_ent = map.emplace(key, std::move(ent))->second;
-    
+
     return &dir_ent;
 }
 

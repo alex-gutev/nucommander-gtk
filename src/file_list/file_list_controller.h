@@ -71,7 +71,7 @@ namespace nuc {
          *
          * @param path The new path.
          */
-        typedef sigc::signal<void, const paths::pathname &> signal_path_type;
+        typedef sigc::signal<void, const pathname &> signal_path_type;
 
 
         /**
@@ -95,14 +95,14 @@ namespace nuc {
          * @param move_to_old If true the selection is moved to the
          *   entry with the same names as the current directory.
          */
-        void path(const paths::pathname &path, bool move_to_old = false);
+        void path(const pathname &path, bool move_to_old = false);
 
         /**
          * Returns the current path.
          *
          * @return The current path.
          */
-        const paths::pathname &path() const {
+        const pathname &path() const {
             return cur_path;
         }
 
@@ -175,7 +175,7 @@ namespace nuc {
         /**
          * The current path.
          */
-        paths::pathname cur_path;
+        pathname cur_path;
 
         /**
          * Path changed signal.
@@ -312,9 +312,9 @@ namespace nuc {
          */
         struct move_up_delegate : public read_delegate {
             /** Path to the directory being read */
-            paths::pathname path;
+            pathname path;
 
-            move_up_delegate(std::weak_ptr<file_list_controller> flist, paths::pathname path)
+            move_up_delegate(std::weak_ptr<file_list_controller> flist, pathname path)
                 : read_delegate(flist), path(path) {}
 
             virtual void finish(bool cancelled, int error);
@@ -336,7 +336,7 @@ namespace nuc {
         /**
          * Directory deleted signal handler.
          */
-        void vfs_dir_deleted(paths::pathname new_path);
+        void vfs_dir_deleted(pathname new_path);
 
 
         /* Reading new directories */
@@ -349,7 +349,7 @@ namespace nuc {
          *
          * @return The expanded path.
          */
-        paths::pathname expand_path(const paths::pathname &path);
+        pathname expand_path(const pathname &path);
 
         /**
          * Performs certain tasks which need to be performed prior to
@@ -379,7 +379,7 @@ namespace nuc {
          * @param path The path of the directory whose parent
          *    directory to read.
          */
-        void read_parent_dir(paths::pathname path);
+        void read_parent_dir(pathname path);
 
 
         /* Setting/Resetting the treeview model */
@@ -414,7 +414,7 @@ namespace nuc {
          * @param new_list The list to add the entry to.
          * @param new_path The path of the directory being read.
          */
-        void add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const paths::pathname &new_path);
+        void add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const pathname &new_path);
 
         /**
          * Sets the sort column (and sort order) of @a new_list to be
@@ -478,7 +478,7 @@ namespace nuc {
          * Selects the first entry named 'name'. If there is no such
          * entry, selects the row at min(row, number of rows - 1).
          */
-        void select_named(const paths::string &name, index_type row = 0);
+        void select_named(const pathname::string &name, index_type row = 0);
 
 
         /* Marking */
