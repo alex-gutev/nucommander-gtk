@@ -33,6 +33,21 @@ dir_entry* dir_tree::add_entry(dir_entry ent) {
     return &dir_ent;
 }
 
+
+dir_entry *dir_tree::get_entry(const pathname::string &name) {
+    auto it = map.find(name);
+
+    if (it != map.end()) {
+        return &it->second;
+    }
+
+    return nullptr;
+}
+
+dir_tree::entry_range dir_tree::get_entries(const pathname::string &name) {
+    return map.equal_range(name);
+}
+
 // Local Variables:
 // indent-tabs-mode: nil
 // End:

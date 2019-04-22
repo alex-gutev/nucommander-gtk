@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_TREE_H
-#define NUC_DIR_TREE_H
+#ifndef NUC_DIRECTORY_DIR_TREE_H
+#define NUC_DIRECTORY_DIR_TREE_H
 
 #include "types.h"
 #include "lister/lister.h"
@@ -69,13 +69,15 @@ namespace nuc {
          */
         typedef file_map<dir_entry*> dir_map;
 
+
         /**
          * Destructor.
          *
-         * Virtual as the class is intended to be inherited from and
-         * used polymorphically.
+         * Virtual as the class is intended to be subclassed and used
+         * polymorphically.
          */
         virtual ~dir_tree() = default;
+
 
         /**
          * Adds an entry to the tree. The 'dir_entry' object is
@@ -103,20 +105,22 @@ namespace nuc {
          */
         virtual dir_entry* add_entry(dir_entry ent);
 
+
         /**
-         * Returns the current subdirectory of the tree. The empty
-         * string indicates the base directory.
+         * Returns the current subdirectory of the tree. An empty
+         * pathname indicates the base directory.
          *
          * @return The current subdirectory.
          */
         virtual pathname subpath() const {
-            // The empty string cannot be a valid directory name.
-            return "";
+            // The empty pathname cannot be a valid directory name.
+            return pathname();
         }
 
         /**
-         * Sets the tree's subdirectory, without checking whether it
-         * exists.
+         * Sets the tree's subdirectory.
+         *
+         * Does not check whether it exists.
          *
          * @param path The new subpath.
          */
@@ -136,6 +140,7 @@ namespace nuc {
             return nullptr;
         }
 
+
         /**
          * @return True if the entry @a ent is a subdirectory of the
          *    tree.
@@ -152,64 +157,47 @@ namespace nuc {
             return true;
         }
 
+
         /**
          * Retrieves the first entry with name @name in the current
          * subdirectory.
          *
-         * @param name The name to the entry.
+         * @param name The name of the entry.
          *
          * @return Pointer to the entry, 'nullptr' if the entry was
          *    not found.
          */
-        virtual dir_entry *get_entry(const pathname::string &name) {
-            auto it = map.find(name);
-
-            if (it != map.end()) {
-                return &it->second;
-            }
-
-            return nullptr;
-        }
+        virtual dir_entry *get_entry(const pathname::string &name);
 
         /**
          * Returns all entries with name @name in the current
          * subdirectory.
          *
-         * @param name The name of the entries.
+         * @param name The name of the entry/ies.
          *
          * @return A pair of iterators where the first iterator is the
          *   iterator to the first entry and the second iterator is
          *   the past the end iterator.
          */
-        virtual entry_range get_entries(const pathname::string &name) {
-            return map.equal_range(name);
-        }
+        virtual entry_range get_entries(const pathname::string &name);
 
         /**
+         * Returns the directory index.
+         *
+         * The index is a map where the each key is the canonicalized
+         * subpath to an entry in the tree and the corresponding value
+         * is the dir_entry* object.
+         *
          * @return A reference to the map (index) containing all
          *    entries in the directory tree.
          */
         auto index() -> decltype(map) & {
             return map;
         }
-
-        /**
-         * @return Iterator to the first entry in the directory tree.
-         */
-        auto begin() -> decltype(map.begin()) {
-            return map.begin();
-        }
-
-        /**
-         * @return Past-the-end iterator.
-         */
-        auto end() -> decltype(map.end()) {
-            return map.end();
-        }
     };
 }
 
-#endif // NUC_DIR_TREE_H
+#endif // NUC_DIRECTORY_DIR_TREE_H
 
 // Local Variables:
 // mode: c++

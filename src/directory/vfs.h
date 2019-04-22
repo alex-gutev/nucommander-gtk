@@ -327,13 +327,6 @@ namespace nuc {
         }
 
         /**
-         * Calls the function function f on each entry (passed as the
-         * first parameter).
-         */
-        template <typename F>
-        void for_each(F f);
-
-        /**
          * Returns the first entry with name @a name in the current
          * subdirectory.
          *
@@ -689,22 +682,6 @@ namespace nuc {
 template <typename F>
 void nuc::vfs::callback_changed(F &&fn) {
     cb_changed = std::forward<F>(fn);
-}
-
-template <typename F>
-void nuc::vfs::for_each(F f) {
-    if (cur_tree->at_basedir()) {
-        for (auto &ent_pair : *cur_tree) {
-            f(ent_pair.second);
-        }
-    }
-    else {
-        auto dir = cur_tree->subpath_dir(cur_tree->subpath());
-
-        for (auto &ent_pair : *dir) {
-            f(*ent_pair.second);
-        }
-    }
 }
 
 #endif // NUC_VFS_H

@@ -416,7 +416,7 @@ void vfs::end_changes(cancel_state &state, std::shared_ptr<delegate> del) {
     state.no_cancel([&] {
         del->begin();
 
-        for (auto &ent : *new_tree) {
+        for (auto &ent : new_tree->index()) {
             del->new_entry(ent.second);
         }
 

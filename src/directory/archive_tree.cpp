@@ -24,6 +24,29 @@
 
 using namespace nuc;
 
+dir_tree::dir_map const * archive_tree::subpath_dir(const pathname &path) const {
+    auto it = dirs.find(path);
+
+    if (it != dirs.end()) {
+        return &(it->second);
+    }
+
+    return nullptr;
+}
+
+bool archive_tree::is_subdir(const dir_entry& ent) const {
+    return ent.type() == dir_entry::type_dir && dirs.count(ent.subpath());
+}
+
+dir_entry *archive_tree::get_entry(const pathname::string &name) {
+    return dir_tree::get_entry(m_subpath.append(name).canonicalize());
+}
+
+dir_tree::entry_range archive_tree::get_entries(const pathname::string &name) {
+    return dir_tree::get_entries(m_subpath.append(name).canonicalize());
+}
+
+
 dir_entry *archive_tree::add_entry(dir_entry ent) {
     dir_entry * dir_ent = ent.type() == dir_entry::type_dir ?
         add_dir_entry(std::move(ent)) : dir_tree::add_entry(std::move(ent));
@@ -116,28 +139,6 @@ dir_entry &archive_tree::make_dir_ent(const pathname &path) {
     dir_entry &ent = map.emplace(path, dir_entry(path, dir_entry::type_dir))->second;
 
     return ent;
-}
-
-dir_tree::dir_map const * archive_tree::subpath_dir(const pathname &path) const {
-    auto it = dirs.find(path);
-
-    if (it != dirs.end()) {
-        return &(it->second);
-    }
-
-    return nullptr;
-}
-
-bool archive_tree::is_subdir(const dir_entry& ent) const {
-    return ent.type() == dir_entry::type_dir && dirs.count(ent.subpath());
-}
-
-dir_entry *archive_tree::get_entry(const pathname::string &name) {
-    return dir_tree::get_entry(m_subpath.append(name).canonicalize());
-}
-
-dir_tree::entry_range archive_tree::get_entries(const pathname::string &name) {
-    return dir_tree::get_entries(m_subpath.append(name).canonicalize());
 }
 
 

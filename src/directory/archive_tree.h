@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_TREE_H
-#define NUC_ARCHIVE_TREE_H
+#ifndef NUC_DIRECTORY_ARCHIVE_TREE_H
+#define NUC_DIRECTORY_ARCHIVE_TREE_H
 
 #include <unordered_map>
 
@@ -32,6 +32,45 @@ namespace nuc {
      * may contain multiple subdirectories and duplicate files.
      */
 	class archive_tree : public dir_tree {
+	public:
+        /**
+         * Constructs an archive directory tree with the subpath set
+         * to the base directory.
+         */
+        archive_tree() = default;
+
+        /**
+         * Constructs an archive directory tree with a particular
+         * subpath.
+         *
+         * @param subpath The subpath
+         */
+        archive_tree(pathname subpath) : m_subpath(std::move(subpath)) {}
+
+
+        /* Method overrides */
+
+        virtual dir_entry* add_entry(dir_entry ent);
+
+        virtual pathname subpath() const {
+            return m_subpath;
+        }
+        virtual void subpath(pathname path) {
+            m_subpath = std::move(path);
+        }
+
+        virtual dir_map const * subpath_dir(const pathname &path) const;
+
+        virtual bool is_subdir(const dir_entry &ent) const;
+
+        virtual bool at_basedir() const {
+            return m_subpath.empty();
+        }
+
+        virtual dir_entry *get_entry(const pathname::string &name);
+        virtual entry_range get_entries(const pathname::string &name);
+
+    private:
         /**
          * Directory map.
          *
@@ -46,6 +85,7 @@ namespace nuc {
          * the base directory.
          */
         pathname m_subpath;
+
 
         /**
          * Extracts and creates the intermediate directory components
@@ -106,48 +146,10 @@ namespace nuc {
          *    the map already contained the entry.
          */
         static bool add_to_map(file_map<dir_entry *> &map, const pathname::string &name, dir_entry *ent);
-
-	public:
-
-        /**
-         * Constructs an archive directory tree with the subpath set
-         * to the base directory.
-         */
-        archive_tree() = default;
-
-        /**
-         * Constructs an archive directory tree with a particular
-         * subpath.
-         *
-         * @param subpath The subpath
-         */
-        archive_tree(pathname subpath) : m_subpath(std::move(subpath)) {}
-
-        /* Method overrides */
-
-        virtual dir_entry* add_entry(dir_entry ent);
-
-        virtual pathname subpath() const {
-            return m_subpath;
-        }
-        virtual void subpath(pathname path) {
-            m_subpath = std::move(path);
-        }
-
-        virtual dir_map const * subpath_dir(const pathname &path) const;
-
-        virtual bool is_subdir(const dir_entry &ent) const;
-
-        virtual bool at_basedir() const {
-            return m_subpath.empty();
-        }
-
-        virtual dir_entry *get_entry(const pathname::string &name);
-        virtual entry_range get_entries(const pathname::string &name);
 	};
 }
 
-#endif // NUC_ARCHIVE_TREE_H
+#endif // NUC_DIRECTORY_ARCHIVE_TREE_H
 
 // Local Variables:
 // mode: c++
