@@ -34,13 +34,41 @@ namespace nuc {
      * Custom command implemented in a Lua script.
      */
     class lua_command : public command {
+    public:
+        /**
+         * Lua Error Exception.
+         */
+        class error : public nuc::error {
+        public:
+            template <typename T>
+            error(T&& desc) : nuc::error(-1, type_general, true, std::forward<T>(desc)) {}
+        };
+
+        /**
+         * Create a Lua command functor with a given path and
+         * description.
+         *
+         * @param path Path to the Lua script file.
+         * @param desc Command description.
+         */
+        lua_command(std::string path, std::string desc = "") : desc(std::move(desc)), path(std::move(path)) {}
+
+        virtual ~lua_command();
+
+        virtual void run(app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg);
+
+        virtual std::string description() {
+            return desc;
+        }
+
+    private:
         /**
          * Lua Interpreter State.
          */
         lua_State *state = nullptr;
 
         /**
-         * Command Description - Pulled from GSettings.
+         * Command Description.
          */
         std::string desc;
         /**
@@ -68,34 +96,6 @@ namespace nuc {
          * retrieved from the Lua stack.
          */
         void raise_lua_error();
-
-    public:
-
-        /**
-         * Lua Error Exception.
-         */
-        class error : public nuc::error {
-        public:
-            template <typename T>
-            error(T&& desc) : nuc::error(-1, type_general, true, std::forward<T>(desc)) {}
-        };
-
-        /**
-         * Create a Lua command functor with a given path and
-         * description.
-         *
-         * @param path Path to the Lua script file.
-         * @param desc Command description.
-         */
-        lua_command(std::string path, std::string desc = "") : desc(std::move(desc)), path(std::move(path)) {}
-
-        virtual ~lua_command();
-
-        virtual void run(app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg);
-
-        virtual std::string description() {
-            return desc;
-        }
     };
 }  // nuc
 
