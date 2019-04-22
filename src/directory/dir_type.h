@@ -50,13 +50,6 @@ namespace nuc {
         virtual ~dir_type() noexcept = default;
 
         /**
-         * Returns a copy of the directory type.
-         *
-         * @return shared_ptr to dir_type object
-         */
-        virtual std::shared_ptr<dir_type> copy() const = 0;
-
-        /**
          * Creates a lister for the directory.
          *
          * @return lister object
@@ -92,7 +85,7 @@ namespace nuc {
          *
          * @return boolean
          */
-        virtual bool is_dir() const = 0;
+        virtual bool is_dir() const noexcept = 0;
 
         /**
          * Returns the path to the directory file. If the directory is
@@ -104,32 +97,22 @@ namespace nuc {
         virtual pathname path() const = 0;
 
         /**
-         * Returns the subpath to the directory within its parent
-         * directory.
-         *
-         * A non-empty string is only returned if the directory is
-         * contained within another virtual file system such as an
-         * archive.
-         *
-         * @return pathname
-         */
-        virtual pathname subpath() const = 0;
-
-        /**
-         * Sets the subpath to the directory within the parent virtual
-         * file system.
-         *
-         * @param subpath The subpath to set.
-         */
-        virtual void subpath(const pathname &subpath) = 0;
-
-        /**
          * Returns the logical path to the directory that is the path
          * returned by subpath() concatenated to the path returned by
          * path().
          */
         virtual pathname logical_path() const = 0;
 
+        /**
+         * Returns a new dir_type object which is a copy of the
+         * current dir_type object, however with the subpath changed
+         * to @a subpath.
+         *
+         * @param subpath The subpath of the new dir_type object.
+         *
+         * @return The new dir_type object.
+         */
+        virtual std::shared_ptr<dir_type> change_subpath(const pathname &subpath) const = 0;
 
         /**
          * Determines the directory type of the directory @a path.

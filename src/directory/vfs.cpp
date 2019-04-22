@@ -124,7 +124,7 @@ void vfs::add_refresh_task() {
     using namespace std::placeholders;
 
     if (auto del = cb_changed())
-        add_read_task(dtype->copy(), true, del);
+        add_read_task(dtype, true, del);
 }
 
 
@@ -186,7 +186,7 @@ void vfs::finish_read_subdir(bool cancelled, std::shared_ptr<read_subdir_state> 
         int error = tstate->error;
 
         if (!cancelled && !error) {
-            self->dtype->subpath(tstate->subpath);
+            self->dtype = self->dtype->change_subpath(tstate->subpath);
             self->cur_tree->subpath(tstate->subpath);
         }
 

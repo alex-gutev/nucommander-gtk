@@ -53,10 +53,6 @@ class reg_dir_type : public dir_type {
 public:
     reg_dir_type(pathname path) : m_path(path) {}
 
-    virtual std::shared_ptr<dir_type> copy() const {
-        return std::make_shared<reg_dir_type>(*this);
-    }
-
     virtual lister * create_lister() const {
         return new dir_lister(m_path);
     }
@@ -73,7 +69,7 @@ public:
         return new reg_dir_writer(m_path.path().c_str());
     }
 
-    virtual bool is_dir() const {
+    virtual bool is_dir() const noexcept {
         return true;
     }
 
@@ -81,14 +77,17 @@ public:
         return m_path;
     }
 
-    virtual pathname subpath() const {
-        return "";
-    }
-
     virtual void subpath(const pathname &subpath) {}
 
     virtual pathname logical_path() const {
         return m_path;
+    }
+
+    virtual std::shared_ptr<dir_type> change_subpath(const pathname &pathname) const {
+        // This method should never be called
+        assert(false);
+
+        return nullptr;
     }
 };
 
@@ -104,10 +103,6 @@ class archive_dir_type : public dir_type {
 public:
     archive_dir_type(archive_plugin *plugin, pathname path, pathname subpath)
         : plugin(plugin), m_path(path), m_subpath(subpath) {}
-
-    virtual std::shared_ptr<dir_type> copy() const {
-        return std::make_shared<archive_dir_type>(*this);
-    }
 
     virtual lister * create_lister() const {
         plugin->load();
@@ -127,7 +122,7 @@ public:
         return new archive_dir_writer(m_path.path().c_str(), plugin, m_subpath);
     }
 
-    virtual bool is_dir() const {
+    virtual bool is_dir() const noexcept {
         return false;
     }
 
@@ -139,12 +134,15 @@ public:
         return m_subpath;
     }
 
-    virtual void subpath(const pathname &subpath) {
-        m_subpath = subpath;
-    }
-
     virtual pathname logical_path() const {
         return m_path.append(m_subpath);
+    }
+
+    virtual std::shared_ptr<dir_type> change_subpath(const pathname &subpath) const {
+        auto type = std::make_shared<archive_dir_type>(*this);
+        type->m_subpath = subpath;
+
+        return type;
     }
 };
 
@@ -173,12 +171,7 @@ class sub_archive_dir_type : public dir_type {
 
 public:
     sub_archive_dir_type(archive_plugin *plugin, std::shared_ptr<dir_type> parent_type, const pathname &path, const pathname &subpath)
-        : plugin(plugin), parent_type(parent_type->copy()), m_path(path), m_subpath(subpath) {
-        this->parent_type->subpath("");
-    }
-
-    virtual std::shared_ptr<dir_type> copy() const {
-        return std::make_shared<sub_archive_dir_type>(*this);
+        : plugin(plugin), parent_type(parent_type->change_subpath("")), m_path(path), m_subpath(subpath) {
     }
 
 
@@ -200,7 +193,7 @@ public:
         return new sub_archive_dir_writer(plugin, new sub_archive_dir_type(*this), parent_type->create_writer(), m_path, m_subpath);
     }
 
-    virtual bool is_dir() const {
+    virtual bool is_dir() const noexcept {
         return false;
     }
 
@@ -212,12 +205,15 @@ public:
         return m_subpath;
     }
 
-    virtual void subpath(const pathname &subpath) {
-        m_subpath = subpath;
-    }
-
     virtual pathname logical_path() const {
         return parent_type->logical_path().append(m_path).append(m_subpath);
+    }
+
+    virtual std::shared_ptr<dir_type> change_subpath(const pathname &subpath) const {
+        auto type = std::make_shared<sub_archive_dir_type>(*this);
+        type->m_subpath = subpath;
+
+        return type;
     }
 };
 
@@ -408,7 +404,7 @@ std::shared_ptr<dir_type> get_archive_type(std::shared_ptr<dir_type> dtype, cons
             }
         }
 
-        dtype->subpath(dir);
+        return dtype->change_subpath(dir);
     }
 
     return dtype;
