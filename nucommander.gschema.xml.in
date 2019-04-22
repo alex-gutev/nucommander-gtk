@@ -28,7 +28,7 @@
         "F7": "make-directory",
         "F8": "delete",
         "F9": "open-terminal",
-        "/": "jump-path",
+        "/": "change-path",
         "<char>": "begin-filter-type",
         "C-s": "begin-filter",
         "C-,": "preferences",

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_COMMANDS_H
-#define NUC_COMMANDS_H
+#ifndef NUC_COMMANDS_COMMANDS_H
+#define NUC_COMMANDS_COMMANDS_H
 
 #include <unordered_map>
 #include <string>

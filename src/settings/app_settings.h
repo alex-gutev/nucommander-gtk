@@ -29,11 +29,6 @@
 namespace nuc {
     class app_settings {
     public:
-        /**
-         * GSettings path where the plugins' settings are stored.
-         */
-        static constexpr const char *settings_path = "/org/agware/NuCommander/";
-
         app_settings();
 
         static app_settings &instance();
@@ -51,6 +46,7 @@ namespace nuc {
          * @return The timeout.
          */
         int dir_refresh_timeout() const;
+
         /**
          * Sets the value of the directory refresh timeout in
          * settings.
@@ -58,6 +54,7 @@ namespace nuc {
          * @param timeout The timeout value to set.
          */
         void dir_refresh_timeout(int timeout);
+
 
         /**
          * Returns the array of the identifiers of the columns which
@@ -75,6 +72,7 @@ namespace nuc {
          */
         void columns(const std::vector<std::string> &columns);
 
+
         /**
          * Returns the name of the column by which file lists should
          * be sorted initially.
@@ -90,6 +88,14 @@ namespace nuc {
          * @param column The column name.
          */
         void default_sort_column(const std::string &column);
+
+
+        /**
+         * Returns the keybindings map.
+         *
+         * @return The map.
+         */
+        std::map<Glib::ustring, Glib::ustring> keybindings() const;
 
     private:
         /**

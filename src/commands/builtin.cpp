@@ -146,13 +146,14 @@ struct delete_command : public command {
 /**
  * Change Path Command.
  *
- * Moves the keyboard focus to the current path entry.
+ * Moves the keyboard focus to the current path entry in order to
+ * change the current path.
  */
-struct jump_path_command : public command {
+struct change_path_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
     virtual std::string description() {
-        return _("Jump to the current path text entry.");
+        return _("Change the current directory path in the source pane.");
     }
 };
 
@@ -180,7 +181,7 @@ struct begin_filter_type_command : public begin_filter_command {
 };
 
 /**
- * Open Preferences Command.
+ * Open Preferences Window Command.
  */
 struct preferences_command : public command {
     virtual void run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase);
@@ -270,6 +271,7 @@ struct quit_command : public command {
     }
 };
 
+
 //// Implementations
 
 void nuc::add_builtin_commands(command_keymap::command_map &table) {
@@ -277,7 +279,7 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("make-directory", std::make_shared<make_dir_command>());
     table.emplace("move", std::make_shared<move_command>());
     table.emplace("delete", std::make_shared<delete_command>());
-    table.emplace("jump-path", std::make_shared<jump_path_command>());
+    table.emplace("change-path", std::make_shared<change_path_command>());
     table.emplace("begin-filter", std::make_shared<begin_filter_command>());
     table.emplace("begin-filter-type", std::make_shared<begin_filter_type_command>());
     table.emplace("preferences", std::make_shared<preferences_command>());
@@ -410,7 +412,7 @@ Glib::ustring delete_command::confirm_delete_msg(const std::vector<dir_entry *> 
 }
 
 
-void jump_path_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
+void change_path_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (src) {
         src->focus_path();
     }

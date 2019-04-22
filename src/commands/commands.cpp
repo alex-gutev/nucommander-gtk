@@ -41,13 +41,14 @@ static std::string generic_keystring(const GdkEventKey *e) {
     return Glib::Unicode::isprint(gdk_keyval_to_unicode(e->keyval)) ? "<char>" : "";
 }
 
+
 /// command_keymap Implementation
 
 command_keymap::command_keymap() {
     // Initially make builtin commands available
     add_builtin_commands(command_table);
 
-    // Load custom commands in background so as to increase
+    // Load custom commands in background so as to decrease
     // application load time.
     load_custom_commands();
 
@@ -82,11 +83,7 @@ void command_keymap::set_command_map(command_map &map) {
 
 
 void command_keymap::get_keymap() {
-    Glib::Variant<std::map<Glib::ustring, Glib::ustring>> gv_map;
-    app_settings::instance().settings()->get_value("keybindings", gv_map);
-
-    auto map = gv_map.get();
-
+    auto map = app_settings::instance().keybindings();
     keymap = std::unordered_map<std::string, std::string>(map.begin(), map.end());
 }
 

@@ -57,3 +57,12 @@ std::string app_settings::default_sort_column() const {
 void app_settings::default_sort_column(const std::string &column) {
     m_settings->set_string("default-sort-column", column);
 }
+
+
+std::map<Glib::ustring, Glib::ustring> app_settings::keybindings() const {
+    Glib::Variant<std::map<Glib::ustring, Glib::ustring>> gv_map;
+
+    m_settings->get_value("keybindings", gv_map);
+
+    return gv_map.get();
+}
