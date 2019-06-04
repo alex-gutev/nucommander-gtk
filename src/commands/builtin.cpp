@@ -40,9 +40,9 @@
 using namespace nuc;
 
 
-//// Prototypes
-
-/// Utility Functions
+///////////////////////////////////////////////////////////////////////////////
+//                                 Prototypes                                //
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Expands relative destination paths to absolute paths relative to @a
@@ -61,8 +61,6 @@ using namespace nuc;
 static pathname expand_dest_path(const pathname &path, const pathname &dest);
 
 
-/// Builtin Commands
-
 /**
  * Copy Command.
  *
@@ -73,7 +71,7 @@ static pathname expand_dest_path(const pathname &path, const pathname &dest);
 struct copy_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Copy marked/selected files, in source pane, to a destination directory.");
     }
 };
@@ -100,7 +98,7 @@ struct make_dir_command : public command {
      */
     static void make_dir_task(nuc::cancel_state &state, const nuc::pathname::string &dest, const nuc::pathname::string &name);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Create a new directory in the source pane.");
     }
 };
@@ -115,7 +113,7 @@ struct make_dir_command : public command {
 struct move_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Move/Rename marked/selected files in the source pane.");
     }
 };
@@ -138,7 +136,7 @@ struct delete_command : public command {
      */
     static Glib::ustring confirm_delete_msg(const std::vector<dir_entry *> &ents);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Delete the marked/selected files in the source pane");
     }
 };
@@ -152,7 +150,7 @@ struct delete_command : public command {
 struct change_path_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Change the current directory path in the source pane.");
     }
 };
@@ -165,7 +163,7 @@ struct change_path_command : public command {
 struct begin_filter_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Begin filtering in the source pane.");
     }
 };
@@ -174,7 +172,7 @@ struct begin_filter_command : public command {
  * Begin filter with character command.
  *
  * Begins filtering and sets the character, corresponding to the event
- * if any, as is the contents of the filter text entry.
+ * if any, as the contents of the filter text entry.
  */
 struct begin_filter_type_command : public begin_filter_command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
@@ -186,7 +184,7 @@ struct begin_filter_type_command : public begin_filter_command {
 struct preferences_command : public command {
     virtual void run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Open the keybinding preferences.");
     }
 };
@@ -199,7 +197,7 @@ struct preferences_command : public command {
 struct swap_panes_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Swap source and destination panes' directories.");
     }
 };
@@ -212,7 +210,7 @@ struct swap_panes_command : public command {
 struct change_dir_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Display the list of open directories, to choose a new directory to display in the source pane.");
     }
 };
@@ -226,7 +224,7 @@ struct change_dir_command : public command {
 struct open_dir_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Create a new directory buffer.");
     }
 };
@@ -240,7 +238,7 @@ struct open_dir_command : public command {
 struct close_dir_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Close the source pane's current directory and return to the previously visited directory.");
     }
 };
@@ -253,7 +251,7 @@ struct close_dir_command : public command {
 struct cancel_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Cancel reading the directory in the source pane");
     }
 };
@@ -266,13 +264,15 @@ struct cancel_command : public command {
 struct quit_command : public command {
     virtual void run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase);
 
-    virtual std::string description() {
+    virtual std::string description() const noexcept {
         return _("Quit the application");
     }
 };
 
 
-//// Implementations
+///////////////////////////////////////////////////////////////////////////////
+//                              Implementations                              //
+///////////////////////////////////////////////////////////////////////////////
 
 void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("copy", std::make_shared<copy_command>());
@@ -292,14 +292,35 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
 }
 
 
-/// Utility Functions
+// Utility Functions //////////////////////////////////////////////////////////
 
 pathname expand_dest_path(const pathname &path, const pathname &dest) {
-    return pathname(path, true).merge(dest);
+    return path.ensure_dir(true).merge(dest);
 }
 
 
-/// Builtin Command Implementations
+// Builtin Command Implementations ////////////////////////////////////////////
+
+/**
+ * Adds a task to the window's task queue.
+ *
+ * @param window The window.
+ *
+ * @param src The source pane.
+ *
+ * @param response The response code of the dialog. If equal to
+ *   Gtk::RESPONSE_OK the task is added to the window's task queue.
+ *
+ * @param f A function which should return the task to add to the
+ *   queue.
+ */
+template <typename F>
+void add_window_task(nuc::app_window *window, nuc::file_view *src, int response, F f) {
+    if (response == Gtk::RESPONSE_OK) {
+        auto type = src->dir_vfs()->directory_type();
+        window->add_operation(f(), window->get_progress_fn(type));
+    }
+}
 
 void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
@@ -309,16 +330,15 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
             dest_dialog *dialog = window->dest_dialog();
 
             dialog->set_query_label(_("Destination"));
-            dialog->dest_path(pathname(src->next_file_view->path(), true).path());
+            dialog->dest_path(src->next_file_view->path().ensure_dir(true).path());
             dialog->set_exec_button_label(_("Copy"));
+            dialog->set_title(_("Copy"));
 
-            if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->dir_vfs()->directory_type();
-
-                window->add_operation(
-                    make_copy_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
-                    window->get_progress_fn(type));
-            }
+            add_window_task(window, src, dialog->run(), [=] {
+                return make_copy_task(src->dir_vfs()->directory_type(),
+                                      entries,
+                                      expand_dest_path(src->path(), dialog->dest_path()));
+            });
         }
     }
 }
@@ -333,16 +353,19 @@ void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
 
         dialog->set_query_label(_("Directory Name"));
         dialog->dest_path("");
-        dialog->set_exec_button_label(_("Create Directory"));
+        dialog->set_exec_button_label(_("Create"));
+        dialog->set_title(_("New Directory"));
 
-        if (dialog->run() == Gtk::RESPONSE_OK) {
-            window->add_operation(std::bind(make_dir_task, _1, dest, dialog->dest_path()));
-        }
+        add_window_task(window, src, dialog->run(), [=] {
+            return std::bind(make_dir_task, _1, dest, dialog->dest_path());
+        });
     }
 }
 
 
 void make_dir_command::make_dir_task(cancel_state &state, const pathname::string &dest, const pathname::string &name) {
+    state.call_progress(progress_event(progress_event::type_begin));
+
     try {
         std::unique_ptr<dir_writer> writer(dir_type::get_writer(dest));
 
@@ -352,6 +375,8 @@ void make_dir_command::make_dir_task(cancel_state &state, const pathname::string
     catch (const error &e) {
         // Catch error to abort operation
     }
+
+    state.call_progress(progress_event(progress_event::type_finish));
 }
 
 
@@ -365,14 +390,13 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
             dialog->set_query_label(_("Destination"));
             dialog->dest_path(pathname(src->next_file_view->path(), true).path());
             dialog->set_exec_button_label(_("Move"));
+            dialog->set_title(_("Move"));
 
-            if (dialog->run() == Gtk::RESPONSE_OK) {
-                auto type = src->dir_vfs()->directory_type();
-
-                window->add_operation(
-                    make_move_task(type, entries, expand_dest_path(src->path(), dialog->dest_path())),
-                    window->get_progress_fn(type));
-            }
+            add_window_task(window, src, dialog->run(), [=] {
+                return make_move_task(src->dir_vfs()->directory_type(),
+                                      entries,
+                                      expand_dest_path(src->path(), dialog->dest_path()));
+            });
         }
     }
 }
@@ -388,16 +412,9 @@ void delete_command::run(nuc::app_window *window, nuc::file_view *src, const Gdk
             Gtk::MessageDialog dialog(*window, _("Confirm Delete"), false, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_OK_CANCEL);
             dialog.set_secondary_text(confirm_delete_msg(entries));
 
-            int result = dialog.run();
-
-            // Add delete operation if response was OK
-
-            if (result == Gtk::RESPONSE_OK) {
-                auto type = src->dir_vfs()->directory_type();
-
-                window->add_operation(make_delete_task(type, entries),
-                                      window->get_progress_fn(type));
-            }
+            add_window_task(window, src, dialog.run(), [=] {
+                return make_delete_task(src->dir_vfs()->directory_type(), entries);
+            });
         }
     }
 }

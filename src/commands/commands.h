@@ -60,7 +60,7 @@ namespace nuc {
          *
          * @return string.
          */
-        virtual std::string description() = 0;
+        virtual std::string description() const noexcept = 0;
     };
 
     /**

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nucommander 0.1\n"
 "Report-Msgid-Bugs-To: alex.gutev@gmail.com\n"
-"POT-Creation-Date: 2019-04-16 09:37+0200\n"
+"POT-Creation-Date: 2019-06-04 09:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,91 +33,95 @@ msgstr ""
 msgid "Size"
 msgstr ""
 
-#: src/commands/builtin.cpp:77
+#: src/commands/builtin.cpp:75
 msgid "Copy marked/selected files, in source pane, to a destination directory."
 msgstr ""
 
-#: src/commands/builtin.cpp:104
+#: src/commands/builtin.cpp:102
 msgid "Create a new directory in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:119
+#: src/commands/builtin.cpp:117
 msgid "Move/Rename marked/selected files in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:142
+#: src/commands/builtin.cpp:140
 msgid "Delete the marked/selected files in the source pane"
 msgstr ""
 
-#: src/commands/builtin.cpp:155
-msgid "Jump to the current path text entry."
+#: src/commands/builtin.cpp:154
+msgid "Change the current directory path in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:168
+#: src/commands/builtin.cpp:167
 msgid "Begin filtering in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:189
+#: src/commands/builtin.cpp:188
 msgid "Open the keybinding preferences."
 msgstr ""
 
-#: src/commands/builtin.cpp:202
+#: src/commands/builtin.cpp:201
 msgid "Swap source and destination panes' directories."
 msgstr ""
 
-#: src/commands/builtin.cpp:215
+#: src/commands/builtin.cpp:214
 msgid ""
 "Display the list of open directories, to choose a new directory to display "
 "in the source pane."
 msgstr ""
 
-#: src/commands/builtin.cpp:229
+#: src/commands/builtin.cpp:228
 msgid "Create a new directory buffer."
 msgstr ""
 
-#: src/commands/builtin.cpp:243
+#: src/commands/builtin.cpp:242
 msgid ""
 "Close the source pane's current directory and return to the previously "
 "visited directory."
 msgstr ""
 
-#: src/commands/builtin.cpp:256
+#: src/commands/builtin.cpp:255
 msgid "Cancel reading the directory in the source pane"
 msgstr ""
 
-#: src/commands/builtin.cpp:269
+#: src/commands/builtin.cpp:268
 msgid "Quit the application"
 msgstr ""
 
-#: src/commands/builtin.cpp:309 src/commands/builtin.cpp:363
+#: src/commands/builtin.cpp:332 src/commands/builtin.cpp:390
 msgid "Destination"
 msgstr ""
 
-#: src/commands/builtin.cpp:311
+#: src/commands/builtin.cpp:334 src/commands/builtin.cpp:335
 msgid "Copy"
 msgstr ""
 
-#: src/commands/builtin.cpp:332
+#: src/commands/builtin.cpp:354
 msgid "Directory Name"
 msgstr ""
 
-#: src/commands/builtin.cpp:334
-msgid "Create Directory"
+#: src/commands/builtin.cpp:356
+msgid "Create"
 msgstr ""
 
-#: src/commands/builtin.cpp:365
+#: src/commands/builtin.cpp:357
+msgid "New Directory"
+msgstr ""
+
+#: src/commands/builtin.cpp:392 src/commands/builtin.cpp:393
 msgid "Move"
 msgstr ""
 
-#: src/commands/builtin.cpp:386
+#: src/commands/builtin.cpp:412
 msgid "Confirm Delete"
 msgstr ""
 
-#: src/commands/builtin.cpp:405
+#: src/commands/builtin.cpp:424
 msgid "Are you sure you want to delete '%1'?"
 msgstr ""
 
-#: src/commands/builtin.cpp:408
+#: src/commands/builtin.cpp:427
 msgid "Are you sure you want to delete %1 selected files?"
 msgstr ""
 

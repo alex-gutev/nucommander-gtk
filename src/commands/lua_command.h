@@ -57,7 +57,7 @@ namespace nuc {
 
         virtual void run(app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg);
 
-        virtual std::string description() {
+        virtual std::string description() const noexcept {
             return desc;
         }
 
