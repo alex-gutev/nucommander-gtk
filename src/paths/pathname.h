@@ -108,6 +108,18 @@ namespace nuc {
         /* Manipulating Paths */
 
         /**
+         * Returns a new pathname ensuring that the path has/doesn't
+         * have a trailing slash.
+         *
+         * @param is_dir If true the path returned has a trailing
+         *   slash.
+         *
+         * @return The new pathname.
+         */
+        pathname ensure_dir(bool is_dir = true) const &;
+        pathname& ensure_dir(bool is_dir = true) &&;
+
+        /**
          * Creates a new pathname with the path @a path appended
          * to it.
          *

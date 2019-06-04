@@ -111,6 +111,37 @@ BOOST_AUTO_TEST_CASE(components5) {
 BOOST_AUTO_TEST_SUITE_END()
 
 
+BOOST_AUTO_TEST_SUITE(test_ensure_dir)
+
+BOOST_AUTO_TEST_CASE(ensure_dir1) {
+    nuc::pathname path("/foo/bar");
+
+    BOOST_CHECK_EQUAL(path.ensure_dir(true).path(), "/foo/bar/");
+    BOOST_CHECK_EQUAL(path.ensure_dir(false).path(), "/foo/bar");
+}
+BOOST_AUTO_TEST_CASE(ensure_dir2) {
+    nuc::pathname path("/foo/bar/");
+
+    BOOST_CHECK_EQUAL(path.ensure_dir(true).path(), "/foo/bar/");
+    BOOST_CHECK_EQUAL(path.ensure_dir(false).path(), "/foo/bar");
+}
+BOOST_AUTO_TEST_CASE(ensure_dir3) {
+    nuc::pathname path("/");
+
+    BOOST_CHECK_EQUAL(path.ensure_dir(true).path(), "/");
+    BOOST_CHECK_EQUAL(path.ensure_dir(false).path(), "/");
+}
+BOOST_AUTO_TEST_CASE(ensure_dir4) {
+    nuc::pathname path("");
+
+    BOOST_CHECK_EQUAL(path.ensure_dir(true).path(), "");
+    BOOST_CHECK_EQUAL(path.ensure_dir(false).path(), "");
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
 BOOST_AUTO_TEST_SUITE(test_append)
 
 BOOST_AUTO_TEST_CASE(append1) {
