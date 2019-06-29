@@ -89,7 +89,7 @@ namespace nuc {
          *   or the empty string if there is no command bound to the
          *   key sequence.
          */
-        std::string command_name(const std::string &key);
+        std::string command_name(const std::string &key) const;
 
         /**
          * Retrieves the name of the command that should be executed
@@ -100,7 +100,7 @@ namespace nuc {
          * @return The name of the command or the empty string if
          *   there no command should be executed.
          */
-        std::string command_name(const GdkEventKey *event);
+        std::string command_name(const GdkEventKey *event) const;
 
         /**
          * Executes the command which is bound to the key-sequence
@@ -117,7 +117,7 @@ namespace nuc {
          * @return boolean True if a command was executed, false if
          *    there is no command bound to the key-sequence.
          */
-        bool exec_command(app_window *window, file_view *src, const GdkEventKey *event, Glib::VariantBase arg = Glib::VariantBase());
+        bool exec_command(app_window *window, file_view *src, const GdkEventKey *event, Glib::VariantBase arg = Glib::VariantBase()) const;
 
         /**
          * Execute the named command @a name.
@@ -132,7 +132,7 @@ namespace nuc {
          *
          * @param arg Optional command argument.
          */
-        bool exec_command(const std::string &name, app_window *window, file_view *src, const GdkEventAny *, Glib::VariantBase arg = Glib::VariantBase());
+        bool exec_command(const std::string &name, app_window *window, file_view *src, const GdkEventAny *, Glib::VariantBase arg = Glib::VariantBase()) const;
 
     private:
         /**

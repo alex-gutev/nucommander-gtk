@@ -28,6 +28,11 @@
 
 using namespace nuc;
 
+
+///////////////////////////////////////////////////////////////////////////////
+//                             Utility Functions                             //
+///////////////////////////////////////////////////////////////////////////////
+
 /**
  * Returns a generic keystring for the key event @a e which represents
  * the type of key pressed, e.g. <char> is returned for keys which
@@ -42,7 +47,11 @@ static std::string generic_keystring(const GdkEventKey *e) {
 }
 
 
-/// command_keymap Implementation
+///////////////////////////////////////////////////////////////////////////////
+//                       Command Keymap Implementation                       //
+///////////////////////////////////////////////////////////////////////////////
+
+// Initialization /////////////////////////////////////////////////////////////
 
 command_keymap::command_keymap() {
     // Initially make builtin commands available
@@ -63,6 +72,8 @@ command_keymap &command_keymap::instance() {
     return inst;
 }
 
+
+// Getting Keymap from GSettings //////////////////////////////////////////////
 
 void command_keymap::load_custom_commands() {
     dispatch_async([=] {
@@ -92,7 +103,9 @@ void command_keymap::keymap_changed(const Glib::ustring &key) {
 }
 
 
-std::string command_keymap::command_name(const std::string &key) {
+// Getting Commands ///////////////////////////////////////////////////////////
+
+std::string command_keymap::command_name(const std::string &key) const {
     auto command = keymap.find(key);
 
     if (command != keymap.end())
@@ -101,7 +114,7 @@ std::string command_keymap::command_name(const std::string &key) {
     return "";
 }
 
-std::string command_keymap::command_name(const GdkEventKey *e) {
+std::string command_keymap::command_name(const GdkEventKey *e) const {
     auto cmd = command_name(event_keystring(e));
 
     return cmd.length() ? cmd : command_name(generic_keystring(e));
@@ -163,11 +176,14 @@ std::string command_keymap::event_keystring(const GdkEventKey *e) {
     return keystring;
 }
 
-bool command_keymap::exec_command(app_window *window, file_view *src, const GdkEventKey *e, Glib::VariantBase arg) {
+
+// Executing Commands /////////////////////////////////////////////////////////
+
+bool command_keymap::exec_command(app_window *window, file_view *src, const GdkEventKey *e, Glib::VariantBase arg) const {
     return exec_command(command_name(e), window, src, (const GdkEventAny *)e, arg);
 }
 
-bool command_keymap::exec_command(const std::string &name, app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg) {
+bool command_keymap::exec_command(const std::string &name, app_window *window, file_view *src, const GdkEventAny *e, Glib::VariantBase arg) const {
     auto command = command_table.find(name);
 
     if (command != command_table.end()) {
