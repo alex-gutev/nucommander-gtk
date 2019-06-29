@@ -37,9 +37,6 @@ namespace nuc {
      * Pass the window and source pane command arguments to a Lua
      * script.
      *
-     * Sets the global 'window' variable to @a window and the global
-     * 'source_pane' variable to @a src.
-     *
      * @param L Lua interpreter state.
      * @param window The app_window.
      * @param src The source file_view.

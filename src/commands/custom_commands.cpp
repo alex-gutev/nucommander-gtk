@@ -79,7 +79,7 @@ static void load_commands_in_dir(const pathname &dir, command_keymap::command_ma
 
     while (listr.read_entry(ent)) {
         if (ent.type != DT_REG) {
-            if (!listr.entry_stat(st) || S_ISREG(st.st_mode))
+            if (!listr.entry_stat(st) && S_ISREG(st.st_mode))
                 continue;
         }
 
