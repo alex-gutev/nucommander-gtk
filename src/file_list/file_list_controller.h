@@ -128,7 +128,7 @@ namespace nuc {
          *
          * @return The vfs object.
          */
-        std::shared_ptr<nuc::vfs> dir_vfs() {
+        nuc::vfs & dir_vfs() {
             return vfs;
         }
 
@@ -188,7 +188,7 @@ namespace nuc {
         /**
          * VFS object - performs the actual reading of the directory.
          */
-        std::shared_ptr<nuc::vfs> vfs;
+        nuc::vfs vfs;
 
         /**
          * Flag for whether there is an ongoing read task.

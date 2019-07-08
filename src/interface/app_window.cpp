@@ -116,7 +116,7 @@ void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controlle
     using namespace std::placeholders;
 
     if (!flist->descend(*ent)) {
-        auto type = flist->dir_vfs()->directory_type();
+        auto type = flist->dir_vfs().directory_type();
 
         if (!type->is_dir()) {
             add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));

@@ -130,18 +130,16 @@ void file_list_controller::init_liststore(Glib::RefPtr<Gtk::ListStore> list_stor
 void file_list_controller::init_vfs() {
     using namespace std::placeholders;
 
-    vfs = nuc::vfs::create();
-
     auto ptr = std::weak_ptr<file_list_controller>(shared_from_this());
 
-    vfs->callback_changed([=] {
+    vfs.callback_changed([=] {
         if (auto self = ptr.lock())
             return self->vfs_dir_changed();
 
         return std::shared_ptr<vfs::delegate>();
     });
 
-    vfs->signal_deleted().connect([=] (pathname path) {
+    vfs.signal_deleted().connect([=] (pathname path) {
         if (auto self = ptr.lock())
             self->vfs_dir_deleted(path);
     });
@@ -232,8 +230,8 @@ void file_list_controller::read_parent_dir(pathname path) {
 
         auto del = std::make_shared<move_up_delegate>(shared_from_this(), path);
 
-        if (!vfs->ascend(del))
-            vfs->read(path, del);
+        if (!vfs.ascend(del))
+            vfs.read(path, del);
     }
 }
 
@@ -279,7 +277,7 @@ void file_list_controller::update_marked_set() {
     auto it = marked_set.begin(), end = marked_set.end();
 
     while (it != end) {
-        auto entries = vfs->get_entries(it->first);
+        auto entries = vfs.get_entries(it->first);
 
         if (std::distance(entries.first, entries.second) != 1) {
             it = marked_set.erase(it);
@@ -305,7 +303,7 @@ void file_list_controller::finish_read(Glib::RefPtr<Gtk::ListStore> new_list) {
     set_new_list(new_list, true);
     restore_selection();
 
-    cur_path = vfs->path();
+    cur_path = vfs.path();
     m_signal_path.emit(cur_path);
 }
 
@@ -314,7 +312,7 @@ void file_list_controller::set_new_list(Glib::RefPtr<Gtk::ListStore> new_list, b
     if (clear_marked)
         marked_set.clear();
 
-    add_parent_entry(new_list, vfs->path());
+    add_parent_entry(new_list, vfs.path());
 
     load_icons(new_list);
 
@@ -482,7 +480,7 @@ void file_list_controller::path(const pathname &path, bool move_to_old) {
     pathname cpath(expand_path(path));
     m_signal_path.emit(cpath);
 
-    vfs->read(cpath, std::make_shared<read_delegate>(shared_from_this()));
+    vfs.read(cpath, std::make_shared<read_delegate>(shared_from_this()));
 }
 
 bool file_list_controller::descend(const dir_entry& ent) {
@@ -493,8 +491,8 @@ bool file_list_controller::descend(const dir_entry& ent) {
         m_signal_path.emit(new_path);
         prepare_read(true);
 
-        if (!vfs->ascend(del)) {
-            vfs->read(new_path, del);
+        if (!vfs.ascend(del)) {
+            vfs.read(new_path, del);
         }
 
         return true;
@@ -502,7 +500,7 @@ bool file_list_controller::descend(const dir_entry& ent) {
     else {
         pathname::string new_path(cur_path.append(ent.file_name()));
 
-        if (vfs->descend(ent, std::make_shared<read_delegate>(shared_from_this()))) {
+        if (vfs.descend(ent, std::make_shared<read_delegate>(shared_from_this()))) {
             prepare_read(false);
             m_signal_path.emit(new_path);
 

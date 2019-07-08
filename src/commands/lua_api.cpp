@@ -389,7 +389,7 @@ int window_unpack_file(lua_State *L) {
     // Store reference to function, which is at the top of the stack.
     int fn_ref = luaL_ref(L, LUA_REGISTRYINDEX);
 
-    window->add_operation(src->file_list()->dir_vfs()->access_file(*ent, [=] (const pathname &path) {
+    window->add_operation(src->file_list()->dir_vfs().access_file(*ent, [=] (const pathname &path) {
         dispatch_main([=] {
             // Get function
             lua_rawgeti(L, LUA_REGISTRYINDEX, fn_ref);

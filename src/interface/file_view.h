@@ -164,7 +164,7 @@ namespace nuc {
          * @return Pointer to the vfs object or NULL if the file_view
          * is not currently displaying a directory.
          */
-        std::shared_ptr<nuc::vfs> dir_vfs() const;
+        nuc::vfs * dir_vfs() const;
 
 
         /* Filtering */

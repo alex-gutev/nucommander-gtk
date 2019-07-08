@@ -353,8 +353,8 @@ std::vector<dir_entry*> file_view::selected_entries() const {
 
 //// Directory VFS
 
-std::shared_ptr<nuc::vfs> file_view::dir_vfs() const {
-    return flist ? flist->dir_vfs() : nullptr;
+nuc::vfs * file_view::dir_vfs() const {
+    return flist ? &flist->dir_vfs() : nullptr;
 }
 
 
