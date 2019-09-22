@@ -198,6 +198,8 @@ void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, 
                 std::unique_ptr<outstream> dest(out.create(ent_name, st));
 
                 copy_file(state, *src, *dest);
+                dest->close();
+
                 state.call_progress(progress_event(progress_event::type_exit_file, ent.name));
             } break;
 

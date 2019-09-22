@@ -30,33 +30,12 @@ namespace nuc {
      * Regular File Output Stream.
      */
     class file_outstream : public outstream {
-        /**
-         * Path to the file being written to.
-         */
-        std::string path;
-
-        /**
-         * File descriptor.
-         */
-        int fd;
-
-        /**
-         * Seeks to the position @a offset bytes from the current
-         * position in the file.
-         *
-         * @param offset The offset, to seek to, from the current file
-         *   position.
-         */
-        void seek(off_t offset);
-
-        /**
-         * Closes the file descriptor.
-         *
-         * @return 0 if successful, non-zero on error.
-         */
-        int close_fd();
-
     public:
+        /**
+         * Modification and Access time type.
+         */
+        typedef struct timespec time_type;
+
         /**
          * Constructs a file output stream for the file at @a path.
          *
@@ -109,6 +88,66 @@ namespace nuc {
         int get_fd() const {
             return fd;
         }
+
+
+        /* Modification and Access Times */
+
+        /**
+         * Sets the access and modification times which will be set
+         * when the stream is closed.
+         *
+         * @param atime Access time.
+         * @param mtime Last modified time.
+         */
+        void times(time_type atime, time_type mtime);
+
+    private:
+        /**
+         * Path to the file being written to.
+         */
+        std::string path;
+
+        /**
+         * File descriptor.
+         */
+        int fd;
+
+        /**
+         * Flag: true if the access and modification times should be
+         * set when the stream is closed.
+         */
+        bool set_times = false;
+
+        /**
+         * Last modified time to set when stream is closed.
+         */
+        time_type mtime;
+        /**
+         * Last accessed time to set when stream is closed.
+         */
+        time_type atime;
+
+        /**
+         * Seeks to the position @a offset bytes from the current
+         * position in the file.
+         *
+         * @param offset The offset, to seek to, from the current file
+         *   position.
+         */
+        void seek(off_t offset);
+
+        /**
+         * Closes the file descriptor.
+         *
+         * @return 0 if successful, non-zero on error.
+         */
+        int close_fd();
+
+        /**
+         * Sets the access and last modified times, to 'atime' and
+         * 'mtime'.
+         */
+        void update_times();
 
     protected:
         void raise_error(int code, error::type_code type, bool can_retry = true) {

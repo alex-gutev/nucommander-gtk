@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "errors/restarts.h"
+
 using namespace nuc;
 
 /**
@@ -45,6 +47,9 @@ file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms
 }
 
 void file_outstream::close() {
+    if (set_times)
+        update_times();
+
     if (close_fd())
         raise_error(errno, error::type_write_file, false);
 }
@@ -58,6 +63,26 @@ int file_outstream::close_fd() {
 
     return 0;
 }
+
+
+void file_outstream::update_times() {
+    time_type times[] = { atime, mtime };
+
+    with_skip_attrib([&] {
+        try_op([&] {
+            if (futimens(fd, times))
+                throw attribute_error(errno, error::type_set_times, true, path);
+        });
+    });
+}
+
+void file_outstream::times(time_type atim, time_type mtim) {
+    set_times = true;
+
+    atime = atim;
+    mtime = mtim;
+}
+
 
 void file_outstream::write(const byte *buf, size_t n, off_t offset) {
     seek(offset);

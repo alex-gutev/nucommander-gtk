@@ -43,6 +43,42 @@ namespace nuc {
          */
         static const nuc::restart restart;
     };
+
+    /**
+     * Skip attribute exception.
+     *
+     * This exception is thrown when the "skip attribute" is invoked,
+     * to skip setting the attribute which triggered the error.
+     */
+    class skip_attribute : public std::exception {};
+
+
+    /* Utilities */
+
+    /**
+     * Executes the function op with the "skip attribute" restart
+     * established,
+     *
+     * @param op The function to execute.
+     */
+    template <typename F>
+    void with_skip_attrib(F op);
+}
+
+
+/* Template Implementations */
+
+template <typename F>
+void nuc::with_skip_attrib(F op) {
+    global_restart skip(restart("skip attribute", [] (const error &, boost::any) {
+        throw skip_attribute();
+    }));
+
+    try {
+        op();
+    }
+    catch (const skip_attribute &) {
+    }
 }
 
 #endif
