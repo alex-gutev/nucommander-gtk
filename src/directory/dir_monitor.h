@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_MONITOR_H
-#define NUC_DIR_MONITOR_H
+#ifndef NUC_DIRECTORY_DIR_MONITOR_H
+#define NUC_DIRECTORY_DIR_MONITOR_H
 
 #include <giomm.h>
 #include <glibmm.h>
@@ -126,7 +126,7 @@ namespace nuc {
 
             /* Accessors */
 
-            const event_type type() const {
+            const event_type type() const noexcept {
                 return m_type;
             }
 
@@ -281,7 +281,7 @@ namespace nuc {
     };
 }
 
-#endif // NUC_DIR_MONITOR_H
+#endif // NUC_DIRECTORY_DIR_MONITOR_H
 
 // Local Variables:
 // mode: c++

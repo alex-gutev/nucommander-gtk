@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_TYPE_H
-#define NUC_DIR_TYPE_H
+#ifndef NUC_DIRECTORY_DIR_TYPE_H
+#define NUC_DIRECTORY_DIR_TYPE_H
 
 #include <tuple>
 #include <memory>
@@ -192,7 +192,7 @@ namespace nuc {
 }
 
 
-#endif // NUC_DIR_TYPE_H
+#endif // NUC_DIRECTORY_DIR_TYPE_H
 
 
 /* Local Variables: */

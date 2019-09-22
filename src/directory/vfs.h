@@ -69,6 +69,8 @@ namespace nuc {
              * There will be no further invocations of any methods, of
              * the delegate object, after this method is called.
              *
+             * This method is called on the main thread.
+             *
              * @param cancelled True if the operation was cancelled.
              *
              * @param error Operation error code or 0 if no error

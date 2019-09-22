@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ICON_LOADER_H
-#define NUC_ICON_LOADER_H
+#ifndef NUC_DIRECTORY_ICON_LOADER_H
+#define NUC_DIRECTORY_ICON_LOADER_H
 
 #include <string>
 
@@ -32,6 +32,24 @@ namespace nuc {
      * Loads icons for entries.
      */
     class icon_loader {
+    public:
+
+        /**
+         * Returns the singleton instance.
+         */
+        static icon_loader &instance();
+
+        /**
+         * Loads the icon for the entry @ent.
+         *
+         * @param ent The entry.
+         *
+         * @return The icon of the entry or a null RefPtr if no icon
+         *    could be found for the entry.
+         */
+        Glib::RefPtr<Gdk::Pixbuf> load_icon(const dir_entry &ent);
+
+    private:
         /**
          * Returns the icon name for a file type.
          *
@@ -51,28 +69,10 @@ namespace nuc {
          *    file.
          */
         Glib::RefPtr<Gio::Icon> icon_from_name(const std::string &name);
-
-
-    public:
-
-        /**
-         * Returns the singleton instance.
-         */
-        static icon_loader &instance();
-
-        /**
-         * Loads the icon for the entry @ent.
-         *
-         * @param ent The entry.
-         *
-         * @return The icon of the entry or a null RefPtr if no icon
-         *    could be found for the entry.
-         */
-        Glib::RefPtr<Gdk::Pixbuf> load_icon(const dir_entry &ent);
     };
 }
 
-#endif // NUC_ICON_LOADER_H
+#endif // NUC_DIRECTORY_ICON_LOADER_H
 
 // Local Variables:
 // mode: c++

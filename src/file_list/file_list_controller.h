@@ -123,8 +123,8 @@ namespace nuc {
         /* VFS Object */
 
         /**
-         * Returns a pointer to the vfs object responsible for reading
-         * the directory.
+         * Returns a reference to the vfs object responsible for
+         * reading the directory.
          *
          * @return The vfs object.
          */
