@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include "fsutil.h"
 #include "file_outstream.h"
 
 #include "error_macros.h"
@@ -64,7 +65,7 @@ outstream * reg_dir_writer::create(const pathname &path, const struct stat *st, 
         stream = new file_outstream(fd, path.path().c_str(), fflags);
     });
 
-    stream->times(st->st_atim, st->st_mtim);
+    stream->times(st);
 
     set_file_attributes(stream->get_fd(), path.path().c_str(), st);
 
@@ -117,20 +118,14 @@ void reg_dir_writer::set_attributes(const pathname &path, const struct stat *st)
                         throw attribute_error(errno, error::type_set_mode, true, path));
             });
 
-#ifdef __APPLE__
+        fs::time_type times[2];
 
-        // TODO: Add OS X specific code here
-
-#else
-
-        struct timespec times[] = { st->st_atim, st->st_mtim };
+        fs::stat_times(st, times);
 
         with_skip_attrib([&] {
-            TRY_OP_(utimensat(fd, path.path().c_str(), times, AT_SYMLINK_NOFOLLOW),
+            TRY_OP_(fs::set_ftimeat(fd, path.path().c_str(), times),
                     throw attribute_error(errno, error::type_set_times, true, path));
         });
-
-#endif
 
         with_skip_attrib([=] {
             TRY_OP_(fchownat(fd, path.path().c_str(), st->st_uid, st->st_gid, AT_SYMLINK_NOFOLLOW),

@@ -84,6 +84,8 @@ nucommander_SOURCES = \
 	stream/archive_dir_writer.cpp \
 	stream/sub_archive_dir_writer.h \
 	stream/sub_archive_dir_writer.cpp \
+	stream/fsutil.h \
+	stream/fsutil.cpp \
 	operations/copy.h \
 	operations/copy.cpp \
 	operations/move.h \

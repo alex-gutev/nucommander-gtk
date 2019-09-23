@@ -46,6 +46,24 @@ file_outstream::file_outstream(int dirfd, const char *path, int flags, int perms
         raise_error(errno, error::type_create_file);
 }
 
+
+void file_outstream::times(const struct stat *st) {
+    fs::time_type tm[2];
+
+    fs::stat_times(st, tm);
+
+    times(tm[0], tm[1]);
+}
+
+void file_outstream::times(fs::time_type atim, fs::time_type mtim) {
+    set_times = true;
+
+    atime = atim;
+    mtime = mtim;
+}
+
+
+
 void file_outstream::close() {
     if (set_times)
         update_times();
@@ -66,21 +84,14 @@ int file_outstream::close_fd() {
 
 
 void file_outstream::update_times() {
-    time_type times[] = { atime, mtime };
+    fs::time_type times[] = { atime, mtime };
 
     with_skip_attrib([&] {
         try_op([&] {
-            if (futimens(fd, times))
+            if (fs::set_ftime(fd, times))
                 throw attribute_error(errno, error::type_set_times, true, path);
         });
     });
-}
-
-void file_outstream::times(time_type atim, time_type mtim) {
-    set_times = true;
-
-    atime = atim;
-    mtime = mtim;
 }
 
 

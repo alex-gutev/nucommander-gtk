@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "fsutil.h"
 #include "outstream.h"
 
 namespace nuc {
@@ -31,11 +32,6 @@ namespace nuc {
      */
     class file_outstream : public outstream {
     public:
-        /**
-         * Modification and Access time type.
-         */
-        typedef struct timespec time_type;
-
         /**
          * Constructs a file output stream for the file at @a path.
          *
@@ -96,10 +92,19 @@ namespace nuc {
          * Sets the access and modification times which will be set
          * when the stream is closed.
          *
+         * @param st Stat structure containing access and modification
+         *    time.
+         */
+        void times(const struct stat *st);
+
+        /**
+         * Sets the access and modification times which will be set
+         * when the stream is closed.
+         *
          * @param atime Access time.
          * @param mtime Last modified time.
          */
-        void times(time_type atime, time_type mtime);
+        void times(fs::time_type atime, fs::time_type mtime);
 
     private:
         /**
@@ -121,11 +126,11 @@ namespace nuc {
         /**
          * Last modified time to set when stream is closed.
          */
-        time_type mtime;
+        fs::time_type mtime;
         /**
          * Last accessed time to set when stream is closed.
          */
-        time_type atime;
+        fs::time_type atime;
 
         /**
          * Seeks to the position @a offset bytes from the current
