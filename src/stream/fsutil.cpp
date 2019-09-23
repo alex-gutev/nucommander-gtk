@@ -21,8 +21,9 @@
 
 #include <string>
 
-#ifdef __APPLE__
 #include <fcntl.h>
+
+#ifdef __APPLE__
 #include <sys/param.h>
 #endif
 
