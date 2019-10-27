@@ -59,7 +59,7 @@ void nuc::dir_size(std::shared_ptr<cancel_state> state, std::shared_ptr<dir_type
             // Operation Cancelled
         }
         catch (const error &) {
-            // Operation Aborted
+            // Abort operation due to error
         }
     });
 }

@@ -28,10 +28,8 @@
 
 using namespace nuc;
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                             Utility Functions                             //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Utility Functions
 
 /**
  * Returns a generic keystring for the key event @a e which represents
@@ -46,12 +44,8 @@ static std::string generic_keystring(const GdkEventKey *e) {
     return Glib::Unicode::isprint(gdk_keyval_to_unicode(e->keyval)) ? "<char>" : "";
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                       Command Keymap Implementation                       //
-///////////////////////////////////////////////////////////////////////////////
-
-// Initialization /////////////////////////////////////////////////////////////
+
+//// Initialization
 
 command_keymap::command_keymap() {
     // Initially make builtin commands available
@@ -73,7 +67,7 @@ command_keymap &command_keymap::instance() {
 }
 
 
-// Getting Keymap from GSettings //////////////////////////////////////////////
+/// Getting Keymap from GSettings
 
 void command_keymap::load_custom_commands() {
     dispatch_async([=] {
@@ -102,8 +96,8 @@ void command_keymap::keymap_changed(const Glib::ustring &key) {
     get_keymap();
 }
 
-
-// Getting Commands ///////////////////////////////////////////////////////////
+
+//// Getting Commands
 
 std::string command_keymap::command_name(const std::string &key) const {
     auto command = keymap.find(key);
@@ -176,8 +170,8 @@ std::string command_keymap::event_keystring(const GdkEventKey *e) {
     return keystring;
 }
 
-
-// Executing Commands /////////////////////////////////////////////////////////
+
+//// Executing Commands
 
 bool command_keymap::exec_command(app_window *window, file_view *src, const GdkEventKey *e, Glib::VariantBase arg) const {
     return exec_command(command_name(e), window, src, (const GdkEventAny *)e, arg);

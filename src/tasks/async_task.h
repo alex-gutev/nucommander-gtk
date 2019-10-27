@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef ASYNC_TASK_H
-#define ASYNC_TASK_H
+#ifndef NUC_ASYNC_TASK_H
+#define NUC_ASYNC_TASK_H
 
 #include <functional>
 
@@ -37,7 +37,7 @@ namespace nuc {
      * Task function type.
      */
     typedef std::function<void()> async_task;
-    
+
     /**
      * Initializes the global thread pool and global main thread
      * dispatcher object.
@@ -66,7 +66,7 @@ namespace nuc {
      */
     async_queue<async_task> &global_main_queue();
 
-    
+
     /**
      * Runs a function on a background thread.
      *
@@ -91,7 +91,7 @@ namespace nuc {
     }
 }
 
-#endif // ASYNC_TASK_H
+#endif // NUC_ASYNC_TASK_H
 
 // Local Variables:
 // mode: c++

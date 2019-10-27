@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_REG_DIR_WRITER_H
-#define NUC_REG_DIR_WRITER_H
+#ifndef NUC_STREAM_REG_DIR_WRITER_H
+#define NUC_STREAM_REG_DIR_WRITER_H
 
 #include "dir_writer.h"
 
@@ -28,23 +28,6 @@ namespace nuc {
      * Regular Directory Writer.
      */
     class reg_dir_writer : public dir_writer {
-        /**
-         * File descriptor of the directory.
-         */
-        int fd;
-
-        /**
-         * Sets the attributes of an open file.
-         *
-         * @param fd File descriptor of the file.
-         *
-         * @param path Path to the file whose attributes are being
-         *   set. Only used for error reporting.
-         *
-         * @param st Stat attributes to set.
-         */
-        void set_file_attributes(int fd, const char *path, const struct stat *st);
-
     public:
         /**
          * Creates a directory writer for the directory at @a path.
@@ -78,6 +61,24 @@ namespace nuc {
         virtual void remove(const pathname &path, bool relative);
 
         virtual file_id get_file_id(const pathname &path);
+
+    private:
+        /**
+         * File descriptor of the directory.
+         */
+        int fd;
+
+        /**
+         * Sets the attributes of an open file.
+         *
+         * @param fd File descriptor of the file.
+         *
+         * @param path Path to the file whose attributes are being
+         *   set. Only used for error reporting.
+         *
+         * @param st Stat attributes to set.
+         */
+        void set_file_attributes(int fd, const char *path, const struct stat *st);
     };
 }
 

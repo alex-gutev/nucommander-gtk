@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_INTERFACE_KEY_PREFS_DIALOG_H
-#define NUC_INTERFACE_KEY_PREFS_DIALOG_H
+#ifndef NUC_INTERFACE_PREFS_WINODW_H
+#define NUC_INTERFACE_PREFS_WINODW_H
 
 #include <gtkmm/dialog.h>
 #include <gtkmm/builder.h>
@@ -39,8 +39,7 @@ namespace nuc {
         prefs_window(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
 
         /**
-         * Creates a new instance of the key-bindings preferences
-         * dialog.
+         * Creates a new instance of the-bindings preferences dialog.
          *
          * @return The key_prefs_dialog instance.
          */
@@ -207,7 +206,7 @@ namespace nuc {
         void get_column_names(Glib::RefPtr<Gtk::ListStore> list);
 
         /**
-         * Signal handler for the cell edited of the column name
+         * Signal handler for the cell edited event of the column name
          * combo-box cell renderer.
          */
         void on_cellrenderer_choice_edited(const Glib::ustring &path, const Glib::ustring &new_text);
@@ -215,7 +214,15 @@ namespace nuc {
         void get_column_settings();
         void store_column_settings();
 
+        /**
+         * Move selected row, in column information tree view,
+         * upwards.
+         */
         void up_column();
+        /**
+         * Move selected row, in column information tree view,
+         * downwards.
+         */
         void down_column();
 
 

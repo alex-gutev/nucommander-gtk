@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_FILE_LIST_H
-#define NUC_FILE_LIST_H
+#ifndef NUC_FILE_LIST_FILE_LIST_CONTROLLER_H
+#define NUC_FILE_LIST_FILE_LIST_CONTROLLER_H
 
 #include <glibmm.h>
 
@@ -281,44 +281,18 @@ namespace nuc {
         /**
          * VFS Read Operation Delegate.
          */
-        struct read_delegate : public vfs::delegate {
-            /** File List Controller */
-            std::weak_ptr<file_list_controller> flist;
-
-            /**
-             * List store model into which the entries are read.
-             */
-            Glib::RefPtr<Gtk::ListStore> list;
-
-            read_delegate(std::weak_ptr<file_list_controller> flist);
-
-            virtual void begin();
-            virtual void new_entry(dir_entry &ent);
-            virtual void finish(bool cancelled, int error);
-        };
+        struct read_delegate;
 
         /**
          * VFS Refresh Operation Delegate.
          */
-        struct update_delegate : public read_delegate {
-            using read_delegate::read_delegate;
-
-            virtual void finish(bool cancelled, int error);
-        };
+        struct update_delegate;
 
         /**
          * VFS read operation delegate for reading the parent
          * directory, after the current directory has been deleted.
          */
-        struct move_up_delegate : public read_delegate {
-            /** Path to the directory being read */
-            pathname path;
-
-            move_up_delegate(std::weak_ptr<file_list_controller> flist, pathname path)
-                : read_delegate(flist), path(path) {}
-
-            virtual void finish(bool cancelled, int error);
-        };
+        struct move_up_delegate;
 
 
         /* Callbacks */
@@ -492,7 +466,7 @@ namespace nuc {
          * @param row    Iterator to the row to mark/unmark.
          * @param marked True if the row should be marked.
          */
-        void mark_row(Gtk::TreeRow row, bool marked);
+        static void mark_row(Gtk::TreeRow row, bool marked);
 
 
         /** Constructor */
@@ -500,7 +474,7 @@ namespace nuc {
     };
 }
 
-#endif // NUC_FILE_LIST_H
+#endif // NUC_FILE_LIST_FILE_LIST_CONTROLLER_H
 
 // Local Variables:
 // mode: c++

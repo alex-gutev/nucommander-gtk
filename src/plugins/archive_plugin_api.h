@@ -17,14 +17,17 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_PLUGIN_API_H
-#define NUC_ARCHIVE_PLUGIN_API_H
+#ifndef NUC_PLUGINS_ARCHIVE_PLUGIN_API_H
+#define NUC_PLUGINS_ARCHIVE_PLUGIN_API_H
 
 #include "archive_plugin_types.h"
 
 /**
  * Contains the prototypes of the archive plugin API functions.
  */
+
+
+//// Obtaining a handle
 
 /**
  * Opens the archive and returns a "handle" to the archive
@@ -60,10 +63,8 @@ void *nuc_arch_open(const char *file, int mode, int *error);
  */
 int nuc_arch_close(void *handle);
 
-
-/**
- * Error Reporting API
- */
+
+//// Error Reporting API
 
 /**
  * Returns a unique code identifying the last error that occurred.
@@ -82,10 +83,8 @@ int nuc_arch_error_code(void *handle);
  */
 const char * nuc_arch_error_string(void *handle);
 
-
-/**
- * Unpacking API
- */
+
+//// Unpacking API
 
 /**
  * Creates an unpacker for an archive where the actual archive data is
@@ -194,10 +193,8 @@ int nuc_arch_unpack(void *handle, const char **buf, size_t *len, off_t *offset);
  */
 void nuc_arch_set_callback(void *handle, nuc_arch_progress_fn callback, void *ctx);
 
-
-/**
- * Packing API
- */
+
+//// Packing API
 
 /**
  * Creates a packer for an archive where the actual archive data is

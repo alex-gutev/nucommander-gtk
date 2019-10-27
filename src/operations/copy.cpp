@@ -31,6 +31,9 @@
 
 using namespace nuc;
 
+
+//// Utility Function Prototypes
+
 /**
  * Copy task function.
  *
@@ -83,10 +86,8 @@ static void copy_file(cancel_state &state, instream &in, outstream &out);
  */
 static void copy_to_temp(cancel_state &state, tree_lister &lst, const std::function<void(const char *)> &callback);
 
-
-//// Implementation
-
-/// Creating the copy task function
+
+//// Creating the Copy Task
 
 nuc::task_queue::task_type nuc::make_copy_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry *> &entries, const pathname::string &dest) {
     using namespace std::placeholders;
@@ -104,6 +105,8 @@ std::vector<pathname> nuc::lister_paths(const std::vector<dir_entry*> &entries) 
     return paths;
 }
 
+
+//// Copy Task
 
 void copy_task_fn(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest) {
     using namespace std::placeholders;
@@ -146,7 +149,7 @@ pathname::string replace_initial_dir(size_t len, const pathname::string &replace
 }
 
 
-/// Actual copying of files
+/// File Copying Functions
 
 void nuc::copy(cancel_state &state, nuc::tree_lister &in, nuc::dir_writer &out, const map_name_fn &map_name) {
     // Set of all directories created during the copy operation.

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_DIR_WRITER_H
-#define NUC_ARCHIVE_DIR_WRITER_H
+#ifndef NUC_STREAM_ARCHIVE_DIR_WRITER_H
+#define NUC_STREAM_ARCHIVE_DIR_WRITER_H
 
 #include <map>
 #include <memory>

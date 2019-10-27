@@ -41,6 +41,9 @@
 
 using namespace nuc;
 
+
+//// Directory Types
+
 /**
  * Regular directory type.
  *
@@ -217,8 +220,8 @@ public:
     }
 };
 
-
-/// Path Canonicalization Utilities
+
+//// Path Canonicalization Utilities
 
 /**
  * Canonicalizes a path by expanding leading tilde's and
@@ -343,10 +346,10 @@ static bool is_reg_dir(const pathname::string &path) {
     return !stat(path.c_str(), &st) && S_ISDIR(st.st_mode);
 }
 
+
+//// Public Static Methods
 
-/// Public static methods
-
-// Getting a dir_type object
+/// Getting a dir_type object
 
 /**
  * Determines the directory type for the sub-directory @a dir nested
@@ -475,14 +478,14 @@ std::shared_ptr<dir_type> dir_type::get(std::shared_ptr<dir_type> dir, const nuc
 }
 
 
-// Getting a directory writer object
+/// Getting a directory writer object
 
 dir_writer * dir_type::get_writer(const pathname &path) {
     return get(path)->create_writer();
 }
 
 
-// Querying Directory Type Properties
+/// Querying Directory Type Properties
 
 dir_type::fs_type dir_type::on_same_fs(const pathname::string &dir1, const pathname::string &dir2) {
     auto path1 = find_dir(dir1).first;

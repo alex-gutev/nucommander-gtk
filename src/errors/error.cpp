@@ -26,6 +26,8 @@
 
 using namespace nuc;
 
+
+//// Restart Map
 
 /**
  * Map of established restarts (error handler functions)
@@ -53,6 +55,9 @@ nuc::global_restart::global_restart(restart r) : name(r.name) {
 nuc::global_restart::~global_restart() {
     restarts().erase(name);
 }
+
+
+//// Default Error Handlers
 
 Glib::ustring nuc::error::explanation() const noexcept {
     // strerror is not thread-safe thus renders the entire method not

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ERROR_MACROS_H
-#define NUC_ERROR_MACROS_H
+#ifndef NUC_STREAM_ERROR_MACROS_H
+#define NUC_STREAM_ERROR_MACROS_H
 
 /**
  * Short-hand for calling the try_op method with a function in which

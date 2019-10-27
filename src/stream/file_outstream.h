@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_FILE_OUTSTREAM_H
-#define NUC_FILE_OUTSTREAM_H
+#ifndef NUC_STREAM_FILE_OUTSTREAM_H
+#define NUC_STREAM_FILE_OUTSTREAM_H
 
 #include <sys/types.h>
 #include <sys/stat.h>

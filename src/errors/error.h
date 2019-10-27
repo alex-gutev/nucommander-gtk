@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ERROR_H
-#define NUC_ERROR_H
+#ifndef NUC_ERRORS_ERROR_H
+#define NUC_ERRORS_ERROR_H
 
 #include <vector>
 #include <unordered_map>

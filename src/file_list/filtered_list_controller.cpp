@@ -21,6 +21,7 @@
 
 using namespace nuc;
 
+
 //// Initialization
 
 std::shared_ptr<filtered_list_controller> filtered_list_controller::create(std::shared_ptr<list_controller> flist, filter_fn filter) {
@@ -34,7 +35,7 @@ filtered_list_controller::filtered_list_controller(std::shared_ptr<list_controll
     flist->signal_select().connect(sigc::mem_fun(this, &filtered_list_controller::select_row));
 }
 
-
+
 //// Filtering
 
 void filtered_list_controller::refilter() {
@@ -91,7 +92,7 @@ void filtered_list_controller::copy_columns(Gtk::TreeRow src, Gtk::TreeRow dest)
     }
 }
 
-
+
 //// Marking and Selecting
 
 std::vector<dir_entry*> filtered_list_controller::selected_entries() const {
@@ -131,7 +132,7 @@ void filtered_list_controller::on_selection_changed(Gtk::TreeRow row) {
     }
 }
 
-
+
 //// List Controller Signal Handlers
 
 void filtered_list_controller::change_model(Glib::RefPtr<Gtk::ListStore> model) {

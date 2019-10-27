@@ -39,10 +39,8 @@
 
 using namespace nuc;
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                                 Prototypes                                //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Utility Function Prototypes
 
 /**
  * Expands relative destination paths to absolute paths relative to @a
@@ -60,6 +58,8 @@ using namespace nuc;
  */
 static pathname expand_dest_path(const pathname &path, const pathname &dest);
 
+
+//// Builtin Commands
 
 /**
  * Copy Command.
@@ -269,10 +269,8 @@ struct quit_command : public command {
     }
 };
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                              Implementations                              //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Implementation
 
 void nuc::add_builtin_commands(command_keymap::command_map &table) {
     table.emplace("copy", std::make_shared<copy_command>());
@@ -292,14 +290,11 @@ void nuc::add_builtin_commands(command_keymap::command_map &table) {
 }
 
 
-// Utility Functions //////////////////////////////////////////////////////////
+/// Utility Functions
 
 pathname expand_dest_path(const pathname &path, const pathname &dest) {
     return path.ensure_dir(true).merge(dest);
 }
-
-
-// Builtin Command Implementations ////////////////////////////////////////////
 
 /**
  * Adds a task to the window's task queue.
@@ -322,6 +317,9 @@ void add_window_task(nuc::app_window *window, nuc::file_view *src, int response,
     }
 }
 
+
+//// Copy Command Implementation
+
 void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
         auto entries = src->selected_entries();
@@ -343,6 +341,9 @@ void copy_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
     }
 }
 
+
+//// Make Directory Command Implementation
+
 void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     using namespace std::placeholders;
 
@@ -362,7 +363,6 @@ void make_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
     }
 }
 
-
 void make_dir_command::make_dir_task(cancel_state &state, const pathname::string &dest, const pathname::string &name) {
     state.call_progress(progress_event(progress_event::type_begin));
 
@@ -379,6 +379,8 @@ void make_dir_command::make_dir_task(cancel_state &state, const pathname::string
     state.call_progress(progress_event(progress_event::type_finish));
 }
 
+
+//// Move Command Implementation
 
 void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
@@ -401,6 +403,8 @@ void move_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEv
     }
 }
 
+
+//// Delete Command Implementation
 
 void delete_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (window && src) {
@@ -428,12 +432,17 @@ Glib::ustring delete_command::confirm_delete_msg(const std::vector<dir_entry *> 
     }
 }
 
+
+//// Change Path Command Implementation
 
 void change_path_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (src) {
         src->focus_path();
     }
 }
+
+
+//// Filter Command Implementations
 
 void begin_filter_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     if (src) {
@@ -456,9 +465,15 @@ void begin_filter_type_command::run(nuc::app_window *window, nuc::file_view *src
     }
 }
 
+
+//// Open Preferences Command Implementation
+
 void preferences_command::run(nuc::app_window *, nuc::file_view *, const GdkEventAny *, Glib::VariantBase) {
     NuCommander::preferences();
 }
+
+
+//// Swap Panes Command Implementation
 
 void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     nuc::file_view *dest = src->next_file_view;
@@ -473,6 +488,9 @@ void swap_panes_command::run(nuc::app_window *window, nuc::file_view *src, const
     dest->file_list(fl_src);
 }
 
+
+//// Change Directory Command Implementation
+
 void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto *popup = window->open_dirs_popup();
 
@@ -484,6 +502,9 @@ void change_dir_command::run(nuc::app_window *window, nuc::file_view *src, const
     popup->present();
 }
 
+
+//// Open New Directory Command Implementation
+
 void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto flist = directory_buffers::instance().new_buffer();
     auto old_path = src->path();
@@ -491,6 +512,9 @@ void open_dir_command::run(nuc::app_window *window, nuc::file_view *src, const G
     src->file_list(flist);
     src->path(old_path);
 }
+
+
+//// Close Directory Command Implementation
 
 void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *, Glib::VariantBase) {
     auto &buffers = directory_buffers::instance();
@@ -521,12 +545,17 @@ void close_dir_command::run(nuc::app_window *window, nuc::file_view *src, const 
     }
 }
 
+
+//// Cancel Command Implementation
+
 void cancel_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase) {
     if (src) {
         src->dir_vfs()->cancel();
     }
 }
 
+
+//// Quit Command Implementation
 
 void quit_command::run(nuc::app_window *window, nuc::file_view *src, const GdkEventAny *e, Glib::VariantBase) {
     NuCommander::instance()->quit();

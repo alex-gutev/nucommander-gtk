@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_LISTER_H
-#define NUC_DIR_LISTER_H
+#ifndef NUC_LISTER_DIR_LISTER_H
+#define NUC_LISTER_DIR_LISTER_H
 
 #include "lister/lister.h"
 
@@ -29,19 +29,6 @@ namespace nuc {
      * directories.
      */
     class dir_lister : public lister {
-        /** Directory handle. */
-        DIR *dp = nullptr;
-
-        /** Last entry read. */
-        struct dirent *last_ent;
-
-        /**
-         * Returns the next entry or nullptr if there are no more
-         * entries. If an error occurs, an 'error' exception is thrown
-         * with the value of 'errno'.
-         */
-        struct dirent *next_ent();
-
     public:
         /**
          * Creates a lister for the directory at @a path.
@@ -63,10 +50,24 @@ namespace nuc {
         virtual bool entry_stat(struct stat &st);
 
         virtual instream *open_entry();
+
+    private:
+        /** Directory handle. */
+        DIR *dp = nullptr;
+
+        /** Last entry read. */
+        struct dirent *last_ent;
+
+        /**
+         * Returns the next entry or nullptr if there are no more
+         * entries. If an error occurs, an 'error' exception is thrown
+         * with the value of 'errno'.
+         */
+        struct dirent *next_ent();
     };
 }
 
-#endif // NUC_DIR_LISTER_H
+#endif // NUC_LISTER_DIR_LISTER_H
 
 // Local Variables:
 // mode: c++

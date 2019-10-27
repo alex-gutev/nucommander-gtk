@@ -45,8 +45,8 @@ namespace nuc {
     std::pair<bool, float> fuzzy_match(const T& string, const T& key);
 }  // nuc
 
-
-/// Implementation
+
+//// Implementation
 
 template <typename T>
 std::pair<bool, float> nuc::fuzzy_match(const T& string, const T& key) {

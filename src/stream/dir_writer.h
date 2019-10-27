@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_WRITER_H
-#define NUC_DIR_WRITER_H
+#ifndef NUC_STREAM_DIR_WRITER_H
+#define NUC_STREAM_DIR_WRITER_H
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -86,21 +86,21 @@ namespace nuc {
         /**
          * Returns a pointer to the destination dialog.
          *
-         * @return Pointer to the destination dialog.
+         * @return Pointer
          */
         nuc::dest_dialog *dest_dialog();
 
         /**
          * Returns a pointer to the progress dialog.
          *
-         * @return Pointer to the progress dialog.
+         * @return Pointer
          */
         nuc::progress_dialog *progress_dialog();
 
         /**
          * Returns a pointer to the open directory list popup.
          *
-         * @return     open_dirs_popup *
+         * @return Pointer
          */
         nuc::open_dirs_popup *open_dirs_popup();
 
@@ -255,53 +255,7 @@ namespace nuc {
          * be invoked, when a restart is chosen for all future errors
          * of the same type.
          */
-        class error_handler {
-            /**
-             * Map of chosen restarts for all errors of a given type.
-             *
-             * The keys are the error objects and the corresponding
-             * values are the identifier names of the chosen restarts.
-             */
-            std::map<error, std::string> chosen_actions;
-
-            /**
-             * The dialog window.
-             */
-            app_window *window;
-
-
-            /**
-             * Displays the error dialog with the error @e and the
-             * recovery options returned by restarts().
-             *
-             * Blocks until the user chooses an error recovery action.
-             *
-             * @param e The error.
-             *
-             * @return A pair consisting of a pointer to the chosen
-             *    restart and a flag, which is true if the recovery action
-             *    should be applied to all future errors of the same type.
-             */
-            std::pair<const restart *, bool> choose_action(const error &e);
-
-
-        public:
-            /**
-             * Constructor.
-             *
-             * @param window The dialog window.
-             */
-            error_handler(app_window *window);
-
-            /**
-             * Error handler function.
-             *
-             * @param state The cancellation state.
-             * @param e The error.
-             */
-            void operator()(cancel_state &state, const error &e);
-        };
-
+        class error_handler;
 
         /* Error Dialog */
 
@@ -332,62 +286,7 @@ namespace nuc {
         /**
          * Progress Reporting Functor.
          */
-        class progress_fn {
-            /**
-             * Type of the directory containing the files being
-             * processed.
-             */
-            std::shared_ptr<dir_type> type;
-
-            /**
-             * Current file hierarchy depth.
-             */
-            size_t depth = 0;
-            /**
-             * The number of files in the current directory
-             */
-            size_t nfiles = 0;
-
-            /**
-             * The progress dialog.
-             */
-            nuc::progress_dialog *dialog;
-
-            /**
-             * Cancellation state of the get directory size operation.
-             */
-            std::shared_ptr<cancel_state> dir_size_state;
-
-            /**
-             * Begins a get directory size operation for the directory
-             * at path @a dir.
-             */
-            void get_dir_size(const pathname &dir);
-            /**
-             * Called when the size of the directory has been obtained.
-             */
-            void got_dir_size(size_t nfile);
-
-        public:
-
-            /**
-             * Constructor.
-             *
-             * @param dialog The progress dialog.
-             *
-             * @param type The type of the parent directory of the
-             *   files being processed.
-             */
-            progress_fn(class progress_dialog *dialog, std::shared_ptr<dir_type> type);
-            progress_fn(class progress_dialog *dialog);
-
-            /**
-             * Progress callback function.
-             *
-             * @param e The progress event.
-             */
-            void operator()(const progress_event &e);
-        };
+        class progress_fn;
 
         /**
          * Progress dialog response signal handler.

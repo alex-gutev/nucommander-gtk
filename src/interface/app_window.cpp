@@ -33,6 +33,9 @@
 
 using namespace nuc;
 
+
+//// Initialization
+
 app_window* app_window::create() {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/window.ui");
 
@@ -94,77 +97,55 @@ void app_window::add_file_view(nuc::file_view* & view, int pane) {
     view->signal_activate_entry().connect(sigc::mem_fun(this, &app_window::on_entry_activate));
 }
 
-
-//// Signal Handlers
-
-bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
-    nuc::error_handler handler([this] (const error &e) {
-        (*show_error(e, restarts()).first)(e);
-    });
-
-    try {
-        return command_keymap::instance().exec_command(this, src, e);
-    }
-    catch (const nuc::error &) {
-        // Catch errors to abort failed commands.
-        // Return true to indicate a command was executed.
-        return true;
-    }
-}
-
-void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controller *flist, nuc::dir_entry *ent) {
-    using namespace std::placeholders;
-
-    if (!flist->descend(*ent)) {
-        auto type = flist->dir_vfs().directory_type();
-
-        if (!type->is_dir()) {
-            add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));
-        }
-        else {
-            pathname full_path = flist->path().append(ent->orig_subpath());
-            add_operation([=] (cancel_state &) {
-                open_file(full_path.c_str());
-            });
-        }
-    }
-}
-
-
-//// Opening Files
-
-void app_window::open_file(const std::string &path) {
-    try {
-        Gio::AppInfo::launch_default_for_uri(Gio::File::create_for_path(path)->get_uri());
-    }
-    catch (Gio::Error) {
-        // For now do nothing as there isn't much that can be done
-        // other than letting the user manually retry.
-    }
-}
-
-
-//// Operations
-
-void app_window::add_operation(task_queue::task_type op) {
-    using namespace std::placeholders;
-
-    operations->add(with_error_handler(std::move(op), error_handler(this)),
-                    std::bind(&app_window::on_operation_finish, this, _1));
-}
-
-void app_window::add_operation(const task_queue::task_type &op, const progress_event::callback &progress) {
-    add_operation([=] (cancel_state &state) {
-        state.no_cancel([&] {
-            state.progress = progress;
-        });
-
-        op(state);
-    });
-}
-
-
+
 //// Error Handler
+
+class app_window::error_handler {
+    /**
+     * Map of chosen restarts for all errors of a given type.
+     *
+     * The keys are the error objects and the corresponding
+     * values are the identifier names of the chosen restarts.
+     */
+    std::map<error, std::string> chosen_actions;
+
+    /**
+     * The dialog window.
+     */
+    app_window *window;
+
+
+    /**
+     * Displays the error dialog with the error @e and the
+     * recovery options returned by restarts().
+     *
+     * Blocks until the user chooses an error recovery action.
+     *
+     * @param e The error.
+     *
+     * @return A pair consisting of a pointer to the chosen
+     *    restart and a flag, which is true if the recovery action
+     *    should be applied to all future errors of the same type.
+     */
+    std::pair<const restart *, bool> choose_action(const error &e);
+
+
+public:
+    /**
+     * Constructor.
+     *
+     * @param window The dialog window.
+     */
+    error_handler(app_window *window);
+
+    /**
+     * Error handler function.
+     *
+     * @param state The cancellation state.
+     * @param e The error.
+     */
+    void operator()(cancel_state &state, const error &e);
+};
 
 app_window::error_handler::error_handler(app_window *window)
     : chosen_actions(auto_error_handlers()), window(window) {
@@ -214,59 +195,134 @@ void app_window::error_handler::operator()(cancel_state &state, const nuc::error
     (*r)(e);
 }
 
+
+//// Signal Handlers
 
-//// Error Dialog
+bool app_window::on_keypress(const GdkEventKey *e, file_view *src) {
+    nuc::error_handler handler([this] (const error &e) {
+        (*show_error(e, restarts()).first)(e);
+    });
 
-error_dialog * app_window::error_dialog() {
-    if (!err_dialog) {
-        err_dialog = error_dialog::create();
-        err_dialog->set_transient_for(*this);
+    try {
+        return command_keymap::instance().exec_command(this, src, e);
     }
-
-    return err_dialog;
-}
-
-std::pair<const restart *, bool> app_window::show_error(const nuc::error &err, const restart_map &restarts) {
-    return error_dialog()->run(err, restarts);
-}
-
-
-//// Destination Dialog
-
-nuc::dest_dialog *app_window::dest_dialog() {
-    if (!m_dest_dialog) {
-        m_dest_dialog = dest_dialog::create();
-        m_dest_dialog->set_transient_for(*this);
-    }
-
-    return m_dest_dialog;
-}
-
-
-//// Progress Dialog
-
-nuc::progress_dialog *app_window::progress_dialog() {
-    if (!m_progress_dialog) {
-        m_progress_dialog = progress_dialog::create();
-        m_progress_dialog->set_transient_for(*this);
-        m_progress_dialog->signal_response().connect(sigc::mem_fun(this, &app_window::on_prog_dialog_response));
-    }
-
-    return m_progress_dialog;
-}
-
-void app_window::on_prog_dialog_response(int id) {
-    if (id == Gtk::RESPONSE_CANCEL) {
-        operations->cancel();
+    catch (const nuc::error &) {
+        // Catch errors to abort failed commands.
+        // Return true to indicate a command was executed.
+        return true;
     }
 }
 
-void app_window::on_operation_finish(bool cancelled) {
-    dispatch_main([this] {
-        progress_dialog()->hide();
+void app_window::on_entry_activate(nuc::file_view *src, nuc::file_list_controller *flist, nuc::dir_entry *ent) {
+    using namespace std::placeholders;
+
+    if (!flist->descend(*ent)) {
+        auto type = flist->dir_vfs().directory_type();
+
+        if (!type->is_dir()) {
+            add_operation(make_unpack_task(type, ent->orig_subpath(), std::bind(&app_window::open_file, this, _1)));
+        }
+        else {
+            pathname full_path = flist->path().append(ent->orig_subpath());
+            add_operation([=] (cancel_state &) {
+                open_file(full_path.c_str());
+            });
+        }
+    }
+}
+
+
+//// Opening Files
+
+void app_window::open_file(const std::string &path) {
+    try {
+        Gio::AppInfo::launch_default_for_uri(Gio::File::create_for_path(path)->get_uri());
+    }
+    catch (Gio::Error) {
+        // For now do nothing as there isn't much that can be done
+        // other than letting the user manually retry.
+    }
+}
+
+
+//// Operations
+
+void app_window::add_operation(task_queue::task_type op) {
+    using namespace std::placeholders;
+
+    operations->add(with_error_handler(std::move(op), error_handler(this)),
+                    std::bind(&app_window::on_operation_finish, this, _1));
+}
+
+void app_window::add_operation(const task_queue::task_type &op, const progress_event::callback &progress) {
+    add_operation([=] (cancel_state &state) {
+        state.no_cancel([&] {
+            state.progress = progress;
+        });
+
+        op(state);
     });
 }
 
+
+//// Progress Callback Function
+
+class app_window::progress_fn {
+    /**
+     * Type of the directory containing the files being
+     * processed.
+     */
+    std::shared_ptr<dir_type> type;
+
+    /**
+     * Current file hierarchy depth.
+     */
+    size_t depth = 0;
+    /**
+     * The number of files in the current directory
+     */
+    size_t nfiles = 0;
+
+    /**
+     * The progress dialog.
+     */
+    nuc::progress_dialog *dialog;
+
+    /**
+     * Cancellation state of the get directory size operation.
+     */
+    std::shared_ptr<cancel_state> dir_size_state;
+
+    /**
+     * Begins a get directory size operation for the directory
+     * at path @a dir.
+     */
+    void get_dir_size(const pathname &dir);
+    /**
+     * Called when the size of the directory has been obtained.
+     */
+    void got_dir_size(size_t nfile);
+
+public:
+
+    /**
+     * Constructor.
+     *
+     * @param dialog The progress dialog.
+     *
+     * @param type The type of the parent directory of the
+     *   files being processed.
+     */
+    progress_fn(class progress_dialog *dialog, std::shared_ptr<dir_type> type);
+    progress_fn(class progress_dialog *dialog);
+
+    /**
+     * Progress callback function.
+     *
+     * @param e The progress event.
+     */
+    void operator()(const progress_event &e);
+};
 
 app_window::progress_fn::progress_fn(class progress_dialog *dialog, std::shared_ptr<dir_type> type) : type(type), dialog(dialog) {
     assert(dialog);
@@ -354,8 +410,63 @@ progress_event::callback app_window::get_progress_fn(std::shared_ptr<dir_type> t
     };
 }
 
+
+//// Dialogs
 
-//// Open Directories Popup
+/// Error Dialog
+
+error_dialog * app_window::error_dialog() {
+    if (!err_dialog) {
+        err_dialog = error_dialog::create();
+        err_dialog->set_transient_for(*this);
+    }
+
+    return err_dialog;
+}
+
+std::pair<const restart *, bool> app_window::show_error(const nuc::error &err, const restart_map &restarts) {
+    return error_dialog()->run(err, restarts);
+}
+
+
+/// Destination Dialog
+
+nuc::dest_dialog *app_window::dest_dialog() {
+    if (!m_dest_dialog) {
+        m_dest_dialog = dest_dialog::create();
+        m_dest_dialog->set_transient_for(*this);
+    }
+
+    return m_dest_dialog;
+}
+
+
+/// Progress Dialog
+
+nuc::progress_dialog *app_window::progress_dialog() {
+    if (!m_progress_dialog) {
+        m_progress_dialog = progress_dialog::create();
+        m_progress_dialog->set_transient_for(*this);
+        m_progress_dialog->signal_response().connect(sigc::mem_fun(this, &app_window::on_prog_dialog_response));
+    }
+
+    return m_progress_dialog;
+}
+
+void app_window::on_prog_dialog_response(int id) {
+    if (id == Gtk::RESPONSE_CANCEL) {
+        operations->cancel();
+    }
+}
+
+void app_window::on_operation_finish(bool cancelled) {
+    dispatch_main([this] {
+        progress_dialog()->hide();
+    });
+}
+
+
+/// Open Directories Popup
 
 nuc::open_dirs_popup *app_window::open_dirs_popup() {
     if (!m_open_dirs_popup) {

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_OUTSTREAM_H
-#define NUC_ARCHIVE_OUTSTREAM_H
+#ifndef NUC_STREAM_ARCHIVE_OUTSTREAM_H
+#define NUC_STREAM_ARCHIVE_OUTSTREAM_H
 
 #include "outstream.h"
 #include "plugins/archive_plugin.h"
@@ -30,16 +30,6 @@ namespace nuc {
      * Writes to files contained in archives.
      */
     class archive_outstream : public outstream {
-        /**
-         * Plugin for writing to the archive.
-         */
-        archive_plugin *plugin;
-
-        /**
-         * Handle of the open archive.
-         */
-        void *handle;
-
     public:
         /**
          * Creates an archive outstream.
@@ -62,6 +52,17 @@ namespace nuc {
         virtual void close();
 
         virtual void write(const byte *buf, size_t n, off_t offset);
+
+    private:
+        /**
+         * Plugin for writing to the archive.
+         */
+        archive_plugin *plugin;
+
+        /**
+         * Handle of the open archive.
+         */
+        void *handle;
     };
 }
 

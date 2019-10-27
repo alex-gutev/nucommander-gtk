@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef FILE_LIST_FILTER_LIST_CONTROLLER_H
-#define FILE_LIST_FILTER_LIST_CONTROLLER_H
+#ifndef NUC_FILE_LIST_FILTER_LIST_CONTROLLER_H
+#define NUC_FILE_LIST_FILTER_LIST_CONTROLLER_H
 
 #include <functional>
 #include <tuple>
@@ -140,7 +140,7 @@ namespace nuc {
 
 }  // nuc
 
-#endif /* FILE_LIST_FILTER_LIST_CONTROLLER_H */
+#endif /* NUC_FILE_LIST_FILTER_LIST_CONTROLLER_H */
 
 // Local Variables:
 // mode: c++

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_COPY_H
-#define NUC_COPY_H
+#ifndef NUC_OPERATIONS_COPY_H
+#define NUC_OPERATIONS_COPY_H
 
 #include "util/util.h"
 

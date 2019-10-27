@@ -26,6 +26,9 @@
 
 using namespace nuc;
 
+
+//// Utility Function Prototypes
+
 /**
  * Creates a new tree view column.
  *
@@ -59,8 +62,8 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col, Gtk::Tre
  */
 static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col);
 
-
-/* Column Descriptors for built-in columns */
+
+//// Column Descriptors for built-in columns
 
 /**
  * Name and Extension Column.
@@ -173,8 +176,8 @@ private:
     Gtk::TreeModelColumn<Glib::ustring> column;
 };
 
-
-/* Column Descriptor Instances */
+
+//// Column Descriptor Map
 
 /**
  * Returns the map, mapping column names to their integer identifiers.
@@ -192,16 +195,7 @@ static std::unordered_map<std::string, int> & column_name_map();
 static std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns();
 
 
-
-/* Implementations */
-
-static std::unordered_map<std::string, int> make_column_name_map();
-
-std::unordered_map<std::string, int> & column_name_map() {
-    static std::unordered_map<std::string, int> map = make_column_name_map();
-
-    return map;
-}
+/// Implementation
 
 std::unordered_map<std::string, int> make_column_name_map() {
     std::unordered_map<std::string, int> map;
@@ -214,9 +208,10 @@ std::unordered_map<std::string, int> make_column_name_map() {
     return map;
 }
 
-std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
-    static std::vector<std::unique_ptr<column_descriptor>> array = make_builtin_columns();
-    return array;
+std::unordered_map<std::string, int> & column_name_map() {
+    static std::unordered_map<std::string, int> map = make_column_name_map();
+
+    return map;
 }
 
 std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
@@ -232,6 +227,13 @@ std::vector<std::unique_ptr<column_descriptor>> make_builtin_columns() {
     return columns;
 }
 
+
+//// Public Function Implementations
+
+std::vector<std::unique_ptr<column_descriptor>> & nuc::column_descriptors() {
+    static std::vector<std::unique_ptr<column_descriptor>> array = make_builtin_columns();
+    return array;
+}
 
 column_descriptor * nuc::get_column(const std::string &name) {
     auto &names = column_name_map();
@@ -248,8 +250,8 @@ column_descriptor * nuc::get_column(int id) {
     return column_descriptors()[id].get();
 }
 
-
-/* Column and Cell Creation Functions */
+
+/// Column and Cell Creation Functions
 
 static Gtk::TreeView::Column *create_column(const Glib::ustring &title) {
     Gtk::TreeView::Column *col = Gtk::manage(new Gtk::TreeView::Column(title));
@@ -275,10 +277,8 @@ static Gtk::CellRendererText *add_text_cell(Gtk::TreeView::Column *col) {
     return cell;
 }
 
-
-/* Column Descriptor Implementations */
-
-/* Full Name Column */
+
+//// Full Name Column Implementation
 
 void full_name_column::add_column(file_model_columns &columns) {
     columns.add(column);
@@ -304,7 +304,8 @@ void full_name_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
     row[column] = ent.file_name();
 }
 
-/* Name Column */
+
+//// Name Column Implementation
 
 void name_column::add_column(file_model_columns &columns) {
     columns.add(column);
@@ -330,8 +331,8 @@ void name_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
     row[column] = ent.subpath().filename();
 }
 
-
-/* Icon Column */
+
+//// Icon Column Implementation
 
 void icon_column::add_column(file_model_columns &columns) {
     columns.add(columns.icon);
@@ -356,7 +357,8 @@ Gtk::TreeSortable::SlotCompare icon_column::sort_func(Gtk::SortType order) {
 void icon_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
 }
 
-/* File Size Column */
+
+//// File Size Column Implementation
 
 void size_column::add_column(file_model_columns &columns) {
     columns.add(column);
@@ -420,8 +422,8 @@ void size_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
     }
 }
 
-
-/* Last Modified Date Column */
+
+//// Last Modified Date Column Implementation
 
 void date_column::add_column(file_model_columns &columns) {
     columns.add(column);
@@ -457,8 +459,8 @@ void date_column::set_data(Gtk::TreeRow row, const nuc::dir_entry &ent) {
     }
 }
 
-
-/* Extension Column */
+
+//// Extension Column Implementation
 
 void extension_column::add_column(file_model_columns &columns) {
     columns.add(column);

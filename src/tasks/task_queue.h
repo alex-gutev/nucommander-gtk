@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_TASK_QUEUE_H
-#define NUC_TASK_QUEUE_H
+#ifndef NUC_TASKS_TASK_QUEUE_H
+#define NUC_TASKS_TASK_QUEUE_H
 
 #include <functional>
 #include <queue>
@@ -223,8 +223,8 @@ namespace nuc {
     };
 }
 
-
-/* Template Implementation */
+
+//// Template Implementation
 
 template <typename T, typename F>
 void nuc::task_queue::add(T task, F finish) {
@@ -242,7 +242,7 @@ void nuc::task_queue::add(T task, F finish) {
     });
 }
 
-#endif // NUC_TASK_QUEUE_H
+#endif // NUC_TASKS_TASK_QUEUE_H
 
 // Local Variables:
 // mode: c++

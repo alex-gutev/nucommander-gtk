@@ -54,6 +54,9 @@ void reg_dir_writer::close() {
     ::close(fd);
 }
 
+
+//// Directory Operations
+
 outstream * reg_dir_writer::create(const pathname &path, const struct stat *st, int flags) {
     int fflags = flags & stream_flag_exclusive ? O_EXCL : 0;
 
@@ -93,8 +96,45 @@ void reg_dir_writer::symlink(const pathname &path, const pathname &target, const
     set_attributes(path, st);
 }
 
+void reg_dir_writer::rename(const pathname &src, const pathname &dest) {
+    bool replace = false;
 
-/// Attributes
+    global_restart(restart("replace", [&] (const error &e, boost::any) {
+        replace = true;
+    }, [&] (const error &e) {
+        return e.code() == EEXIST;
+    }));
+
+    try_op([&] {
+        // Check if file exists
+        if (!replace && !faccessat(fd, dest.path().c_str(), F_OK, AT_SYMLINK_NOFOLLOW)) {
+            throw file_error(EEXIST, error::type_rename_file, true, dest);
+        }
+
+        if (renameat(fd, src.path().c_str(), fd, dest.path().c_str())) {
+            throw file_error(errno, error::type_rename_file, true, dest);
+        }
+    });
+}
+
+void reg_dir_writer::remove(const pathname &path, bool relative) {
+    try_op([=] {
+        if (unlinkat(fd, path.path().c_str(), AT_REMOVEDIR)) {
+            int err = errno;
+
+            if (err == ENOTDIR) {
+                if (unlinkat(fd, path.path().c_str(), 0))
+                    throw file_error(errno, error::type_delete_file, true, path);
+            }
+            else {
+                throw file_error(err, error::type_delete_file, true, path);
+            }
+        }
+    });
+}
+
+
+//// Attributes
 
 void reg_dir_writer::set_file_attributes(int fd, const char *path, const struct stat *st) {
     if (st) {
@@ -142,46 +182,4 @@ nuc::file_id reg_dir_writer::get_file_id(const pathname &path) {
     }
 
     return file_id();
-}
-
-/// Renaming Files
-
-void reg_dir_writer::rename(const pathname &src, const pathname &dest) {
-    bool replace = false;
-
-    global_restart(restart("replace", [&] (const error &e, boost::any) {
-        replace = true;
-    }, [&] (const error &e) {
-        return e.code() == EEXIST;
-    }));
-
-    try_op([&] {
-        // Check if file exists
-        if (!replace && !faccessat(fd, dest.path().c_str(), F_OK, AT_SYMLINK_NOFOLLOW)) {
-            throw file_error(EEXIST, error::type_rename_file, true, dest);
-        }
-
-        if (renameat(fd, src.path().c_str(), fd, dest.path().c_str())) {
-            throw file_error(errno, error::type_rename_file, true, dest);
-        }
-    });
-}
-
-
-/// Deleting Files
-
-void reg_dir_writer::remove(const pathname &path, bool relative) {
-    try_op([=] {
-        if (unlinkat(fd, path.path().c_str(), AT_REMOVEDIR)) {
-            int err = errno;
-
-            if (err == ENOTDIR) {
-                if (unlinkat(fd, path.path().c_str(), 0))
-                    throw file_error(errno, error::type_delete_file, true, path);
-            }
-            else {
-                throw file_error(err, error::type_delete_file, true, path);
-            }
-        }
-    });
 }

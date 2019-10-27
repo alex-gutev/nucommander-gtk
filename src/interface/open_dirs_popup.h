@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef INTERFACE_OPEN_DIRS_POPUP_H
-#define INTERFACE_OPEN_DIRS_POPUP_H
+#ifndef NUC_INTERFACE_OPEN_DIRS_POPUP_H
+#define NUC_INTERFACE_OPEN_DIRS_POPUP_H
 
 #include <vector>
 #include <functional>
@@ -38,16 +38,7 @@ namespace nuc {
      * Popup window displaying list of open directories.
      */
     class open_dirs_popup : public Gtk::Window {
-        /**
-         * Model columns record for the list.
-         */
-        struct model_columns : public Gtk::TreeModelColumnRecord {
-            Gtk::TreeModelColumn<Glib::ustring> path;
-            Gtk::TreeModelColumn<std::shared_ptr<file_list_controller>> file_list;
-
-            model_columns();
-        };
-
+    public:
         /**
          * Directory Chosen Function Type.
          *
@@ -57,6 +48,49 @@ namespace nuc {
          *   directory.
          */
         typedef std::function<void(std::shared_ptr<file_list_controller>)> dir_chosen_fn;
+
+        /** constructor */
+        open_dirs_popup(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
+
+        /**
+         * Creates a new open directory list popup.
+         */
+        static open_dirs_popup *create();
+
+        /**
+         * Sets the list of open directories displayed in the
+         * treeview.
+         *
+         * Only the file_list_controllers which are not attached to
+         * any file_view are displayed in the list.
+         *
+         * @param dirs Vector of file_list_controller objects for each
+         *   open directory.
+         */
+        void set_dirs(const directory_buffers::buffer_set &dirs);
+
+        /**
+         * Sets the directory chosen callback function.
+         *
+         * This function is called when a directory is chosen by the
+         * user.
+         *
+         * @param fn The callback function.
+         */
+        void dir_chosen(dir_chosen_fn fn) {
+            m_dir_chosen = std::move(fn);
+        }
+
+    private:
+        /**
+         * Model columns record for the list.
+         */
+        struct model_columns : public Gtk::TreeModelColumnRecord {
+            Gtk::TreeModelColumn<Glib::ustring> path;
+            Gtk::TreeModelColumn<std::shared_ptr<file_list_controller>> file_list;
+
+            model_columns();
+        };
 
         /**
          * Column Model
@@ -99,44 +133,11 @@ namespace nuc {
          * Key press event handler.
          */
         bool on_key_press_event(GdkEventKey *e);
-
-    public:
-        /** constructor */
-        open_dirs_popup(BaseObjectType *cobject, const Glib::RefPtr<Gtk::Builder> &builder);
-
-        /**
-         * Creates a new open directory list popup.
-         */
-        static open_dirs_popup *create();
-
-        /**
-         * Sets the list of open directories displayed in the
-         * treeview.
-         *
-         * Only the file_list_controllers which are not attached to
-         * any file_view are displayed in the list.
-         *
-         * @param dirs Vector of file_list_controller objects for each
-         *   open directory.
-         */
-        void set_dirs(const directory_buffers::buffer_set &dirs);
-
-        /**
-         * Sets the directory chosen callback function.
-         *
-         * This function is called when a directory is chosen by the
-         * user.
-         *
-         * @param fn The callback function.
-         */
-        void dir_chosen(dir_chosen_fn fn) {
-            m_dir_chosen = std::move(fn);
-        }
     };
 
 };
 
-#endif /* INTERFACE_OPEN_DIRS_POPUP_H */
+#endif /* NUC_INTERFACE_OPEN_DIRS_POPUP_H */
 
 // Local Variables:
 // mode: c++

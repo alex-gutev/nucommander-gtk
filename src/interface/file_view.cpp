@@ -36,8 +36,8 @@
 
 using namespace nuc;
 
-
-//// Constructor
+
+//// Initialization
 
 file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & builder)
     : Gtk::Frame(cobject) {
@@ -55,7 +55,7 @@ file_view::file_view(BaseObjectType *cobject, Glib::RefPtr<Gtk::Builder> & build
 }
 
 
-//// Initialization
+/// Tree View Initialization
 
 void file_view::init_file_list() {
     init_columns();
@@ -139,6 +139,8 @@ void file_view::init_file_list_events() {
 }
 
 
+// Path Entry Initialization
+
 void file_view::init_path_entry() {
     path_entry->signal_activate().connect(sigc::mem_fun(this, &file_view::on_path_entry_activate));
 }
@@ -150,8 +152,8 @@ void file_view::init_filter_entry() {
     filter_entry->signal_key_press_event().connect(sigc::mem_fun(*this, &file_view::filter_key_press));
 }
 
-
-//// Changing the File List
+
+//// Changing the File List Controller
 
 void file_view::file_list(std::shared_ptr<file_list_controller> new_flist, bool push_old) {
     if (flist) {
@@ -200,7 +202,7 @@ std::shared_ptr<file_list_controller> file_view::pop_file_list() {
     return nullptr;
 }
 
-
+
 //// Signal Handlers
 
 void file_view::on_path_entry_activate() {
@@ -247,6 +249,9 @@ void file_view::on_selection_changed() {
         }
     }
 }
+
+
+/// Key Press Events
 
 bool file_view::on_file_list_keypress(GdkEventKey *e) {
     if (filtering() && e->keyval == GDK_KEY_Escape) {
@@ -299,6 +304,8 @@ void file_view::keypress_change_selection(const GdkEventKey *e, bool mark_select
 }
 
 
+/// File List Controller Signals
+
 void file_view::connect_model_signals(const std::shared_ptr<list_controller> &list) {
     signals.model_change = list->signal_change_model().connect(sigc::mem_fun(*this, &file_view::change_model));
     signals.select_row = list->signal_select().connect(sigc::mem_fun(*this, &file_view::select_row));
@@ -320,8 +327,8 @@ void file_view::select_row(Gtk::TreeRow row) {
     }
 }
 
-
-//// Changing the current path
+
+//// Changing the Current Path
 
 void file_view::path(const pathname &path, bool move_to_old) {
     end_filter();
@@ -334,14 +341,16 @@ void file_view::entry_path(const std::string &path) {
     path_entry->set_text(path);
 }
 
-
-//// Getting Selected Entry
+
+//// Retrieving the Selected Entry
 
 dir_entry *file_view::selected_entry() {
-    auto row = filtered_list->selected();
+    if (filtered_list) {
+        auto row = filtered_list->selected();
 
-    if (row)
-        return row[file_model_columns::instance().ent];
+        if (row)
+            return row[file_model_columns::instance().ent];
+    }
 
     return nullptr;
 }
@@ -350,21 +359,21 @@ std::vector<dir_entry*> file_view::selected_entries() const {
     return filtered_list ? filtered_list->selected_entries() : std::vector<dir_entry*>();
 }
 
-
+
 //// Directory VFS
 
 nuc::vfs * file_view::dir_vfs() const {
     return flist ? &flist->dir_vfs() : nullptr;
 }
 
-
+
 //// Changing Keyboard Focus
 
 void file_view::focus_path() {
     path_entry->grab_focus();
 }
 
-
+
 //// Filtering
 
 void file_view::make_filter_model() {
@@ -429,6 +438,7 @@ void file_view::end_filter() {
         connect_model_signals(flist);
     }
 }
+
 
 void file_view::filter_changed() {
     auto filter_list = std::dynamic_pointer_cast<filtered_list_controller>(filtered_list);

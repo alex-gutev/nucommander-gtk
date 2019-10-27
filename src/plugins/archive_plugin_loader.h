@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_PLUGIN_LOADER_H
-#define NUC_ARCHIVE_PLUGIN_LOADER_H
+#ifndef NUC_PLUGINS_ARCHIVE_PLUGIN_LOADER_H
+#define NUC_PLUGINS_ARCHIVE_PLUGIN_LOADER_H
 
 #include <unordered_map>
 #include <vector>
@@ -37,6 +37,32 @@ namespace nuc {
      * archive file.
      */
     class archive_plugin_loader {
+    public:
+
+        /**
+         * Constructor: Retrieves the plugin configuration details
+         * from GSettings.
+         */
+        archive_plugin_loader();
+
+        /**
+         * Returns a reference to the singleton instance.
+         */
+        static archive_plugin_loader &instance();
+
+        /**
+         * Loads the archive plugin for the file at path @a path. If
+         * the file name component of the path matches a particular
+         * plugin's regular expression, the plugin is loaded and a
+         * pointer to the archive_plugin object is returned. If it
+         * doesn't match any regular expression, nullptr is returned
+         * indicating there is no plugin.
+         *
+         * @param path The file path.
+         */
+        archive_plugin *get_plugin(const std::string &path);
+
+    private:
         /**
          * ID of the plugin GSettings schema.
          */
@@ -68,31 +94,6 @@ namespace nuc {
          * plugin regular expression.
          */
         void get_plugin_details();
-
-    public:
-
-        /**
-         * Constructor: Retrieves the plugin configuration details
-         * from GSettings.
-         */
-        archive_plugin_loader();
-
-        /**
-         * Returns a reference to the singleton instance.
-         */
-        static archive_plugin_loader &instance();
-
-        /**
-         * Loads the archive plugin for the file at path @a path. If
-         * the file name component of the path matches a particular
-         * plugin's regular expression, the plugin is loaded and a
-         * pointer to the archive_plugin object is returned. If it
-         * doesn't match any regular expression, nullptr is returned
-         * indicating there is no plugin.
-         *
-         * @param path The file path.
-         */
-        archive_plugin *get_plugin(const std::string &path);
     };
 }
 

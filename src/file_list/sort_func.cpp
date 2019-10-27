@@ -80,7 +80,6 @@ int nuc::sort_mtime(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::ite
     return tm1 > tm2 ? 1 : (tm1 < tm2 ? -1 : 0);
 }
 
-#include <iostream>
 int nuc::sort_extension(const Gtk::TreeModel::iterator &a, const Gtk::TreeModel::iterator &b) {
     file_model_columns &columns = file_model_columns::instance();
 

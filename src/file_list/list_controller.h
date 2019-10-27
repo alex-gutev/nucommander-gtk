@@ -61,6 +61,7 @@ namespace nuc {
         /* Destructor */
         virtual ~list_controller() noexcept = default;
 
+        /* Signals */
 
         /**
          * Model changed signal.
@@ -83,6 +84,8 @@ namespace nuc {
             return m_signal_select;
         }
 
+
+        /* Interface Methods */
 
         /**
          * Returns the list store model.

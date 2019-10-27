@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_COPY_MOVE_H
-#define NUC_COPY_MOVE_H
+#ifndef NUC_OPERATIONS_MOVE_H
+#define NUC_OPERATIONS_MOVE_H
 
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"

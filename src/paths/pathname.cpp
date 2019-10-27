@@ -24,10 +24,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                                Constructors                               //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Constructors
 
 nuc::pathname::pathname(string path) : m_path(std::move(path)) {}
 nuc::pathname::pathname(string path, bool is_dir) : m_path(std::move(path)) {
@@ -42,10 +40,8 @@ nuc::pathname::pathname(const std::vector<string> &components, bool is_dir) {
     ensure_trail_slash(is_dir);
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                              Private Methods                              //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Private Utility Methods
 
 void nuc::pathname::ensure_trail_slash(bool is_dir) {
     if (m_path.size()) {
@@ -63,10 +59,8 @@ void nuc::pathname::append_component(const string &component) {
     m_path.append(component);
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                                 Accessors                                 //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Accessors
 
 bool nuc::pathname::is_dir() const {
     return m_path.size() && m_path.back() == '/';
@@ -102,10 +96,8 @@ std::vector<nuc::pathname::string> nuc::pathname::components() const {
     return components;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                         Path Manipulation Methods                         //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Path Manipulation Methods
 
 nuc::pathname& nuc::pathname::ensure_dir(bool is_dir) && {
     ensure_trail_slash(is_dir);
@@ -228,9 +220,8 @@ nuc::pathname nuc::pathname::expand_tilde() const {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-//                       Retrieving Specific Components                      //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Retrieving Specific Components
 
 nuc::pathname::string nuc::pathname::basename() const {
     if (m_path.length()) {
@@ -281,10 +272,8 @@ size_t nuc::pathname::basename_offset() const {
     return offset == string::npos ? 0 : offset + 1;
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-//                            Querying Path Types                            //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Querying Path Properties
 
 bool nuc::pathname::is_root() const {
     return m_path == "/";

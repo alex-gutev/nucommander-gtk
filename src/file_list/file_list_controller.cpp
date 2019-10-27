@@ -33,6 +33,7 @@
 
 using namespace nuc;
 
+
 //// Private Functions
 
 /// Sorting
@@ -75,7 +76,7 @@ static void load_icons(Glib::RefPtr<Gtk::ListStore> new_list);
  */
 static void load_icon(Gtk::TreeRow row);
 
-
+
 //// Initialization
 
 std::shared_ptr<file_list_controller> file_list_controller::create() {
@@ -94,6 +95,8 @@ file_list_controller::file_list_controller() {
     empty_list = create_model();
 }
 
+
+/// ListStore Model Initialization
 
 Glib::RefPtr<Gtk::ListStore> file_list_controller::create_model() {
     auto list_store = make_liststore();
@@ -127,6 +130,8 @@ void file_list_controller::init_liststore(Glib::RefPtr<Gtk::ListStore> list_stor
 }
 
 
+/// VFS Initialization
+
 void file_list_controller::init_vfs() {
     using namespace std::placeholders;
 
@@ -145,14 +150,30 @@ void file_list_controller::init_vfs() {
     });
 }
 
-
+
 //// VFS Delegates
 
 /// Read Delegate
 
+struct file_list_controller::read_delegate : public vfs::delegate {
+    /** File List Controller */
+    std::weak_ptr<file_list_controller> flist;
+
+    /**
+     * List store model into which the entries are read.
+     */
+    Glib::RefPtr<Gtk::ListStore> list;
+
+    read_delegate(std::weak_ptr<file_list_controller> flist);
+
+    virtual void begin();
+    virtual void new_entry(dir_entry &ent);
+    virtual void finish(bool cancelled, int error);
+};
+
+
 file_list_controller::read_delegate::read_delegate(std::weak_ptr<file_list_controller> flist) :
-    flist(flist), list(make_liststore()) {
-}
+    flist(flist), list(make_liststore()) {}
 
 void file_list_controller::read_delegate::begin() {}
 
@@ -188,6 +209,12 @@ void file_list_controller::read_delegate::finish(bool cancelled, int error) {
 
 /// Update Delegate
 
+struct file_list_controller::update_delegate : public read_delegate {
+    using read_delegate::read_delegate;
+
+    virtual void finish(bool cancelled, int error);
+};
+
 void file_list_controller::update_delegate::finish(bool cancelled, int error) {
     if (auto ptr = flist.lock()) {
         if (!error && !cancelled) {
@@ -196,7 +223,18 @@ void file_list_controller::update_delegate::finish(bool cancelled, int error) {
     }
 }
 
+
 /// Move Up Delegate
+
+struct file_list_controller::move_up_delegate : public read_delegate {
+    /** Path to the directory being read */
+    pathname path;
+
+    move_up_delegate(std::weak_ptr<file_list_controller> flist, pathname path)
+        : read_delegate(flist), path(path) {}
+
+    virtual void finish(bool cancelled, int error);
+};
 
 void file_list_controller::move_up_delegate::finish(bool cancelled, int error) {
     if (auto ptr = flist.lock()) {
@@ -209,7 +247,7 @@ void file_list_controller::move_up_delegate::finish(bool cancelled, int error) {
     }
 }
 
-
+
 //// VFS Callbacks
 
 std::shared_ptr<vfs::delegate> file_list_controller::vfs_dir_changed() {
@@ -221,10 +259,7 @@ void file_list_controller::vfs_dir_deleted(pathname new_path) {
         read_parent_dir(new_path.empty() ? cur_path : std::move(new_path));
 }
 
-
 void file_list_controller::read_parent_dir(pathname path) {
-    using namespace std::placeholders;
-
     if (!path.is_root()) {
         path = path.remove_last_component();
 
@@ -235,7 +270,7 @@ void file_list_controller::read_parent_dir(pathname path) {
     }
 }
 
-
+
 //// Setting/Resetting The File List
 
 void file_list_controller::reset_list() {
@@ -292,11 +327,6 @@ void file_list_controller::update_marked_set() {
 }
 
 
-void file_list_controller::add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const pathname &new_path) {
-    if (!new_path.is_root())
-        create_row(*new_list->append(), parent_entry);
-}
-
 void file_list_controller::finish_read(Glib::RefPtr<Gtk::ListStore> new_list) {
     reading = false;
 
@@ -335,7 +365,12 @@ void file_list_controller::set_sort_column(Glib::RefPtr<Gtk::ListStore> new_list
     }
 }
 
+void file_list_controller::add_parent_entry(Glib::RefPtr<Gtk::ListStore> new_list, const pathname &new_path) {
+    if (!new_path.is_root())
+        create_row(*new_list->append(), parent_entry);
+}
 
+
 //// Sorting
 
 void sort_changed(Gtk::ListStore *list_store) {
@@ -354,7 +389,7 @@ void sort_changed(Gtk::ListStore *list_store) {
         list_store->set_sort_func(id, model.columns[col_id]->sort_func(order));
 }
 
-
+
 //// Marking Rows
 
 void file_list_controller::mark_row(Gtk::TreeRow row) {
@@ -383,7 +418,7 @@ void file_list_controller::mark_row(Gtk::TreeRow row, bool marked) {
     row[columns.color] = Gdk::RGBA(marked ? "#FF0000" : "#000000");
 }
 
-
+
 //// Selection
 
 void file_list_controller::select_row(index_type index) {
@@ -423,6 +458,8 @@ void file_list_controller::select_named(const pathname::string &name, index_type
             selection = cur_list->get_path(row)[0];
         }
         else {
+            // Keep selection at same row index or select 'row_ind'
+            // row if the index is out of bounds.
             selection = std::min(cur_list->children().size() - 1, row_ind);
         }
 
@@ -436,7 +473,7 @@ void file_list_controller::on_selection_changed(Gtk::TreeRow row) {
     }
 }
 
-
+
 //// Icons
 
 void load_icons(Glib::RefPtr<Gtk::ListStore> new_list) {
@@ -454,25 +491,8 @@ void load_icon(Gtk::TreeRow row) {
     row[columns.icon] = icon_loader::instance().load_icon(ent);
 }
 
-
+
 //// Beginning Read Operations
-
-void file_list_controller::prepare_read(bool move_to_old) {
-    this->move_to_old = move_to_old;
-    reading = true;
-
-    clear_view();
-}
-
-pathname file_list_controller::expand_path(const pathname &path) {
-    return pathname(cur_path, true).merge(path);
-}
-
-void file_list_controller::clear_view() {
-    // Set model to empty list to display an empty tree view without
-    // discarding the old list
-    m_signal_change_model.emit(empty_list);
-}
 
 void file_list_controller::path(const pathname &path, bool move_to_old) {
     prepare_read(move_to_old);
@@ -512,6 +532,24 @@ bool file_list_controller::descend(const dir_entry& ent) {
 }
 
 
+void file_list_controller::prepare_read(bool move_to_old) {
+    this->move_to_old = move_to_old;
+    reading = true;
+
+    clear_view();
+}
+
+pathname file_list_controller::expand_path(const pathname &path) {
+    return pathname(cur_path, true).merge(path);
+}
+
+void file_list_controller::clear_view() {
+    // Set model to empty list to display an empty tree view without
+    // discarding the old list
+    m_signal_change_model.emit(empty_list);
+}
+
+
 //// Getting Selected and Marked Entries
 
 std::vector<dir_entry*> file_list_controller::selected_entries() const {

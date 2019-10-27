@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_PLUGIN_H
-#define NUC_ARCHIVE_PLUGIN_H
+#ifndef NUC_PLUGINS_ARCHIVE_PLUGIN_H
+#define NUC_PLUGINS_ARCHIVE_PLUGIN_H
 
 #include <string>
 #include <exception>
@@ -39,6 +39,7 @@ namespace nuc {
      * retained in memory.
      */
     class archive_plugin {
+    public:
         /* Function Pointer types */
 
         typedef void*(*open_fn)(const char *, int, int *);
@@ -73,35 +74,6 @@ namespace nuc {
 
         typedef void(*set_callback_fn)(void *, nuc_arch_progress_fn, void *);
 
-        /**
-         * Path to the plugin shared library file.
-         */
-        const std::string path;
-
-        /**
-         * Mutex for synchronizing loading and unloading.
-         */
-        std::mutex mutex;
-
-
-        /**
-         * Handle to the dynamically loaded shared library.
-         */
-        void *dl_handle = nullptr;
-
-        /**
-         * Checks whether the last dl operation resulted in an error,
-         * by checking whether dlerror is NULL. If dlerror returns
-         * non-NULL an error exception with error code @a code is
-         * thrown.
-         *
-         * @param code The error code, as a load_error constant, of
-         *    the exception to throw if the last operation resulted in
-         *    an error.
-         */
-        void check_error(int code);
-
-    public:
         /**
          * Exception thrown when there is an error loading the plugin.
          */
@@ -203,10 +175,40 @@ namespace nuc {
         pack_finish_fn pack_finish;
 
         set_callback_fn set_callback;
+
+    private:
+
+        /**
+         * Path to the plugin shared library file.
+         */
+        const std::string path;
+
+        /**
+         * Mutex for synchronizing loading and unloading.
+         */
+        std::mutex mutex;
+
+
+        /**
+         * Handle to the dynamically loaded shared library.
+         */
+        void *dl_handle = nullptr;
+
+        /**
+         * Checks whether the last dl operation resulted in an error,
+         * by checking whether dlerror is NULL. If dlerror returns
+         * non-NULL an error exception with error code @a code is
+         * thrown.
+         *
+         * @param code The error code, as a load_error constant, of
+         *    the exception to throw if the last operation resulted in
+         *    an error.
+         */
+        void check_error(int code);
     };
 }
 
-#endif // NUC_ARCHIVE_PLUGIN_H
+#endif // NUC_PLUGINS_ARCHIVE_PLUGIN_H
 
 // Local Variables:
 // mode: c++

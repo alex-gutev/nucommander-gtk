@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef FILEMODELCOLUMNS_H
-#define FILEMODELCOLUMNS_H
+#ifndef NUC_FILE_LIST_FILE_MODEL_COLUMNS_H
+#define NUC_FILE_LIST_FILE_MODEL_COLUMNS_H
 
 #include <gtkmm/treemodelcolumn.h>
 #include <gdkmm/rgba.h>
@@ -85,7 +85,7 @@ namespace nuc {
     };
 }
 
-#endif // FILEMODELCOLUMNS_H
+#endif // NUC_FILE_LIST_FILE_MODEL_COLUMNS_H
 
 // Local Variables:
 // mode: c++

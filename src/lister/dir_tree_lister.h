@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_DIR_TREE_LISTER_H
-#define NUC_DIR_TREE_LISTER_H
+#ifndef NUC_LISTER_DIR_TREE_LISTER_H
+#define NUC_LISTER_DIR_TREE_LISTER_H
 
 #include "tree_lister.h"
 
@@ -33,6 +33,30 @@ namespace nuc {
      * Regular Directory Tree Lister.
      */
     class dir_tree_lister : public tree_lister {
+    public:
+
+        /**
+         * Creates a directory tree lister for the
+         * sub-directories/files @a path in the directory at @a base.
+         *
+         * @param base Path to the base directory of the tree.
+         *
+         * @param paths Array of names of sub-directories/files which
+         *    are to be listed.
+         */
+        dir_tree_lister(const pathname &base, const std::vector<pathname> &paths);
+
+        virtual ~dir_tree_lister();
+
+        /* Method Overrides */
+
+        virtual void list_entries(const list_callback &fn);
+
+        virtual std::string symlink_path();
+
+        virtual instream * open_entry();
+
+    private:
         /**
          * FTS directory tree handle.
          */
@@ -84,33 +108,10 @@ namespace nuc {
          * @param ent The FTS entry.
          */
         static visit_info get_visit_info(FTSENT *ent);
-
-    public:
-
-        /**
-         * Creates a directory tree lister for the
-         * sub-directories/files @a path in the directory at @a base.
-         *
-         * @param base Path to the base directory of the tree.
-         *
-         * @param paths Array of names of sub-directories/files which
-         *    are to be listed.
-         */
-        dir_tree_lister(const pathname &base, const std::vector<pathname> &paths);
-
-        virtual ~dir_tree_lister();
-
-        /* Method Overrides */
-
-        virtual void list_entries(const list_callback &fn);
-
-        virtual std::string symlink_path();
-
-        virtual instream * open_entry();
     };
 }
 
-#endif // NUC_DIR_TREE_LISTER_H
+#endif // NUC_LISTER_DIR_TREE_LISTER_H
 
 // Local Variables:
 // mode: c++

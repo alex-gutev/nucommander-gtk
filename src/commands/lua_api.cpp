@@ -31,7 +31,8 @@
 
 using namespace nuc;
 
-/* Application Functions */
+
+//// Application Functions
 
 /**
  * Execute Command Function.
@@ -102,8 +103,8 @@ static void launch_app(const std::string &app);
  */
 static void launch_app_with_file(const std::string &app, const std::string &file);
 
-
-/* NucWindow Methods */
+
+//// NucWindow Methods
 
 /**
  * Unpacks a file to a temporary location (if necessary), and calls a
@@ -141,8 +142,8 @@ static luaL_Reg NucWindow_metatable[] = {
     {NULL, NULL}
 };
 
-
-/* NucPane Methods */
+
+//// NucPane Methods
 
 /**
  * Get the selected entry.
@@ -174,8 +175,8 @@ static luaL_Reg NucPane_metatable[] = {
     {NULL, NULL}
 };
 
-
-/* NucEntry Methods */
+
+//// NucEntry Methods
 
 /**
  * Get the file name.
@@ -237,7 +238,7 @@ static luaL_Reg NucEntry_metatable[] = {
  */
 static void add_type_constants(lua_State *L);
 
-
+
 //// API Registration Functions
 
 void nuc::register_nuc_api(lua_State *L) {
@@ -295,10 +296,8 @@ void nuc::pass_lua_command_args(lua_State *L, app_window *window, file_view *src
     lua_setfield(L, -2, "source");
 }
 
-
-//// API Functions
-
-/// Application Functions
+
+//// Application Functions
 
 int exec_command(lua_State *L) {
     const char *cmd = luaL_checkstring(L, 1);
@@ -337,7 +336,7 @@ int launch(lua_State *L) {
 }
 
 
-// Application Launch Utilities
+/// Application Launch Utilities
 
 static void launch_app(const std::string &app) {
 #ifdef __APPLE__
@@ -375,8 +374,8 @@ static void launch_app_with_file(const std::string &app, const std::string &file
 #endif
 }
 
-
-/// NucWindow Methods
+
+//// NucWindow Methods
 
 int window_unpack_file(lua_State *L) {
     app_window *window = luaW_check<app_window>(L, 1);
@@ -403,8 +402,8 @@ int window_unpack_file(lua_State *L) {
     return 0;
 }
 
-
-/// NucPane Methods
+
+//// NucPane Methods
 
 int pane_selected(lua_State *L) {
     // Pane
@@ -425,8 +424,8 @@ int pane_path(lua_State *L) {
     return 1;
 }
 
-
-/// NucEntry Methods
+
+//// NucEntry Methods
 
 int entry_name(lua_State *L) {
     dir_entry *ent = luaW_check<dir_entry>(L, 1);

@@ -47,7 +47,7 @@ namespace nuc {
          * Mutex for synchronizing access to the queue.
          */
         mutable std::mutex m_mutex;
-        
+
     public:
         /**
          * Returns the mutex.
@@ -76,7 +76,7 @@ namespace nuc {
          * The following member functions lock the queue before
          * executing and unlock the queue before returning.
          */
-        
+
         /**
          * Returns a reference to the head element, the element which
          * will be popped off next.
@@ -163,15 +163,19 @@ namespace nuc {
          */
         bool pop(T &item) {
             lock_guard l(m_mutex);
-        
+
             if (q.empty()) return false;
-        
+
             item = std::move(q.front());
             q.pop();
-            
+
             return true;
-        }        
+        }
     };
 }
 
 #endif // NUC_ASYNC_QUEUE_H
+
+// Local Variables:
+// mode: c++
+// End:

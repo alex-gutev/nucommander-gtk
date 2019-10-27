@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_INSTREAM_H
-#define NUC_ARCHIVE_INSTREAM_H
+#ifndef NUC_STREAM_ARCHIVE_INSTREAM_H
+#define NUC_STREAM_ARCHIVE_INSTREAM_H
 
 #include "instream.h"
 
@@ -29,21 +29,6 @@ namespace nuc {
      * Input stream for files in archives.
      */
     class archive_instream : public instream {
-        /**
-         * Offset of the first byte after the last block of data read.
-         */
-        off_t last_offset = 0;
-
-        /**
-         * Plugin for reading the archive.
-         */
-        archive_plugin *plugin;
-
-        /**
-         * Archive handle.
-         */
-        void *handle;
-
     public:
 
         /**
@@ -70,6 +55,22 @@ namespace nuc {
         virtual void close() {}
 
         virtual const byte *read_block(size_t &size, off_t &offset);
+
+    private:
+        /**
+         * Offset of the first byte after the last block of data read.
+         */
+        off_t last_offset = 0;
+
+        /**
+         * Plugin for reading the archive.
+         */
+        archive_plugin *plugin;
+
+        /**
+         * Archive handle.
+         */
+        void *handle;
     };
 }
 

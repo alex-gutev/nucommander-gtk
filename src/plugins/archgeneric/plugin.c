@@ -38,7 +38,6 @@
  */
 #define HOLE_BUF_SIZE 131072
 
-
 /**
  * Archive Handle.
  */
@@ -102,7 +101,7 @@ typedef struct nuc_arch_handle {
     void *callback_ctx;
 } nuc_arch_handle;
 
-
+
 //// Function Prototypes
 
 /**
@@ -238,7 +237,7 @@ static nuc_arch_prog_act call_callback(nuc_arch_handle *handle, nuc_arch_prog_ty
  */
 static int err_code(const nuc_arch_handle *handle, int err);
 
-
+
 //// Opening Archives
 
 static nuc_arch_handle *alloc_handle() {
@@ -313,7 +312,7 @@ int open_pack(const char *file, nuc_arch_handle *handle) {
     return NUC_AP_OK;
 }
 
-
+
 //// Unpacking Raw Data
 
 EXPORT
@@ -387,7 +386,7 @@ off_t skip_callback(struct archive *ar, void *ctx, off_t request) {
     return handle->skip_fn(handle->callback_ctx, request);
 }
 
-
+
 //// Packing into Raw Data
 
 EXPORT
@@ -426,7 +425,7 @@ ssize_t unpack_write_callback(struct archive *ar, void *ctx, const void *buffer,
     return n;
 }
 
-
+
 //// Closing Archives
 
 EXPORT
@@ -467,7 +466,7 @@ int close_pack(nuc_arch_handle *handle) {
     return err;
 }
 
-
+
 //// Error Reporting
 
 EXPORT
@@ -482,7 +481,7 @@ const char * nuc_arch_error_string(void *ctx) {
     return archive_error_string(handle->ar);
 }
 
-
+
 //// Set Callback
 
 EXPORT
@@ -493,7 +492,7 @@ void nuc_arch_set_callback(void *plg_ctx, nuc_arch_progress_fn callback, void *c
     handle->ctx = cb_ctx;
 }
 
-
+
 //// Reading and Unpacking Entries
 
 EXPORT
@@ -539,7 +538,7 @@ int nuc_arch_unpack(void *ctx, const char **buf, size_t *size, off_t *offset) {
     return err_code(handle, archive_read_data_block(handle->ar, (const void **)buf, size, offset));
 }
 
-
+
 //// Copying archive types and entries
 
 EXPORT
@@ -817,7 +816,7 @@ int nuc_arch_pack_finish(void *ctx) {
     return NUC_AP_OK;
 }
 
-
+
 //// Utility Functions
 
 nuc_arch_prog_act call_callback(nuc_arch_handle *handle, nuc_arch_prog_type type, int error, size_t bytes) {

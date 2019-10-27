@@ -25,8 +25,11 @@
 
 using namespace nuc;
 
+
+//// Constructors
+
 archive_dir_writer::archive_dir_writer(pathname arch_path, archive_plugin *plugin, pathname subpath)
-    : path(std::move(arch_path)), subpath(subpath), plugin(plugin) {
+    : path(std::move(arch_path)), plugin(plugin), subpath(subpath) {
     open_old();
 
     try {
@@ -39,6 +42,9 @@ archive_dir_writer::archive_dir_writer(pathname arch_path, archive_plugin *plugi
 }
 
 archive_dir_writer::archive_dir_writer(archive_plugin *plugin, const pathname &path, const pathname &subpath) : plugin(plugin), path(path), subpath(subpath) {}
+
+
+//// Opening old archive and temporary new archive file
 
 void archive_dir_writer::open_old() {
     try_op([this] {
@@ -84,6 +90,9 @@ void archive_dir_writer::open_temp(const pathname &path) {
     get_old_entries();
 }
 
+
+//// Cleanup
+
 archive_dir_writer::~archive_dir_writer() {
     close_handles();
 }
@@ -118,6 +127,8 @@ void archive_dir_writer::close() {
     tmp_exists = false;
 }
 
+
+//// Copying entries from old archive to new archive
 
 void archive_dir_writer::get_old_entries() {
     lister::entry ent;
@@ -204,6 +215,9 @@ bool archive_dir_writer::next_entry(lister::entry &ent) {
 
     return more;
 }
+
+
+//// Directory Operations
 
 outstream * archive_dir_writer::create(const pathname &path, const struct stat *st, int flags) {
     // Default regular file stat structure

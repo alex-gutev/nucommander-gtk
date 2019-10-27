@@ -29,6 +29,9 @@
 
 using namespace nuc;
 
+
+//// Utilities
+
 /**
  * Exception which is thrown when the copy restart is invoked.
  *
@@ -68,6 +71,9 @@ static void move_or_copy(cancel_state &state, std::shared_ptr<dir_type> src_type
  * @param dest Path to the destination directory.
  */
 static void copy_files(cancel_state &state, std::shared_ptr<dir_type> src_type, const std::vector<pathname> &paths, const pathname &dest);
+
+
+//// Move Task Implementation
 
 task_queue::task_type nuc::make_move_task(std::shared_ptr<dir_type> src_type, const std::vector<dir_entry*> &entries, const pathname &dest) {
     std::vector<pathname> paths = lister_paths(entries);

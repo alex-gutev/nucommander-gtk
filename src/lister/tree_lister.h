@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_TREE_LISTER_H
-#define NUC_TREE_LISTER_H
+#ifndef NUC_LISTER_TREE_LISTER_H
+#define NUC_LISTER_TREE_LISTER_H
 
 #include <vector>
 #include <functional>
@@ -152,7 +152,7 @@ namespace nuc {
 }
 
 
-#endif // NUC_TREE_LISTER_H
+#endif // NUC_LISTER_TREE_LISTER_H
 
 // Local Variables:
 // mode: c++

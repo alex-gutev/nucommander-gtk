@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_COPY_DELETE_H
-#define NUC_COPY_DELETE_H
+#ifndef NUC_OPERATIONS_DELETE_H
+#define NUC_OPERATIONS_DELETE_H
 
 #include "lister/tree_lister.h"
 #include "stream/dir_writer.h"

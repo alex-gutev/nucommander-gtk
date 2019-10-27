@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_CANCEL_STATE_H
-#define NUC_CANCEL_STATE_H
+#ifndef NUC_TASKS_CANCEL_STATE_H
+#define NUC_TASKS_CANCEL_STATE_H
 
 #include <atomic>
 #include <exception>
@@ -47,13 +47,13 @@ namespace nuc {
          * Progress callback function.
          */
         progress_event::callback progress;
-        
+
         /**
          * Operation cancelled exception.
          */
         class cancelled : public std::exception {};
 
-        
+
         /** Default constructor */
         cancel_state() = default;
 
@@ -65,27 +65,27 @@ namespace nuc {
         cancel_state(const cancel_state &) = delete;
         cancel_state& operator=(const cancel_state &) = delete;
 
-        
+
         /**
          * Enters the "no cancel" state. Throws a 'cancelled'
          * exception, if the operation has been cancelled.
          */
         void enter_no_cancel();
-        
+
         /**
          * Exits the "no cancel" state. Throws a 'cancelled' exception
          * if the operation was cancelled whilst in the no cancel
          * state.
          */
         void exit_no_cancel();
-        
+
         /**
          * Tests whether the operation has been cancelled.  If the
          * operation has been cancelled, a cancelled exception is
          * thrown.
          */
         void test_cancel();
-        
+
         /**
          * Executes the callable 'f' in the "no cancel" state,
          * effectively the call to 'f' is preceded by
@@ -111,7 +111,7 @@ namespace nuc {
             }
             exit_no_cancel();
         }
-        
+
 
         /**
          * Cancels the operation.
@@ -160,7 +160,7 @@ namespace nuc {
          * @param event The progress event.
          */
         void call_progress(const progress_event &event);
-        
+
     private:
         /**
          * Cancellation state constants.
@@ -173,10 +173,10 @@ namespace nuc {
             /** Operation has been cancelled. */
             CANCELLED  = 2
         };
-        
+
         /** Cancellation State. */
         std::atomic<int> state {CAN_CANCEL};
-        
+
         /**
          * Boolean flag for whether the finish signal has been
          * emitted.
@@ -190,7 +190,7 @@ namespace nuc {
     };
 }
 
-#endif // NUC_CANCEL_STATE_H
+#endif // NUC_TASKS_CANCEL_STATE_H
 
 // Local Variables:
 // mode: c++

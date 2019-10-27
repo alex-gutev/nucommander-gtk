@@ -33,6 +33,7 @@ namespace nuc {
      * Dialog that queries the user for a destination path.
      */
     class dest_dialog : public Gtk::Dialog {
+    public:
         /**
          * Destination chosen function type.
          *
@@ -40,64 +41,6 @@ namespace nuc {
          */
         typedef std::function<void(const Glib::ustring &)> chose_dest_fn;
 
-        /**
-         * The label displaying the destination path query message.
-         */
-        Gtk::Label *query_label;
-
-        /**
-         * The execute button.
-         */
-        Gtk::Button *exec_button;
-
-        /**
-         * The cancel button.
-         */
-        Gtk::Button *cancel_button;
-
-        /**
-         * Destination path text entry.
-         */
-        Gtk::Entry *dest_entry;
-
-
-        /**
-         * Callback function which is executed after the user has
-         * entered a destination path.
-         */
-        chose_dest_fn dest_chosen;
-
-
-        /* Initialization Methods */
-
-        /* Signal Handlers */
-
-        /**
-         * Signal handler for the "clicked" event of the execute action
-         * button.
-         */
-        void exec_clicked();
-
-        /**
-         * Signal handler for the "clicked" event of the "cancel"
-         * button.
-         */
-        void cancel_clicked();;
-
-        /**
-         * Called just after the dialog is shown.
-         */
-        void on_show() override;
-
-        /**
-         * Signal handler for the "deleted" signal. Called when the
-         * user closes the dialog.
-         *
-         * Hides the dialog preventing it from being deleted.
-         */
-        bool on_delete(const GdkEventAny *e);
-
-    public:
         using Gtk::Dialog::show;
 
         /** Constructor */
@@ -158,6 +101,64 @@ namespace nuc {
          *   enters a destination path.
          */
         void show(chose_dest_fn chose_fn);
+
+    private:
+        /**
+         * The label displaying the destination path query message.
+         */
+        Gtk::Label *query_label;
+
+        /**
+         * The execute button.
+         */
+        Gtk::Button *exec_button;
+
+        /**
+         * The cancel button.
+         */
+        Gtk::Button *cancel_button;
+
+        /**
+         * Destination path text entry.
+         */
+        Gtk::Entry *dest_entry;
+
+
+        /**
+         * Callback function which is executed after the user has
+         * entered a destination path.
+         */
+        chose_dest_fn dest_chosen;
+
+
+        /* Initialization Methods */
+
+        /* Signal Handlers */
+
+        /**
+         * Signal handler for the "clicked" event of the execute action
+         * button.
+         */
+        void exec_clicked();
+
+        /**
+         * Signal handler for the "clicked" event of the "cancel"
+         * button.
+         */
+        void cancel_clicked();;
+
+        /**
+         * Called just after the dialog is shown.
+         */
+        void on_show() override;
+
+        /**
+         * Signal handler for the "deleted" signal. Called when the
+         * user closes the dialog.
+         *
+         * Hides the dialog preventing it from being deleted.
+         */
+        bool on_delete(const GdkEventAny *e);
     };
 }
 

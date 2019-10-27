@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef FILE_LIST_COLUMNS_H
-#define FILE_LIST_COLUMNS_H
+#ifndef NUC_FILE_LIST_LIST_COLUMNS_H
+#define NUC_FILE_LIST_LIST_COLUMNS_H
 
 #include <unordered_map>
 

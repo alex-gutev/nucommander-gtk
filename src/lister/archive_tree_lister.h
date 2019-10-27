@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_TREE_LISTER_H
-#define NUC_ARCHIVE_TREE_LISTER_H
+#ifndef NUC_LISTER_ARCHIVE_TREE_LISTER_H
+#define NUC_LISTER_ARCHIVE_TREE_LISTER_H
 
 #include <map>
 #include <set>
@@ -35,6 +35,46 @@ namespace nuc {
      * Lists directory trees within archives.
      */
     class archive_tree_lister : public tree_lister {
+    public:
+
+        /**
+         * Creates an archive tree lister.
+         *
+         * @param plugin Plugin for reading the archive.
+         *
+         * @param archive Path to the actual archive file.
+         *
+         * @param paths Subpaths, within the archive, of the directory
+         *    trees to list (base paths). All paths should be
+         *    canonicalized and paths to directories should have a
+         *    trailing slash '/'.
+         */
+        archive_tree_lister(archive_plugin *plugin, const pathname &archive, const std::vector<pathname> &paths);
+
+        /**
+         * Creates an archive tree lister.
+         *
+         * @param listr The lister object for listing the archive.
+         *
+         * @param paths Subpaths, within the archive, of the directory
+         *    trees to list (base paths). All paths should be
+         *    canonicalized and paths to directories should have a
+         *    trailing slash '/'.
+         */
+        archive_tree_lister(archive_lister* listr, const std::vector<pathname> &paths);
+
+
+        /* Method Overrides */
+
+        virtual void list_entries(const list_callback &fn);
+
+        virtual instream * open_entry() {
+            return listr->open_entry();
+        }
+
+        virtual std::string symlink_path();
+
+    private:
         /**
          * Set of subpaths to visit (base paths).
          */
@@ -92,49 +132,10 @@ namespace nuc {
          *   if it has been visited.
          */
         bool add_dir_stat(const pathname &name, const struct stat *st);
-
-    public:
-
-        /**
-         * Creates an archive tree lister.
-         *
-         * @param plugin Plugin for reading the archive.
-         *
-         * @param archive Path to the actual archive file.
-         *
-         * @param paths Subpaths, within the archive, of the directory
-         *    trees to list (base paths). All paths should be
-         *    canonicalized and paths to directories should have a
-         *    trailing slash '/'.
-         */
-        archive_tree_lister(archive_plugin *plugin, const pathname &archive, const std::vector<pathname> &paths);
-
-        /**
-         * Creates an archive tree lister.
-         *
-         * @param listr The lister object for listing the archive.
-         *
-         * @param paths Subpaths, within the archive, of the directory
-         *    trees to list (base paths). All paths should be
-         *    canonicalized and paths to directories should have a
-         *    trailing slash '/'.
-         */
-        archive_tree_lister(archive_lister* listr, const std::vector<pathname> &paths);
-
-
-        /* Method Overrides */
-
-        virtual void list_entries(const list_callback &fn);
-
-        virtual instream * open_entry() {
-            return listr->open_entry();
-        }
-
-        virtual std::string symlink_path();
     };
 }
 
-#endif // NUC_ARCHIVE_TREE_LISTER_H
+#endif // NUC_LISTER_ARCHIVE_TREE_LISTER_H
 
 // Local Variables:
 // mode: c++

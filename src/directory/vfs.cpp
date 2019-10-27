@@ -24,9 +24,8 @@
 
 using namespace nuc;
 
-///////////////////////////////////////////////////////////////////////////////
-//                           Background Task State                           //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Background Task State
 
 /**
  * Background Task State
@@ -114,9 +113,8 @@ struct vfs::background_task {
     void queue_main_wait(F fn);
 };
 
-///////////////////////////////////////////////////////////////////////////////
-//                                 Read Task                                 //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Read Task
 
 /**
  * Read Directory Task State.
@@ -187,9 +185,8 @@ struct vfs::read_dir_task : public vfs::background_task, std::enable_shared_from
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-//                              Read Subdir Task                             //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Read Subdirectory Task
 
 /**
  * Read Subdirectory Task State.
@@ -245,9 +242,8 @@ struct vfs::read_subdir_task : public vfs::background_task, std::enable_shared_f
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-//                            Update Directory Task                          //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Update Task
 
 /**
  * Update Task State
@@ -271,9 +267,8 @@ struct vfs::update_task : public vfs::background_task {
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-//                                 Utilities                                 //
-///////////////////////////////////////////////////////////////////////////////
+
+//// Utilities
 
 /**
  * Calls the begin method of an operation delegate. The method is
@@ -285,11 +280,8 @@ struct vfs::update_task : public vfs::background_task {
 static void call_begin(cancel_state &state, std::shared_ptr<vfs::delegate> delegate);
 
 
-///////////////////////////////////////////////////////////////////////////////
-//                             VFS Implementation                            //
-///////////////////////////////////////////////////////////////////////////////
-
-// Constructors ///////////////////////////////////////////////////////////////
+
+//// Initialization
 
 vfs::vfs() : tasks(std::make_shared<background_task_state>(this)) {
     monitor.signal_event().connect(sigc::mem_fun(*this, &vfs::file_event));
@@ -303,14 +295,15 @@ vfs::background_task_state::background_task_state(class vfs *vfs)
     : vfs(vfs), queue(task_queue::create()) {}
 
 
-// Accessors //////////////////////////////////////////////////////////////////
+
+//// Accessors
 
 vfs::deleted_signal vfs::signal_deleted() {
     return sig_deleted;
 }
 
-
-// Queuing Background Tasks //////////////////////////////////////////////////
+
+//// Queuing Background Tasks
 
 template <typename F>
 void vfs::background_task_state::queue_main(F fn) {
@@ -343,8 +336,8 @@ void vfs::background_task::queue_main_wait(F fn) {
         tasks->queue_main_wait(fn);
 }
 
-
-// Initiating Background Read Tasks ///////////////////////////////////////////
+
+//// Initiating Background Read Tasks
 
 void vfs::read(const pathname& path, std::shared_ptr<delegate> del) {
     cancel_update();
@@ -378,8 +371,8 @@ void vfs::add_refresh_task() {
         add_read_task(dtype, true, del);
 }
 
-
-// Read Task //////////////////////////////////////////////////////////////////
+
+//// Read Task
 
 void vfs::read_dir_task::read_path(nuc::cancel_state &state, const nuc::pathname &path) {
     type = dir_type::get(path);
@@ -459,8 +452,8 @@ void call_begin(cancel_state &state, std::shared_ptr<vfs::delegate> delegate) {
     });
 }
 
-
-/// Changing directory tree subdirectories
+
+//// Changing directory tree subdirectories
 
 bool vfs::descend(const dir_entry &ent, std::shared_ptr<delegate> del) {
     if (cur_tree->is_subdir(ent)) {
@@ -500,7 +493,7 @@ void vfs::add_read_subdir(const pathname &subpath, std::shared_ptr<delegate> del
 }
 
 
-// Read Subdirectory Task /////////////////////////////////////////////////////
+/// Read Subdirectory Task
 
 void vfs::read_subdir_task::read_subdir(cancel_state &state) {
     call_begin(state, m_delegate);
@@ -551,8 +544,8 @@ void vfs::refresh_subdir() {
     }
 }
 
-
-/// Cancellation
+
+//// Cancellation
 
 void vfs::cancel_update() {
     // Prevent further update tasks from being queued
@@ -608,7 +601,7 @@ void vfs::resume_monitor() {
     monitor.resume();
 }
 
-
+
 //// Monitoring
 
 void vfs::monitor_dir(bool paused) {
@@ -809,7 +802,7 @@ void vfs::file_event(dir_monitor::event e) {
     }
 }
 
-
+
 //// Accessing Files on Disk
 
 task_queue::task_type vfs::access_file(const dir_entry &ent, std::function<void(const pathname &)> fn) {

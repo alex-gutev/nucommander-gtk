@@ -34,89 +34,6 @@ namespace nuc {
      * Dialog that displays operation progress.
      */
     class progress_dialog : public Gtk::Dialog {
-        /**
-         * Label displaying the name of the file currently being
-         * copied.
-         */
-        Gtk::Label *file_label;
-
-        /**
-         * Progress bar showing progress on the current file.
-         */
-        Gtk::ProgressBar *file_progressbar;
-
-        /**
-         * Label displaying the name of the directory currently being
-         * copied.
-         */
-        Gtk::Label *dir_label;
-        /**
-         * Progress bar showing progress on the current directory.
-         */
-        Gtk::ProgressBar *dir_progressbar;
-
-        /**
-         * Box containing the widgets in the dialog.
-         */
-        Gtk::Box *box;
-
-        /**
-         * The cancel button.
-         */
-        Gtk::Button *cancel_button;
-
-        /**
-         * The hide button.
-         */
-        Gtk::Button *hide_button;
-
-        /**
-         * File progress.
-         */
-        size_t file_prog = 0;
-        /**
-         * File Size;
-         */
-        size_t file_size = 0;
-
-        /**
-         * Directory Progress
-         */
-        size_t dir_prog = 0;
-        /**
-         * Directory Size
-         */
-        size_t dir_size = 0;
-
-
-        /* Initialization Methods */
-
-        /* Signal Handlers */
-
-        /**
-         * Signal handler for the "clicked" event of the "cancel"
-         * button.
-         */
-        void cancel_clicked();;
-
-        /**
-         * Signal handler for the "clicked" event of the hide button.
-         */
-        void hide_clicked();
-
-        /**
-         * Called just after the dialog is shown.
-         */
-        void on_show() override;
-
-        /**
-         * Signal handler for the "deleted" signal. Called when the
-         * user closes the dialog.
-         *
-         * Hides the dialog preventing it from being deleted.
-         */
-        bool on_delete(const GdkEventAny *e);
-
     public:
         /** Constructor */
         progress_dialog(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder> &builder);
@@ -219,6 +136,90 @@ namespace nuc {
         size_t dir_progress() const {
             return dir_prog;
         }
+
+    private:
+        /**
+         * Label displaying the name of the file currently being
+         * copied.
+         */
+        Gtk::Label *file_label;
+
+        /**
+         * Progress bar showing progress on the current file.
+         */
+        Gtk::ProgressBar *file_progressbar;
+
+        /**
+         * Label displaying the name of the directory currently being
+         * copied.
+         */
+        Gtk::Label *dir_label;
+        /**
+         * Progress bar showing progress on the current directory.
+         */
+        Gtk::ProgressBar *dir_progressbar;
+
+        /**
+         * Box containing the widgets in the dialog.
+         */
+        Gtk::Box *box;
+
+        /**
+         * The cancel button.
+         */
+        Gtk::Button *cancel_button;
+
+        /**
+         * The hide button.
+         */
+        Gtk::Button *hide_button;
+
+        /**
+         * File progress.
+         */
+        size_t file_prog = 0;
+        /**
+         * File Size;
+         */
+        size_t file_size = 0;
+
+        /**
+         * Directory Progress
+         */
+        size_t dir_prog = 0;
+        /**
+         * Directory Size
+         */
+        size_t dir_size = 0;
+
+
+        /* Initialization Methods */
+
+        /* Signal Handlers */
+
+        /**
+         * Signal handler for the "clicked" event of the "cancel"
+         * button.
+         */
+        void cancel_clicked();;
+
+        /**
+         * Signal handler for the "clicked" event of the hide button.
+         */
+        void hide_clicked();
+
+        /**
+         * Called just after the dialog is shown.
+         */
+        void on_show() override;
+
+        /**
+         * Signal handler for the "deleted" signal. Called when the
+         * user closes the dialog.
+         *
+         * Hides the dialog preventing it from being deleted.
+         */
+        bool on_delete(const GdkEventAny *e);
     };
 }
 

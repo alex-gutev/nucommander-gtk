@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_PLUGIN_TYPES_H
-#define NUC_ARCHIVE_PLUGIN_TYPES_H
+#ifndef NUC_PLUGINS_ARCHIVE_PLUGIN_TYPES_H
+#define NUC_PLUGINS_ARCHIVE_PLUGIN_TYPES_H
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -167,7 +167,7 @@ typedef off_t(*nuc_arch_skip_callback)(void *ctx, off_t n);
  */
 typedef ssize_t(*nuc_arch_write_callback)(void *ctx, const void *buffer, size_t length);
 
-#endif // NUC_ARCHIVE_PLUGIN_TYPES_H
+#endif // NUC_PLUGINS_ARCHIVE_PLUGIN_TYPES_H
 
 /* Local Variables: */
 /* indent-tabs-mode: nil */

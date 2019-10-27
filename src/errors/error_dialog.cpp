@@ -27,6 +27,8 @@
 
 using namespace nuc;
 
+
+//// Initialization
 
 error_dialog *error_dialog::create() {
     auto builder = Gtk::Builder::create_from_resource("/org/agware/nucommander/error_dialog.ui");
@@ -74,6 +76,8 @@ Glib::RefPtr<Gtk::ListStore> error_dialog::create_model() {
     return list_store;
 }
 
+
+//// Running the Dialog
 
 void error_dialog::set_error(const error &err, const restart_map &restarts) {
     actions->clear();
@@ -119,6 +123,8 @@ std::pair<const restart *, bool> error_dialog::run(const error &err, const resta
     return std::make_pair(r, resp == RESPONSE_ALL);
 }
 
+
+//// Signal Handlers
 
 void error_dialog::exec_clicked() {
     choose_action(false);
@@ -126,14 +132,6 @@ void error_dialog::exec_clicked() {
 
 void error_dialog::all_clicked() {
     choose_action(true);
-}
-
-void error_dialog::choose_action(bool all) {
-    auto row = *actions_view->get_selection()->get_selected();
-
-    if (row) {
-        response(all ? RESPONSE_ALL : RESPONSE_CHOOSE);
-    }
 }
 
 void error_dialog::row_clicked(const Gtk::TreeModel::Path &row_path, Gtk::TreeViewColumn *column) {
@@ -147,4 +145,12 @@ bool error_dialog::key_pressed(const GdkEventKey *e) {
     }
 
     return false;
+}
+
+void error_dialog::choose_action(bool all) {
+    auto row = *actions_view->get_selection()->get_selected();
+
+    if (row) {
+        response(all ? RESPONSE_ALL : RESPONSE_CHOOSE);
+    }
 }

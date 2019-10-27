@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_ARCHIVE_LISTER_H
-#define NUC_ARCHIVE_LISTER_H
+#ifndef NUC_LISTER_ARCHIVE_LISTER_H
+#define NUC_LISTER_ARCHIVE_LISTER_H
 
 #include "lister/lister.h"
 #include "plugins/archive_plugin.h"
@@ -91,7 +91,7 @@ namespace nuc {
     };
 }
 
-#endif // NUC_ARCHIVE_LISTER_H
+#endif // NUC_LISTER_ARCHIVE_LISTER_H
 
 // Local Variables:
 // mode: c++

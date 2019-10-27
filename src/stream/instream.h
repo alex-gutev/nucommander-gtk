@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef NUC_INSTREAM_H
-#define NUC_INSTREAM_H
+#ifndef NUC_STREAM_INSTREAM_H
+#define NUC_STREAM_INSTREAM_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -98,7 +98,7 @@ namespace nuc {
     };
 }
 
-#endif // NUC_INSTREAM_H
+#endif // NUC_STREAM_INSTREAM_H
 
 // Local Variables:
 // mode: c++

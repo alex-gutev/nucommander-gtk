@@ -32,6 +32,7 @@
 
 using namespace nuc;
 
+
 //// Utility Function Prototypes
 
 /**
@@ -50,7 +51,7 @@ static void add_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> model);
  */
 static void remove_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> model);
 
-
+
 //// Implementation
 
 prefs_window *prefs_window::instance() {
@@ -104,7 +105,7 @@ void prefs_window::show() {
     }
 }
 
-
+
 //// General Settings
 
 void prefs_window::init_general(const Glib::RefPtr<Gtk::Builder> &builder) {
@@ -122,7 +123,7 @@ void prefs_window::store_general_settings() {
     app_settings::instance().dir_refresh_timeout(refresh_timeout_entry->get_value_as_int());
 }
 
-
+
 //// Keybinding Settings
 
 void prefs_window::init_keybindings(const Glib::RefPtr<Gtk::Builder> &builder) {
@@ -187,7 +188,7 @@ void prefs_window::store_bindings() {
     app_settings::instance().settings()->set_value("keybindings", Glib::Variant<std::map<Glib::ustring, Glib::ustring>>::create(key_map));
 }
 
-
+
 //// Plugin Settings
 
 prefs_window::plugin_model_columns::plugin_model_columns() {
@@ -250,7 +251,7 @@ void prefs_window::store_plugins() {
     app_settings::instance().settings()->set_value("plugins", Glib::Variant<std::vector<std::tuple<Glib::ustring, Glib::ustring>>>::create(plugins));
 }
 
-
+
 //// Error Handler Settings
 
 prefs_window::eh_model_columns::eh_model_columns() {
@@ -321,7 +322,7 @@ void prefs_window::store_error_handlers() {
         Glib::Variant<std::vector<std::tuple<Glib::ustring, int, Glib::ustring>>>::create(handlers));
 }
 
-
+
 //// Column Settings
 
 prefs_window::column_model_columns::column_model_columns() {
@@ -418,6 +419,7 @@ void prefs_window::store_column_settings() {
     app_settings::instance().settings()->set_string_array("columns", columns);
 }
 
+
 void prefs_window::up_column() {
     if (auto it = column_view->get_selection()->get_selected()) {
         auto prev = it;
@@ -438,7 +440,7 @@ void prefs_window::down_column() {
     }
 }
 
-
+
 //// Window Signal Handlers
 
 void prefs_window::apply_clicked() {
@@ -476,7 +478,7 @@ bool prefs_window::on_key_press_event(GdkEventKey *e) {
     return false;
 }
 
-
+
 //// Utility Functions
 
 void add_row(Gtk::TreeView *view, Glib::RefPtr<Gtk::ListStore> list) {
